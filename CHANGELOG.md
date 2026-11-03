@@ -12,6 +12,11 @@ into `main` ahead of the public 0.1 release.
 
 ### Added
 
+- `gate_bot.py` check 5 `readme-counts`: the README's `**N stages**` and
+  `**N domains**` claims are re-counted against the numbered rows in
+  `framework/ecosystem-map.md` and `framework/13domains-mapping.md`.
+  A documentation claim that no file backs is a claim, not a fact; the
+  gate now fails when the two drift apart.
 - `llms.txt` at the repository root — LLM/agent-friendly entry point per the
   llms.txt convention, covering the three laws, core interface, run
   instructions, and verified test evidence.
@@ -40,11 +45,21 @@ into `main` ahead of the public 0.1 release.
 - README links the rest of the stack — theory repository, doctrine DOIs
   (concept + v1.7.0), portal, silent-failure catalog, uibc-core — and the
   repository Homepage now points at the portal.
-- README explains 11 stages / 13 domains / 14 links as three different
-  scopes rather than leaving three numbers unexplained.
+- README states the two counts this repository can source — 11 stages
+  (`framework/ecosystem-map.md`, 11 numbered rows) and 13 domains
+  (`framework/13domains-mapping.md`) — and labels the 14-link ecosystem
+  caliber as **external**: it is not defined here and is not re-listed,
+  because an earlier revision of this section asserted 14 without a
+  source while the repository's own map said 11.
 - README and `demo2/sse_server.py` document the SSE smoke precondition (the
   log must contain both a pass and a hold path); on failure the smoke names
   the missing types and the exact commands that generate them.
+- `demo2/sse_server.py` stops printing a traceback when a client simply hangs
+  up: an abandoned SSE stream raises `ConnectionResetError` /
+  `ConnectionAbortedError` (Windows 10054 / 10053), which socketserver's
+  default handler rendered as a server crash while the smoke still
+  reported `6/6`. Those three connection-teardown types are now silent;
+  every other exception still reaches the default handler.
 - README separates the theory home from the engine home: theory, domain
   papers and standards participation (ITU FG-TIDA, W3C) are stated as
   maintained in `lgd-theory`; this repository implements the rules instead

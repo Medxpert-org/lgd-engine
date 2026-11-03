@@ -42,7 +42,7 @@ Verify the whole gate before trusting it (stock Python 3.9+, stdlib only):
 # Any OS
 python demo1/test_demo1.py       # change-gate gold tests
 python demo2/test_demo2.py       # five-seat review tests
-python framework/gate_bot.py     # CI gate (four checks)
+python framework/gate_bot.py     # CI gate (five checks)
 ```
 
 One decision from a case JSON:
@@ -243,13 +243,21 @@ measure different things — neither is a count of the other:
   postmarket, UDI, SaMD, …) mapped onto those stages in
   `framework/13domains-mapping.md`. Several domains are cross-stage
   (compliance grading, risk management), which is why 13 ≠ 11.
-- **14 links (14 环)** — the ecosystem-level industry-chain caliber used
-  in LGD ecosystem publications. It is the coarsest of the three and is
-  not re-listed here (single source of truth): the 11-stage model is this
-  engine's projection of that chain, not a competing count.
+- **14 links (14 环)** — a wider industry-chain caliber that circulates in
+  the theory line's ecosystem publications. It is **not defined in this
+  repository** and this README does not re-list it: `framework/ecosystem-map.md`
+  is the binding list here and it has 11 links. Treat 14 as an external
+  caliber — cite its defining document when you use it, and do not infer it
+  from this repo.
 
-So: 14 环 = industry chain (ecosystem), 13 域 = judgment domains
-(knowledge), 11 阶段 = implemented stages (this engine).
+So: 11 环节 = the list this repo binds (`framework/ecosystem-map.md`),
+13 域 = judgment domains, and 14 环 = an external ecosystem caliber that
+this engine projects onto those 11 stages rather than re-defines.
+
+Both in-repo counts are asserted by CI: `framework/gate_bot.py` re-counts
+the rows in `framework/ecosystem-map.md` (11) and
+`framework/13domains-mapping.md` (13) and fails if either drifts from the
+numbers above.
 
 ## Gate bot (CI) & security baseline
 
@@ -266,13 +274,17 @@ entries and known secret shapes are rejected).
 for LLM Applications (2025) to concrete defenses in this tree;
 `python security/security_scan.py` re-checks the tree before every release.
 
-## Verified test evidence (2026-11-03)
+## Verified test evidence (2026-11-04)
 
 - demo1 change-gate gold tests: **5/5 PASS**; demo2 five-seat review: **26/26 PASS**
-- `framework/gate_bot.py`: **4/4 checks PASS**; `security/security_scan.py`: **clean, 0 findings**
+- `framework/gate_bot.py`: **5/5 checks PASS** (incl. README-count drift); `security/security_scan.py`: **clean, 0 findings**
 - MCP smoke (tools list + judge + RBAC deny): **PASS**; SSE smoke: **6/6 event types**
 - GitHub Actions: `gate` CI and `CodeQL` **green on main**; Dependabot enabled;
   branch protection active (PR required + gate status check)
+- Negative controls (each one must be able to fail, and does): stdlib OpenAPI
+  scan → `5/17 (text-scan only)`; injection self-test with a broken guard →
+  `5/6`, exit 1; SSE smoke on an empty log → explicit empty-log error;
+  README claiming 12 stages → gate check 5 FAIL
 - Independent red-team / eval: 7-dimension security review closed with no open
   high-severity findings (LGD-EVAL-2026-009)
 

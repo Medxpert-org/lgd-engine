@@ -6,6 +6,9 @@ Check sequence (ordered, all must pass):
   2. License files      -> release-prep/LICENSE and release-prep/NOTICE exist, non-empty
   3. No plaintext keys  -> scan tree for secret-shaped literals
   4. Manifest syntax    -> every skill.yaml / framework/examples/*.yaml validates
+  5. README counts      -> the "N stages" / "N domains" claims equal the row
+                           counts of framework/ecosystem-map.md and
+                           framework/13domains-mapping.md
 
 Exit 0 = PASS. Exit 1 = FAIL, failing items listed on stdout.
 
@@ -182,6 +185,49 @@ def check_manifests(root: Path) -> tuple[bool, str]:
     return True, f"{len(uniq)} manifest(s) valid: " + ", ".join(p.name for p in uniq)
 
 
+def count_table_rows(path: Path) -> int:
+    """Count numbered rows (``| 1 | ...``) in a markdown table. -1 if unreadable."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return -1
+    return sum(1 for line in text.splitlines() if re.match(r"^\|\s*\d+\s*\|", line))
+
+
+# A number in the README that no file in the tree backs is a claim, not a fact.
+# Each entry: (README label, claim pattern, the table that must supply the count).
+README_COUNT_CLAIMS = [
+    ("stages", r"\*\*(\d+) stages\*\*", "framework/ecosystem-map.md"),
+    ("domains", r"\*\*(\d+) domains\*\*", "framework/13domains-mapping.md"),
+]
+
+
+def check_readme_counts(root: Path) -> tuple[bool, str]:
+    readme = root / "README.md"
+    if not readme.exists():
+        return False, "README.md missing"
+    text = readme.read_text(encoding="utf-8")
+    problems, notes = [], []
+    for label, pattern, src in README_COUNT_CLAIMS:
+        m = re.search(pattern, text)
+        if not m:
+            problems.append(f"README has no '**N {label}**' claim to verify")
+            continue
+        claimed = int(m.group(1))
+        rows = count_table_rows(root / src)
+        if rows < 0:
+            problems.append(f"{src} unreadable, cannot verify the {claimed}-{label} claim")
+        elif rows != claimed:
+            problems.append(
+                f"README claims {claimed} {label} but {src} lists {rows} rows "
+                f"(fix the README and the map in the same commit)")
+        else:
+            notes.append(f"{claimed} {label} = {rows} rows in {src}")
+    if problems:
+        return False, "README count drift: " + "; ".join(problems)
+    return True, "README counts match their source tables: " + ", ".join(notes)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=str(Path(__file__).resolve().parent.parent),
@@ -194,6 +240,7 @@ def main() -> int:
         ("2.license-files", check_license_files(root)),
         ("3.no-plaintext-keys", check_no_plaintext_keys(root)),
         ("4.manifest-syntax", check_manifests(root)),
+        ("5.readme-counts", check_readme_counts(root)),
     ]
     failed = [name for name, (ok, _) in checks if not ok]
     print("=" * 60)
