@@ -1,0 +1,352 @@
+# =============================================================================
+# lgd-engine REST API — OpenAPI 3.1 contract (mode ① of the 7 integration modes)
+#
+# IMPLEMENTATION STATUS — read this before coding against the contract:
+#   BETA / DRAFT. This file freezes the production-facing wire shape.
+#   * DEMO LAYER (already runs today): mvp/demo1/web.py serves a stdlib
+#     http.server UI+JSON endpoint at POST http://127.0.0.1:8765/judge
+#     (note: NO /v1 prefix) and returns the exact GateReport object defined
+#     below ({verdict, per_judge, reasons, evidence, law_enforcements}).
+#   * PRODUCTION REST (POST /v1/judge, GET /v1/decisions, TLS, auth): NOT yet
+#     wired. No /v1 service exists in the repo. The contract below is the
+#     frozen target the Beta milestone will implement; demo1/web.py is the
+#     behavioral reference for request/response semantics.
+#   Do not treat this file as proof that a production REST server exists.
+#
+# Sources of truth for shapes:
+#   - mvp/lgd_engine/gate/engine.py   (GateReport.to_dict())
+#   - mvp/lgd_engine/judges/base.py   (JudgeVerdict: reasons/evidence schema)
+#   - mvp/demo1/web.py                (real ctx fields, real /judge behavior)
+#   - mvp/demo2/db.py                 (DecisionRecord shape)
+# =============================================================================
+openapi: 3.1.0
+
+info:
+  title: lgd-engine Judgment API
+  version: "0.1.0-beta"
+  description: >
+    Theory-bound judgment core for medical-device AI change control
+    (LGD 三律 / 有籍有证有门禁 / 触点即门).
+
+    **Status: Beta contract.** The request/response JSON shapes are exercised
+    today by the local demo (`python -m demo1.web`, POST /judge on :8765);
+    the `/v1/*` production paths, auth and TLS termination land in the Beta
+    milestone. The judgment core itself is model-independent and runs fully
+    offline — this API is the HTTP surface customers may expose behind their
+    own TLS-terminating reverse proxy.
+
+    Security model: bind 127.0.0.1 by default; never expose directly to the
+    internet. Customer-facing deployments MUST terminate TLS at their own
+    reverse proxy and inject the API bearer/key from their secret store
+    (no secrets in config files).
+
+  contact:
+    name: lgd-engine (open-source MVP)
+  license:
+    name: Apache-2.0
+
+servers:
+  - url: http://127.0.0.1:8765
+    description: >
+      Local DEMO server (runs today via `python -m demo1.web`). Serves POST
+      /judge (no /v1 prefix) and the demo HTML UI. Reference implementation
+      of the request/response semantics below.
+  - url: https://api.example.internal
+    description: >
+      Production target (Beta, not implemented yet). TLS terminated at the
+      customer reverse proxy; path prefix /v1. Base URL is the customer's
+      internal address, not a public cloud.
+
+tags:
+  - name: judge
+    description: Submit a change/evaluation case and get a gate verdict chain.
+  - name: decisions
+    description: Append-only audit list of persisted decision records.
+
+paths:
+
+  /v1/judge:
+    post:
+      tags: [judge]
+      summary: Run the gate over one change-context JSON case.
+      description: >
+        Submit a change-context object; the engine runs every registered
+        DomainJudge (510(k) change judge, postmarket judge at MVP) and
+        aggregates into one GateReport.
+
+        Verdict aggregation rules (frozen in lgd_engine/gate/engine.py):
+          * L3-GATED: any critical reason → final verdict = reject
+          * L2-EVIDENCED: aggregate "go" with zero evidence → hold
+          * L1-RECORDED: caller is expected to persist the DecisionRecord
+            (the pure engine does not write storage itself).
+
+        **Beta note:** today this behavior is reachable at POST /judge on
+        the demo server (:8765) with identical body/response shapes.
+      operationId: judgeChange
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        description: Change-context case JSON. Known fields below; the engine
+          also tolerates additional context keys (per_judge adapters read
+          what they need).
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeContext"
+            examples:
+              holdMaterialSwap:
+                summary: 510(k) material nonconforming change (HOLD/REJECT chain)
+                value:
+                  device_risk_class: II
+                  regulatory_path: "510k"
+                  change_type: material_nonconforming
+                  safety_impact: none
+                  evidence_sufficiency: needs_supplement
+                  recall_class: none
+                  requires_submission: false
+                  predicate_unchanged: true
+                  device_description: "Blood-glucose test strip, BOM adhesive swap"
+      responses:
+        "200":
+          description: GateReport — the full verdict chain.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GateReport"
+              examples:
+                report:
+                  summary: Example GateReport (shape as returned by demo1/web.py)
+                  value:
+                    verdict: hold
+                    per_judge:
+                      med-device-510k-change:
+                        verdict: hold
+                        reasons:
+                          - rule: MATERIAL-NONCONFORMING.EVIDENCE
+                            level: major
+                            detail: "Material change with needs_supplement evidence"
+                        evidence:
+                          - kind: fda_510k
+                            ref: "K190204"
+                    reasons:
+                      - rule: MATERIAL-NONCONFORMING.EVIDENCE
+                        level: major
+                        detail: "Material change with needs_supplement evidence"
+                    evidence:
+                      - kind: fda_510k
+                        ref: "K190204"
+                    law_enforcements: []
+        "400":
+          description: Malformed JSON body or missing required change_type.
+        "401":
+          description: Missing/invalid bearer token or X-API-Key (Beta).
+
+  /v1/decisions:
+    get:
+      tags: [decisions]
+      summary: List persisted decision records (append-only audit).
+      description: >
+        Read-only audit feed of DecisionRecords (time / initiator / subject /
+        decision / basis / evidence refs / status). History is append-only;
+        records are never rewritten (Part-11-style traceability).
+
+        **Beta note:** today the equivalent data lives in
+        mvp/demo2/decisions_demo.db (SQLite, table `decisions`); no HTTP
+        listing is served yet.
+      operationId: listDecisions
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Max records to return, newest first. Default 50, cap 500.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+      responses:
+        "200":
+          description: Audit decision list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DecisionRecord"
+        "401":
+          description: Missing/invalid bearer token or X-API-Key (Beta).
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Beta. Customer issues short-lived bearer tokens (their IdP / vault).
+        TLS is terminated at the customer reverse proxy — never send bearer
+        tokens over plain HTTP.
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: >
+        Alternative key header (same discipline as the WeKnora deployment).
+        Key injected from the customer secret store at process start;
+        never committed to config files.
+
+  schemas:
+
+    ChangeContext:
+      type: object
+      description: Change-context case (fields exercised by demo1/web.py).
+      required: [change_type]
+      properties:
+        device_risk_class:
+          type: string
+          enum: [I, II, III]
+          description: FDA device risk class.
+        regulatory_path:
+          type: string
+          enum: ["510k", pma, nmpa_import]
+        change_type:
+          type: string
+          enum:
+            - label_correction
+            - label_clarification
+            - label_expansion
+            - function_config_change
+            - process_change_control
+            - material_nonconforming
+            - design_defect
+            - maintenance_execution
+        safety_impact:
+          type: string
+          enum: [none, limited_reversible, severe_life_threatening]
+        evidence_sufficiency:
+          type: string
+          enum: [sufficient, needs_supplement, none]
+        recall_class:
+          type: string
+          enum: [none, class1, class2, class3]
+        requires_submission:
+          type: boolean
+        predicate_unchanged:
+          type: boolean
+        device_description:
+          type: string
+        source_refs:
+          type: array
+          items:
+            type: string
+          description: External evidence references (e.g. 510(k) numbers).
+      additionalProperties: true
+
+    JudgeVerdict:
+      type: object
+      description: Per-domain judge output (fixed schema, mvp/lgd_engine/judges/base.py).
+      required: [verdict, reasons, evidence]
+      properties:
+        verdict:
+          type: string
+          enum: [go, hold, reject]
+        reasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/Reason"
+        evidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/Evidence"
+
+    Reason:
+      type: object
+      required: [rule, level, detail]
+      properties:
+        rule:
+          type: string
+          example: MATERIAL-NONCONFORMING.EVIDENCE
+        level:
+          type: string
+          enum: [critical, major, minor]
+        detail:
+          type: string
+
+    Evidence:
+      type: object
+      required: [kind, ref]
+      properties:
+        kind:
+          type: string
+          example: fda_510k
+        ref:
+          type: string
+          example: "K190204"
+
+    GateReport:
+      type: object
+      description: Aggregated gate verdict (GateReport.to_dict() in gate/engine.py).
+      required: [verdict, per_judge, reasons, evidence, law_enforcements]
+      properties:
+        verdict:
+          type: string
+          enum: [go, hold, reject]
+          description: Final aggregated verdict after L3/L2 enforcement.
+        per_judge:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/JudgeVerdict"
+          description: Map of domain name → per-domain JudgeVerdict.
+        reasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/Reason"
+          description: Flattened reason chain across all judges.
+        evidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/Evidence"
+        law_enforcements:
+          type: array
+          items:
+            type: string
+          description: Which LGD laws fired (L1-RECORDED / L2-EVIDENCED / L3-GATED).
+
+    DecisionRecord:
+      type: object
+      description: Append-only audit row (demo2/db.py DecisionStore).
+      required: [time, initiator, subject, decision, basis, status]
+      properties:
+        id:
+          type: integer
+          example: 1
+        time:
+          type: string
+          format: date-time
+        initiator:
+          type: string
+          example: mcp-server
+        subject:
+          type: string
+          example: "MedXpert glucose-strip BOM swap review"
+        decision:
+          type: string
+          example: PASS
+        basis:
+          type: string
+          example: "tools/call judge_change"
+        status:
+          type: string
+          enum: [pending, executed, vetoed]
+        evidence_refs:
+          type: array
+          items:
+            type: string
+        session_id:
+          type: string
