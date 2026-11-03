@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lgd-engine"
+version = "0.1.0"
+description = "Theory-bound judgment core for medical-device AI change control (LGD 三律 / 有籍有证有门禁 / 触点即门)."
+readme = "release-prep/README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Zhao, X.", affiliation = "Independent Researcher" }]
+dependencies = []  # stdlib only at MVP
+
+[project.optional-dependencies]
+vector = ["fastembed>=0.3"]
+yaml = ["pyyaml>=6.0"]
+
+[project.scripts]
+lgd-gate = "lgd_engine.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lgd_engine*"]

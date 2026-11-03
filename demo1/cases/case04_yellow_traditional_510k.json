@@ -1,0 +1,17 @@
+{
+  "case_id": "DEMO1-YELLOW-02",
+  "_desensitized_from": "P2-CASE-MOD-02 (Edwards HemoSphere Stream Module, Traditional 510(k) K253034, predicate K243781)",
+  "device_description": "Class II non-invasive hemodynamic monitor module; new Stream SKU outputs only the waveform and drops derived BP/hemodynamic parameters. Software & system V&V matches predicate.",
+  "device_risk_class": "II",
+  "regulatory_path": "510k",
+  "change_type": "function_config_change",
+  "safety_impact": "none",
+  "evidence_sufficiency": "sufficient",
+  "recall_class": "none",
+  "requires_submission": true,
+  "predicate_unchanged": true,
+  "source_refs": [
+    {"kind": "fda_510k", "ref": "K253034 (Traditional), predicate K243781"}
+  ],
+  "expected_verdict": "hold"
+}

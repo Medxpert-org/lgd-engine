@@ -1,0 +1,19 @@
+# NOTE: the docker CLI is NOT on this machine's PATH at authoring time.
+# This file must be smoke-tested in a real Docker environment before release;
+# local registration: "pending Docker-environment verification".
+
+services:
+  lgd-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile      # to be added at packaging
+    image: lgd-engine:0.1.0
+    ports:
+      - "127.0.0.1:8080:8080"     # REST demo (示意)
+      - "127.0.0.1:8765:8765"     # streamable-HTTP MCP (示意)
+    environment:
+      - LGD_DEFAULT_BIND=0.0.0.0
+    # WeKnora RAG side: point at YOUR own instance; this repo deliberately
+    # does not bundle the private KB. See docs/connecting.md (to be added).
+    # depends_on:
+    #   - weknora

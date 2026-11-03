@@ -1,0 +1,15 @@
+{
+  "case_id": "PM-GREEN-01",
+  "_desensitized_from": "B1-C04 Philips Pinnacle3 TPS, NMPA 三级召回 (2025-09-05)",
+  "device_description": "Radiotherapy treatment-planning software; stop-power-ratio (SPR) calculation dataset issue; firm voluntary recall, NMPA Class 3.",
+  "recall_class": "class3",
+  "fda_cause_type": "software_design",
+  "harm_severity": "no_harm",
+  "distribution_scope": "limited_local",
+  "event_report_count": 2,
+  "marketing_without_license": false,
+  "source_refs": [
+    {"kind": "nmpa_recall", "ref": "NMPA 2025-09-05 三级召回公告"}
+  ],
+  "expected_verdict": "go"
+}

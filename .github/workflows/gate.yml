@@ -1,0 +1,26 @@
+name: gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    name: LGD gate (gold-test / license / no-plaintext / manifest)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Gate bot (gold test + LICENSE/NOTICE + no plaintext keys + manifest syntax)
+        run: python framework/gate_bot.py
+
+      - name: Demo2 five-seat review self-test
+        run: python demo2/test_demo2.py
+
+      - name: MCP server smoke (tools list + judge + RBAC deny)
+        run: python lgd_engine/mcp_smoke.py

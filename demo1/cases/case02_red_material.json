@@ -1,0 +1,17 @@
+{
+  "case_id": "DEMO1-RED-02",
+  "_desensitized_from": "P2-CASE-MAJ-02 (Medline Anesthesia Circuit Kits, Recall Z-0445-2026, Event 97882)",
+  "device_description": "Class II anesthesia breathing circuit kit; supplier material substitution produced cracked tubing causing anesthesia gas leak.",
+  "device_risk_class": "II",
+  "regulatory_path": "510k",
+  "change_type": "material_nonconforming",
+  "safety_impact": "severe_life_threatening",
+  "evidence_sufficiency": "none",
+  "recall_class": "class1",
+  "requires_submission": true,
+  "predicate_unchanged": false,
+  "source_refs": [
+    {"kind": "fda_recall", "ref": "Z-0445-2026 / Event 97882"}
+  ],
+  "expected_verdict": "reject"
+}

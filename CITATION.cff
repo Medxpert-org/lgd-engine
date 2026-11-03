@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+title: "LGD Engine: A Theory-Bound Judgment Core for Medical-Device AI Change Control"
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - family-names: "Zhao"
+    given-names: "X."
+    affiliation: "Independent Researcher"
+version: 0.1.0
+date-released: 2026-11-03
+license: Apache-2.0
+preferred-citation:
+  type: article
+  title: "LGD theory and its medical-device change-control application (preprint placeholder)"
+  authors:
+    - family-names: "Zhao"
+      given-names: "X."
+  year: "2027"
+  note: "Placeholder — venue and metadata to be completed upon submission."

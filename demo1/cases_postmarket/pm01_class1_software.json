@@ -1,0 +1,15 @@
+{
+  "case_id": "PM-RED-01",
+  "_desensitized_from": "B1-C02 Dexcom G7/ONE+ CGM App, FDA Recall id=215007 (Class 1)",
+  "device_description": "CGM companion app missed 'Sensor Failed' alert on transmitter hardware/firmware fault; urgent medical device correction notice.",
+  "recall_class": "class1",
+  "fda_cause_type": "software_design",
+  "harm_severity": "serious_injury",
+  "distribution_scope": "us_national",
+  "event_report_count": 40,
+  "marketing_without_license": false,
+  "source_refs": [
+    {"kind": "fda_recall", "ref": "id=215007 (Class 1, 2025-07-24)"}
+  ],
+  "expected_verdict": "reject"
+}

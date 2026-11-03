@@ -1,0 +1,20 @@
+name: change-gate-skill
+version: 0.1.0
+description: Medical-device change-control gate judgment (LGD 三律 + 13-domain router).
+author: "Zhao, X. (Independent Researcher)"
+license: Apache-2.0
+gate_tag: theory-bound
+requires_llm: false
+permissions: suggest
+entry: python -m lgd.skills.change_gate
+dependencies:
+  - lgd.judges
+  - lgd.gate
+inputs:
+  change_type: enum["minor", "major", "critical"]
+  evidence: object
+outputs:
+  verdict: enum["go", "hold", "reject"]
+  reasons: list
+  citations: list
+network: false

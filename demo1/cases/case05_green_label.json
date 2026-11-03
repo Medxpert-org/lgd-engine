@@ -1,0 +1,17 @@
+{
+  "case_id": "DEMO1-GREEN-01",
+  "_desensitized_from": "P2-CASE-MIN-01 (Orthofix Pillar SA PTC Spacer, Recall Z-0893-2026, Event 97862)",
+  "device_description": "Class II lumbar interbody fusion spacer; inconsistent marketing 'nanotextured surface' claim across product manuals, IFU and website. Firm removes the claim; no product return; continue use.",
+  "device_risk_class": "II",
+  "regulatory_path": "510k",
+  "change_type": "label_correction",
+  "safety_impact": "none",
+  "evidence_sufficiency": "sufficient",
+  "recall_class": "class3",
+  "requires_submission": false,
+  "predicate_unchanged": true,
+  "source_refs": [
+    {"kind": "fda_recall", "ref": "Z-0893-2026 / Event 97862"}
+  ],
+  "expected_verdict": "go"
+}

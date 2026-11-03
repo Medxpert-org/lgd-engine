@@ -1,0 +1,19 @@
+{
+  "case_id": "JUR-SWAP-01",
+  "_desensitized_from": "hypothetical equivalence case; threshold comparison only",
+  "device_description": "Class II single-use diagnostic kit; secondary polymer tube supplier swapped to an ISO-10993-biocompatible equivalent; full equivalence validation (materials, sterility, shelf-life, functional performance) completed and filed.",
+  "device_risk_class": "II",
+  "regulatory_path": "510k",
+  "change_type": "supplier_substitution",
+  "safety_impact": "none",
+  "evidence_sufficiency": "sufficient",
+  "recall_class": "none",
+  "requires_submission": false,
+  "predicate_unchanged": true,
+  "equivalence_declared": true,
+  "source_refs": [
+    {"kind": "internal_verification", "ref": "EQ-VAL-2026-014 biocompatibility + shelf-life report"}
+  ],
+  "expected_fda_verdict": "hold",
+  "expected_nmpa_verdict": "go"
+}

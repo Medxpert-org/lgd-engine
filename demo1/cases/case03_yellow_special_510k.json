@@ -1,0 +1,17 @@
+{
+  "case_id": "DEMO1-YELLOW-01",
+  "_desensitized_from": "P2-CASE-MOD-01 (Alere/Abbott ID NOW Influenza A&B 2, Special 510(k) K190204, predicate K173932)",
+  "device_description": "Class II rapid molecular IVD assay; package insert updated to add -80C VTM specimen transport claim; 3-cycle freeze-thaw validation study completed.",
+  "device_risk_class": "II",
+  "regulatory_path": "510k",
+  "change_type": "label_expansion",
+  "safety_impact": "none",
+  "evidence_sufficiency": "sufficient",
+  "recall_class": "none",
+  "requires_submission": true,
+  "predicate_unchanged": true,
+  "source_refs": [
+    {"kind": "fda_510k", "ref": "K190204 (Special), predicate K173932"}
+  ],
+  "expected_verdict": "hold"
+}

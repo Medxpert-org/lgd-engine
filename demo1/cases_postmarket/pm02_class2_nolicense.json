@@ -1,0 +1,15 @@
+{
+  "case_id": "PM-YELLOW-01",
+  "_desensitized_from": "B1-C05 Blue Ortho Predict+ ortho AI planning, FDA Recall id=209984 (Class 2, No Marketing Application)",
+  "device_description": "Orthopedic surgical-planning AI feature found on US market without premarket clearance/approval; firm emailed users to withdraw until clearance.",
+  "recall_class": "class2",
+  "fda_cause_type": "no_marketing_application",
+  "harm_severity": "no_harm",
+  "distribution_scope": "us_national",
+  "event_report_count": 3,
+  "marketing_without_license": true,
+  "source_refs": [
+    {"kind": "fda_recall", "ref": "id=209984 (Class 2, 2024-08-30 withdrawal)"}
+  ],
+  "expected_verdict": "reject"
+}

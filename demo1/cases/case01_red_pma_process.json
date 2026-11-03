@@ -1,0 +1,18 @@
+{
+  "case_id": "DEMO1-RED-01",
+  "_desensitized_from": "P2-CASE-MAJ-01 (Medtronic Azure S DR MRI SureScan, Recall Z-1924-2025, PMA P980035)",
+  "device_description": "Class III implantable cardiac pulse generator; production process change in power module introduced batch-level sudden power-loss risk without alarm.",
+  "device_risk_class": "III",
+  "regulatory_path": "pma",
+  "change_type": "process_change_control",
+  "safety_impact": "severe_life_threatening",
+  "evidence_sufficiency": "none",
+  "recall_class": "class1",
+  "requires_submission": true,
+  "predicate_unchanged": false,
+  "source_refs": [
+    {"kind": "fda_recall", "ref": "Z-1924-2025 / Event 96722"},
+    {"kind": "fda_pma", "ref": "P980035"}
+  ],
+  "expected_verdict": "reject"
+}

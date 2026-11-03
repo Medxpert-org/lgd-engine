@@ -1,0 +1,18 @@
+name: touchpoint-gate-skill
+version: 0.1.0
+description: Annotate every user/AI touchpoint with a gate sticker (触点即门 principle enforcement).
+author: "Zhao, X. (Independent Researcher)"
+license: Apache-2.0
+gate_tag: theory-bound
+requires_llm: false
+permissions: read-only
+entry: python -m lgd.skills.touchpoint_gate
+dependencies:
+  - lgd.gate
+inputs:
+  surface: string
+  actor_role: string
+outputs:
+  gate_present: bool
+  missing_requirements: list
+network: false
