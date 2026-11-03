@@ -5,10 +5,16 @@ type: software
 authors:
   - family-names: "Zhao"
     given-names: "X."
-    affiliation: "Independent Researcher"
 version: 0.1.0
-date-released: 2026-11-03
 license: Apache-2.0
+keywords:
+  - medical devices
+  - change control
+  - regulatory compliance
+  - software as a medical device (SaMD)
+  - AI governance
+repository-code: "https://github.com/Medxpert-org/lgd-engine"
+url: "https://github.com/Medxpert-org/lgd-engine"
 preferred-citation:
   type: article
   title: "LGD theory and its medical-device change-control application (preprint placeholder)"
@@ -16,4 +22,13 @@ preferred-citation:
     - family-names: "Zhao"
       given-names: "X."
   year: "2027"
-  note: "Placeholder — venue and metadata to be completed upon submission."
+  note: "Placeholder — venue, DOI, and citation metadata to be completed upon submission. Do not cite this entry as a published paper."
+# Notes for maintainers:
+# - `date-released` is intentionally omitted: version 0.1.0 has not been
+#   published yet. Add it (ISO 8601, e.g. 2026-12-01) when the release tag
+#   actually ships.
+# - ORCID and e-mail are intentionally omitted: none is recorded in the
+#   repository; do not fabricate. Add `orcid: "https://orcid.org/..."` and/or
+#   `email: "..."` only from verified sources.
+# - `affiliation` is intentionally omitted, consistent with the PEP 621
+#   metadata in pyproject.toml (authors carry name only).
