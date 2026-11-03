@@ -99,6 +99,32 @@ def check_no_plaintext_keys(root: Path) -> tuple[bool, str]:
     return True, "no plaintext keys / ORCID-shaped literals in tree"
 
 
+def _mini_yaml(text: str) -> dict:
+    """Stdlib-only fallback YAML reader: top-level ``key: scalar`` pairs.
+
+    Understands quoted strings, inline comments, null and YAML 1.1 booleans
+    (true/yes/on, false/no/off). Lists (``key:\\n  - item``) and other complex
+    values are kept as the raw first token so presence checks still work.
+    """
+    data = {}
+    for m in re.finditer(r"^([a-z_][a-z0-9_]*)\s*:\s*(.*)$", text, re.M):
+        key, raw = m.group(1), m.group(2).strip()
+        raw = raw.split(" #")[0].strip()
+        if not raw:
+            data[key] = None
+        elif (raw.startswith('"') and raw.endswith('"')) or (raw.startswith("'") and raw.endswith("'")):
+            data[key] = raw[1:-1]
+        elif raw.lower() in ("true", "yes", "on"):
+            data[key] = True
+        elif raw.lower() in ("false", "no", "off"):
+            data[key] = False
+        elif raw.lower() == "null":
+            data[key] = None
+        else:
+            data[key] = raw
+    return data
+
+
 def load_manifest(path: Path):
     text = path.read_text(encoding="utf-8")
     try:
@@ -108,10 +134,8 @@ def load_manifest(path: Path):
             return None, "not a mapping"
         return data, None
     except ImportError:
-        # Minimal structural fallback: top-level key presence only.
-        keys = set(re.findall(r"^([a-z_][a-z0-9_]*)\s*:", text, re.M))
-        fake = {k: True for k in keys}
-        return fake, None
+        # Stdlib fallback: top-level key presence + scalar value parsing.
+        return _mini_yaml(text), None
 
 
 def check_manifests(root: Path) -> tuple[bool, str]:
