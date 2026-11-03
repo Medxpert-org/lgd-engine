@@ -24,3 +24,20 @@ jobs:
 
       - name: MCP server smoke (tools list + judge + RBAC deny)
         run: python lgd_engine/mcp_smoke.py
+
+      # The docs said these were "enforced in CI"; they were not (S7 red team).
+      - name: OpenAPI contract validation (structural)
+        run: |
+          python -m pip install --quiet pyyaml
+          python docs/validate_openapi.py
+
+      - name: Security self-tests (injection defence + tree scan)
+        run: |
+          python security/prompt_injection_defense.py
+          python security/security_scan.py
+
+      - name: SSE smoke (generate both event paths, then assert 6/6)
+        run: |
+          python -m demo2.session --case demo2/case_gate_report.json --auto
+          python -m demo2.session --case demo2/case_gate_report_critical.json --auto
+          python -m demo2.sse_server --port 8770 --smoke

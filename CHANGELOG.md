@@ -31,6 +31,30 @@ into `main` ahead of the public 0.1 release.
   `license = { text = "Apache-2.0" }`, package discovery via
   `[tool.setuptools.packages.find]`).
 
+### Fixed
+
+- **Fail-open on an unclassified change**: an unknown or missing `change_type`
+  returned `go` with zero reasons, and a blank `{"kind": "", "ref": ""}` counted
+  as evidence. Unknown now yields `hold` with `R-MAJ-06`; blank refs are dropped
+  (S7 red team R1, three invariants in `demo1/test_demo1.py`).
+- **A veto could be softened**: a major rule overwrote `reject` with `hold`, so a
+  Class 1 recall reported `per_judge: HOLD` while the aggregate said `REJECT`.
+  Major rules may escalate, never soften (R2).
+- **A broken tool looked like a verdict**: a judge exception printed `REJECT` and
+  exited `2`. The report now carries `errors`, the CLI exits `3`, usage errors
+  exit `64`; a real REJECT still exits 2 (R3).
+- `gate_bot.py` hardening: one canonical self-test path (a shadow
+  `demo1/selftest.py` fails the gate), the gold test must report
+  `N/N cases; N/N invariants`, the stdlib YAML fallback refuses unbalanced
+  collections, list-valued `entry` traversal is caught, and the secret patterns
+  cover AWS secret keys, password assignments and JWTs (R4–R7).
+- A malformed manifest now produces a clean `[FAIL]` instead of a traceback.
+- `gate_bot.py` gained a sixth check (`demo2` suite) and check 5 now compares the
+  documented gate count across README, `llms.txt` and `release-prep/README.md`
+  instead of README alone (R8).
+- CI now runs what the docs claimed was "enforced in CI": OpenAPI validation,
+  the injection/security self-tests and the SSE smoke (R11).
+
 ### Changed
 
 - `docs/validate_openapi.py` reports its mode instead of an unqualified pass:

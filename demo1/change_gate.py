@@ -89,8 +89,25 @@ def run_case(case_path: Path, domain: str = "510k",
     return report
 
 
+# Exit codes carry two different meanings and must not collide:
+#   0/1/2 = the verdict (go/hold/reject) — a correct REJECT is 2, not a failure
+#   64    = usage error (bad arguments)
+#   3     = the engine failed (unreadable case, judge exception)
+# Red team S7 2026-11-04: a judge that raised used to print REJECT and exit 2,
+# so a broken tool was indistinguishable from a real veto.
+RC_USAGE, RC_TOOL_ERROR = 64, 3
+
+
+class _Parser(argparse.ArgumentParser):
+    def error(self, message: str) -> None:  # argparse exits 2 by default
+        self.print_usage(sys.stderr)
+        print(f"{self.prog}: error: {message}", file=sys.stderr)
+        print(f"(usage errors exit {RC_USAGE}, not 2 — 2 means REJECT)", file=sys.stderr)
+        raise SystemExit(RC_USAGE)
+
+
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description="lgd-engine Demo1 CLI")
+    p = _Parser(description="lgd-engine Demo1 CLI")
     p.add_argument("--case", type=str, help="path to a case JSON")
     p.add_argument("--all", action="store_true", help="run every case under cases/")
     p.add_argument("--domain", choices=list(_DOMAINS), default="510k")
@@ -107,8 +124,15 @@ def main(argv: list[str] | None = None) -> int:
         cases = sorted(root.glob("*.json"))
         n_pass = 0
         for c in cases:
-            rep = run_case(c, domain=args.domain,
-                           jurisdiction=args.jurisdiction, mem=mem)
+            try:
+                rep = run_case(c, domain=args.domain,
+                               jurisdiction=args.jurisdiction, mem=mem)
+            except Exception as exc:
+                print(f"\n[ENGINE ERROR] {c.name}: {type(exc).__name__}: {exc}")
+                print(f"             exit {RC_TOOL_ERROR} = the tool failed; this is "
+                      f"not a verdict.")
+                mem.close()
+                return RC_TOOL_ERROR
             ctx = json.loads(c.read_text(encoding="utf-8"))
             exp = ctx.get("expected_verdict")
             if exp and rep.verdict == exp:
@@ -124,9 +148,24 @@ def main(argv: list[str] | None = None) -> int:
     cp = Path(args.case)
     if not cp.is_absolute():
         cp = (Path.cwd() / cp).resolve()
-    rep = run_case(cp, domain=args.domain,
-                   jurisdiction=args.jurisdiction, mem=mem)
+    try:
+        rep = run_case(cp, domain=args.domain,
+                       jurisdiction=args.jurisdiction, mem=mem)
+    except Exception as exc:
+        print(f"\n[ENGINE ERROR] {type(exc).__name__}: {exc}")
+        print(f"             exit {RC_TOOL_ERROR} = the tool failed; this is not a "
+              f"verdict (0=go, 1=hold, 2=reject).")
+        mem.close()
+        return RC_TOOL_ERROR
     mem.close()
+    if getattr(rep, "errors", None):
+        print("\n[ENGINE ERROR] a judge raised — the verdict below is fail-safe, "
+              "not a judgment:")
+        for e in rep.errors:
+            print(f"  - {e}")
+        print(f"             exit {RC_TOOL_ERROR} = the tool failed; this is not a "
+              f"verdict (0=go, 1=hold, 2=reject).")
+        return RC_TOOL_ERROR
     rc = {"go": 0, "hold": 1, "reject": 2}[rep.verdict]
     print(f"\n[exit code] {rc} = {rep.verdict} — the exit code IS the verdict "
           f"(0=go, 1=hold, 2=reject).")

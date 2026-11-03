@@ -21,6 +21,11 @@ class GateReport:
     reasons: List[Dict[str, str]] = field(default_factory=list)
     evidence: List[Dict[str, str]] = field(default_factory=list)
     law_enforcements: List[str] = field(default_factory=list)
+    # Judges that raised. The verdict stays fail-safe (reject), but a consumer
+    # must be able to tell "the tool broke" from "the change is rejected" —
+    # otherwise a broken install reads as a legitimate veto and the CLI exits 2
+    # exactly like a real REJECT (red team S7 2026-11-04).
+    errors: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -29,6 +34,7 @@ class GateReport:
             "reasons": self.reasons,
             "evidence": self.evidence,
             "law_enforcements": self.law_enforcements,
+            "errors": self.errors,
         }
 
     def pretty(self) -> str:
@@ -81,13 +87,16 @@ class GateEngine:
         any_critical = False
         any_hold = False
         any_go = False
+        errors: List[str] = []
 
         for j in self.judges:
             dom = getattr(j, "domain", j.__class__.__name__)
             try:
                 v = j.evaluate(ctx)
             except Exception as exc:
-                # judge itself crashing is a critical failure
+                # A crashing judge is a critical failure: never let it pass.
+                # It is also NOT a verdict, so it is recorded as an error.
+                errors.append(f"{dom}: {type(exc).__name__}: {exc}")
                 v = {
                     "verdict": "reject",
                     "reasons": [{"rule": f"{dom}.exception",
@@ -137,6 +146,7 @@ class GateEngine:
             final = "hold"  # no judges ran — safe default
 
         return GateReport(
+            errors=errors,
             verdict=final,
             per_judge=per_judge,
             reasons=all_reasons,
