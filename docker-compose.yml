@@ -1,9 +1,11 @@
 # lgd-engine container definition.
 # Status (2026-11-03): verified on Docker Desktop 4.89.0 — image built and
-# verdict smoke returned a real GateReport; host ports moved to 18080/18765 to
-# avoid collisions with local services (8080 was taken on the dev machine).
-# Streamable-HTTP MCP on 18765 is the target layout; the MCP server currently
-# speaks stdio, so 18765 is reserved for the upcoming adapter.
+# verdict smoke returned a real GateReport. Host ports: 8080 was taken on the
+# dev machine, and 18080 collides with the Docker Desktop backend itself
+# (com.docker.backend, measured locally), so the REST demo now binds 18090 and
+# the streamable-HTTP MCP slot 18766.
+# Streamable-HTTP MCP on 18766 is the target layout; the MCP server currently
+# speaks stdio, so 18766 is reserved for the upcoming adapter.
 
 services:
   lgd-engine:
@@ -12,8 +14,8 @@ services:
       dockerfile: Dockerfile
     image: lgd-engine:0.1.0
     ports:
-      - "127.0.0.1:18080:8080"      # REST demo (示意)
-      - "127.0.0.1:18765:8765"      # streamable-HTTP MCP (示意, reserved)
+      - "127.0.0.1:18090:8080"      # REST demo (示意)
+      - "127.0.0.1:18766:8765"      # streamable-HTTP MCP (示意, reserved)
     environment:
       - LGD_DEFAULT_BIND=0.0.0.0
     # WeKnora RAG side: point at YOUR own instance; this repo deliberately
