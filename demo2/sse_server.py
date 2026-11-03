@@ -82,13 +82,38 @@ class _H(BaseHTTPRequestHandler):
                 # SSE frame: "event:<type>\ndata:<json>\n\n"
                 self.wfile.write(f"event: {etype}\ndata: {payload}\n\n".encode("utf-8"))
                 self.wfile.flush()
-        except (BrokenPipeError, ConnectionResetError):
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            # Client closed the stream (browser tab closed, smoke client got what
+            # it came for). Windows reports this as ConnectionAbortedError
+            # (WinError 10053), not BrokenPipeError — catching only the POSIX
+            # pair printed a traceback that looked like a server fault.
             pass
         finally:
             stop.set()
 
     def log_message(self, fmt, *args):  # quieter console
         sys.stderr.write(f"[sse] {self.address_string()} {fmt % args}\n")
+
+
+class _QuietServer(ThreadingHTTPServer):
+    """Threading server that treats a client hang-up as an event, not a fault.
+
+    An SSE stream is meant to be abandoned: a browser tab closes, and the smoke
+    client exits as soon as it has seen the six event types. CPython surfaces
+    that as ConnectionResetError / ConnectionAbortedError (Windows: 10054 /
+    10053) and socketserver's default ``handle_error`` prints a full traceback
+    that reads like a server crash — the check passes while the log says FAIL.
+    Only those three types are silenced; every other exception still reaches
+    the default handler.
+    """
+
+    daemon_threads = True
+
+    def handle_error(self, request, client_address):
+        exc = sys.exc_info()[1]
+        if isinstance(exc, (ConnectionResetError, ConnectionAbortedError, BrokenPipeError)):
+            return
+        super().handle_error(request, client_address)
 
 
 def smoke_client(host: str, port: int, want_types: int = 6, timeout: float = 10.0) -> int:
@@ -175,7 +200,7 @@ def main() -> int:
         # Self-hosted smoke: start the server in a thread, stream, then exit.
         # (R4 role test 2026-11-03: --smoke used to expect an externally running
         # server, which made the documented one-liner fail for a fresh clone.)
-        srv = ThreadingHTTPServer((args.host, args.port), _H)
+        srv = _QuietServer((args.host, args.port), _H)
         t = threading.Thread(target=srv.serve_forever, daemon=True)
         t.start()
         try:
@@ -185,7 +210,7 @@ def main() -> int:
             srv.server_close()
         return rc
 
-    srv = ThreadingHTTPServer((args.host, args.port), _H)
+    srv = _QuietServer((args.host, args.port), _H)
     print(f"SSE server: http://{args.host}:{args.port}/events/stream  (tail {log_path})  Ctrl+C to stop")
     try:
         srv.serve_forever()
