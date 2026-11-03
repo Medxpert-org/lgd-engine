@@ -191,7 +191,7 @@ code{{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgro
   <div class="eyebrow">Pre-release review · generated {esc(when)}</div>
   <h1>lgd-engine — can an outside reader reach it, run it, and verify it?</h1>
   <div class="sub">Repository <span class="mono">Medxpert-org/lgd-engine</span> · branch
-  <span class="mono">fix/s6-review-20261104</span> · tree <span class="mono">{esc(rep.get("root",""))}</span></div>
+  <span class="mono">fix/s6-review-20261104</span> · commit <span class="mono">{esc(rep.get("commit",""))}</span></div>
 </header>
 
 <div class="verdict">

@@ -94,9 +94,24 @@ _MAJOR_RULES = [
     },
     {
         "rule": "R-MAJ-03-evidence-incomplete",
-        "detail": "Evidence package incomplete — must supplement verification "
-                  "data (e.g. freeze-thaw study, V&V report) before go.",
-        "when": lambda c: c.get("evidence_sufficiency") == "needs_supplement",
+        # `none` is *worse* than `needs_supplement`, so it cannot be the value
+        # that slips through. Before this set included "none", the axis was
+        # inverted: needs_supplement held while none returned go (probe A1,
+        # 2026-11-04).
+        "detail": "Evidence package incomplete or absent — must supplement "
+                  "verification data (e.g. freeze-thaw study, V&V report) "
+                  "before go.",
+        "when": lambda c: c.get("evidence_sufficiency") in {"needs_supplement", "none"},
+    },
+    {
+        "rule": "R-MAJ-07-class2-recall-field-correction",
+        # A Class 2 / 二级 recall means a field correction is already owed.
+        # R-MAJ-02 only covers the maintenance-execution route, so any other
+        # change type riding a Class 2 recall used to return go (probe E2).
+        "detail": "Class 2 / NMPA 二级 recall on record — field correction is "
+                  "owed regardless of change type; hold pending CAPA and "
+                  "enhanced monitoring.",
+        "when": lambda c: c.get("recall_class") == "class2",
     },
     {
         "rule": "R-MAJ-04-config-change-same-platform",
@@ -134,6 +149,22 @@ KNOWN_CHANGE_TYPES = {
     "material_nonconforming", "design_defect", "maintenance_execution",
     "supplier_substitution",
 }
+
+# The same "unknown is not a safe default" argument applies to every enumerated
+# axis, not just change_type: a value outside the table silently matched no rule
+# and rode out as go. Class-level fix; the postmarket judge got the identical
+# treatment the same day (probe C4).
+KNOWN_SAFETY_IMPACT = {"none", "limited_reversible", "severe_life_threatening"}
+KNOWN_EVIDENCE_SUFFICIENCY = {"sufficient", "needs_supplement", "none"}
+KNOWN_RECALL_CLASS = {"none", "class1", "class2", "class3"}
+KNOWN_REGULATORY_PATH = {"510k", "pma", "pma_supplement", "de_novo", "nmpa_import"}
+
+_ENUM_AXES = (
+    ("safety_impact", KNOWN_SAFETY_IMPACT),
+    ("evidence_sufficiency", KNOWN_EVIDENCE_SUFFICIENCY),
+    ("recall_class", KNOWN_RECALL_CLASS),
+    ("regulatory_path", KNOWN_REGULATORY_PATH),
+)
 
 
 class Judge510kChange:
@@ -232,6 +263,20 @@ class Judge510kChange:
                 rule="R-MAJ-06-unknown-change-type", level="major",
                 detail=f"change_type {ct!r} matches no rule in this judge — unknown is "
                        f"not a safe default; hold pending classification.",
+            ))
+            if verdict == "go":
+                verdict = "hold"
+
+        # Same argument for every other enumerated axis: a value the table does
+        # not know matches no rule and would ride out as go.
+        for field, known in _ENUM_AXES:
+            val = ctx.get(field)
+            if val is None or val in known:
+                continue
+            reasons.append(Reason(
+                rule=f"R-MAJ-06-unknown-{field}", level="major",
+                detail=f"{field} {val!r} is not a value this judge can classify — "
+                       f"hold pending classification.",
             ))
             if verdict == "go":
                 verdict = "hold"

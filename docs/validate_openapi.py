@@ -19,8 +19,12 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SPEC = HERE / "openapi.yaml"
 
-STRUCTURAL_TOTAL = 17   # checks in PyYAML mode
+STRUCTURAL_TOTAL = 20   # checks in PyYAML mode
 TEXT_TOTAL = 5          # checks in the degraded substring mode
+
+ROOT = HERE.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 failures: list[str] = []
 checks_run = 0
@@ -84,6 +88,21 @@ else:
 
     cv = schemas.get("ChangeContext", {})
     check("change_type" in cv.get("required", []), "ChangeContext requires change_type")
+
+    # Contract/code lockstep: the published enum and the ref shape must match
+    # what the judges actually accept. Both drifted once — supplier_substitution
+    # was missing from the enum and source_refs was typed as bare strings, so a
+    # client that followed the contract could never satisfy law 2 (2026-11-04).
+    from lgd_engine.judges.judge_510k import KNOWN_CHANGE_TYPES  # noqa: E402
+    enum = set(cv.get("properties", {}).get("change_type", {}).get("enum") or [])
+    missing = sorted(set(KNOWN_CHANGE_TYPES) - enum)
+    check(not missing, f"change_type enum covers every known type (missing: {missing})")
+
+    refs = cv.get("properties", {}).get("source_refs", {}).get("items", {}) or {}
+    check(refs.get("type") == "object" and "ref" in (refs.get("required") or []),
+          "source_refs items are {kind, ref} objects with ref required")
+
+    check("errors" in props, "GateReport.errors present (judge-side failures visible)")
 
 print("-" * 60)
 if failures:

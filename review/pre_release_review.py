@@ -569,6 +569,41 @@ def check_machine(root: Path) -> list[dict]:
 # ---------------------------------------------------------------------------
 # runner
 # ---------------------------------------------------------------------------
+def check_redteam(root: Path) -> list[dict]:
+    """Run the adversarial probe harness and require it to be non-vacuous.
+
+    A red-team report that cannot fail is decoration. This check insists on all
+    three: every probe passes, the harness proves each probe *can* fail
+    (--selfcheck), and a probe count of zero is a failure rather than a pass.
+    """
+    script = root / "review" / "redteam_probe.py"
+    if not script.exists():
+        return [finding("redteam", False, "fail", "review/redteam_probe.py missing")]
+    try:
+        p = subprocess.run([sys.executable, str(script), "--selfcheck"],
+                           cwd=str(root), capture_output=True, text=True, timeout=600,
+                           encoding="utf-8", errors="replace")
+    except Exception as e:
+        return [finding("redteam", False, "blocked", f"{type(e).__name__}: {e}")]
+
+    out = (p.stdout or "") + (p.stderr or "")
+    m = re.search(r"(\d+)/(\d+) probes PASS", out)
+    passed, total = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+    vacuous = "VACUOUS PROBES" in out
+
+    ok = p.returncode == 0 and total > 0 and passed == total and not vacuous \
+        and "SELFCHECK PASS" in out
+    if ok:
+        detail = f"{passed}/{total} probes pass, every probe proven able to fail"
+    elif total == 0:
+        detail = "harness produced no probes (vacuous by construction)"
+    elif vacuous:
+        detail = "at least one probe passes against its own mutant — measures nothing"
+    else:
+        detail = f"{passed}/{total} probes pass, rc={p.returncode}"
+    return [finding("redteam", ok, "pass" if ok else "fail", detail)]
+
+
 CHECKS = [
     ("links", "Every cited URL resolves and carries its expected text", check_links),
     ("outsider", "The committed tree runs the documented commands verbatim", check_outsider),
@@ -578,6 +613,8 @@ CHECKS = [
     ("license", "LICENSE / pyproject / CITATION agree", check_license),
     ("public", "The default branch is readable without a token", check_public),
     ("machine", "Agent-facing entry points exist and parse", check_machine),
+    ("redteam", "The judgment core survives adversarial probes, and each probe can fail",
+     check_redteam),
 ]
 
 
@@ -601,7 +638,12 @@ def run(root: Path, only: str | None, tree: str) -> dict:
                   if f["status"] in ("blocked", "blocked_by_target"))
     return {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-        "root": str(root),
+        # The evidence file is published, so it must not carry the reviewer's
+        # local filesystem layout (security_scan flags host paths as MEDIUM, and
+        # an outside reader gains nothing from them). Repo-relative only.
+        "root": ".",
+        "commit": _head_sha(root),
+        "branch": _head_branch(root),
         "summary": {"checks": len(results), "findings": total,
                     "failed": failed, "blocked": blocked,
                     "verdict": "PASS" if failed == 0 else "FAIL"},
@@ -609,9 +651,27 @@ def run(root: Path, only: str | None, tree: str) -> dict:
     }
 
 
+def _git(root: Path, *args: str) -> str:
+    try:
+        p = subprocess.run(["git", "-C", str(root), *args],
+                           capture_output=True, text=True, timeout=30)
+        return p.stdout.strip() if p.returncode == 0 else ""
+    except Exception:
+        return ""
+
+
+def _head_sha(root: Path) -> str:
+    return _git(root, "rev-parse", "--short", "HEAD") or "unknown"
+
+
+def _head_branch(root: Path) -> str:
+    return _git(root, "rev-parse", "--abbrev-ref", "HEAD") or "unknown"
+
+
 def print_report(rep: dict) -> None:
     print("=" * 78)
-    print("PRE-RELEASE REVIEW — " + rep["root"])
+    print("PRE-RELEASE REVIEW — branch %s @ %s" %
+          (rep.get("branch", "?"), rep.get("commit", "?")))
     print("=" * 78)
     for c in rep["checks"]:
         mark = "PASS" if c["ok"] else "FAIL"
@@ -700,6 +760,17 @@ def selftest(root: Path) -> int:
         t7 = _clone(root, work / "t_mach")
         (t7 / "llms.txt").unlink()
         expect_fail("machine/no-llms", check_machine(t7))
+
+        # redteam: sabotage one probe so it can no longer fail against its
+        # mutant, and the harness must report a vacuous probe rather than PASS.
+        t8 = _clone(root, work / "t_redteam")
+        probe = t8 / "review" / "redteam_probe.py"
+        probe.write_text(
+            read(probe).replace(
+                'return (_sev(out.get("verdict")) >= 1), f"verdict={out.get(\'verdict\')}"',
+                'return True, "always fine"', 1),
+            encoding="utf-8")
+        expect_fail("redteam/vacuous-probe", check_redteam(t8))
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
