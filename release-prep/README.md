@@ -105,6 +105,50 @@ the public 0.1 release wires them to production endpoints.
 - **MCP server (stdio)** — `lgd_engine/mcp_server.py`; the driver
   `python lgd_engine/mcp_smoke.py` runs initialize / tools list / judge /
   RBAC-deny against it (read-only role, denied tool returns -32003).
+
+**MCP client config (copy-paste, local-trust)**
+
+Until the public 0.1 release, run the server from a clone; from 0.1,
+`pip install lgd-engine` provides the `lgd-engine-mcp` entry point
+(equivalent to `python -m lgd_engine.mcp_server`). Both forms resolve all
+internal paths from the package itself, so no specific working directory is
+required.
+
+Claude Desktop — `claude_desktop_config.json`
+(Settings → Developer → Edit Config):
+
+```json
+{
+  "mcpServers": {
+    "lgd-engine": {
+      "command": "python",
+      "args": ["-m", "lgd_engine.mcp_server"]
+    }
+  }
+}
+```
+
+Cursor — `.cursor/mcp.json` at your project root:
+
+```json
+{
+  "mcpServers": {
+    "lgd-engine": {
+      "command": "python",
+      "args": ["-m", "lgd_engine.mcp_server"]
+    }
+  }
+}
+```
+
+Platform notes:
+- Windows: `python` (or `py -3`); macOS/Linux: `python3` — replace the
+  `command` value accordingly, or use the absolute path of your interpreter.
+- The server binds stdio locally and trusts the caller's role claim
+  (local-trust adapter, no network authentication boundary) — production
+  wiring is scheduled for the public 0.1 release.
+- streamable-HTTP: the 0.1 release will also expose a streamable-HTTP
+  endpoint; client config will then use `"url"` instead of `command`/`args`.
 - **TypeScript SDK skeleton** — `lgd-engine-ts/` (zero-dependency types +
   `Client` skeleton mirroring the OpenAPI contract);
   `cd lgd-engine-ts && npm run smoke` under Node 18+.
