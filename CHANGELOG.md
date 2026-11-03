@@ -12,7 +12,7 @@ into `main` ahead of the public 0.1 release.
 
 ### Added
 
-- `review/redteam_probe.py` — 20 adversarial probes over the real judges, the
+- `review/redteam_probe.py` — 22 adversarial probes over the real judges, the
   MCP surface and the CLI, testing properties rather than examples: verdict
   monotonicity along every risk axis, "unknown is never a go" for every
   enumerated field, law 2 reachability, MCP role resolution, the documented
@@ -21,6 +21,20 @@ into `main` ahead of the public 0.1 release.
   requires it to fail there; a probe that survives its own mutant is reported
   VACUOUS and fails the run. The harness is wired into the pre-release review
   as check 9 `redteam`.
+- `review/pre_release_review.py` — the eleven-check pre-release gate, each check
+  paired with a mutant that must make it fail (`--selftest`). `links`, `outsider`,
+  `docs-claims`, `parity`, `relative-links`, `citation`, `license`, `legal`,
+  `public`, `machine`, `redteam`. It exits non-zero on any finding that is not a
+  `pass`, and never records `BLOCKED` (a host it could not reach) as a pass.
+- `parity` distinguishes two facts that were previously one number:
+  `parity-pushed` (can a stranger fetch exactly the commit we reviewed?) and
+  `parity-sha` (does the default branch carry it?). An unpushed commit and an
+  unmerged branch call for different actions, so they are different findings.
+- `docs-claims` now re-counts every "N probes" claim in `README.md`, `llms.txt`
+  and `CHANGELOG.md` against the `@probe` registrations in the harness. This
+  entry's own predecessor said "twenty probes" for two commits after the harness
+  had 22 — a stale count no gate was watching. (The check is deliberately literal:
+  it cannot tell a claim from a quotation of an old one, so quoting is spelled out.)
 - `gate_bot.py` check 5 `readme-counts`: the README's `**N stages**` and
   `**N domains**` claims are re-counted against the numbered rows in
   `framework/ecosystem-map.md` and `framework/13domains-mapping.md`.
@@ -42,6 +56,11 @@ into `main` ahead of the public 0.1 release.
 
 ### Fixed
 
+- **The review self-test was slow enough to be skipped** (R21): `--selftest` spent
+  the release path's `4 × 30 s` retry budget proving that a deliberately dead URL
+  is dead — 3 m 22 s, longer than the wrapper running it. Its own mutants now use
+  `1 × 8 s`, because the self-test asks "does this check detect a defect?", not
+  "does it tolerate a flaky upstream?": 49 s, same mutants, same verdict.
 - **`--db` took any path** (R18): the demo CLI handed `--db` straight to SQLite,
   which created parent directories wherever it was pointed and — on an existing
   non-database file — died with a traceback and exit 1 instead of a usage error.

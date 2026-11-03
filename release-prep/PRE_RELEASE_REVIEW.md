@@ -72,7 +72,7 @@ Two honesty notes about this round:
 | `links` | every cited URL resolves and contains its expected text | yes — bogus host, absent marker |
 | `outsider` | the committed tree runs every documented command verbatim | yes — a broken gold test |
 | `docs-claims` | numbers in the docs equal what the tree produces | yes — four checks claimed vs six run |
-| `parity` | the tree an outsider can fetch is the tree this review examined — and the documented commands run on *that* tree | yes — point it at any commit that is not HEAD |
+| `parity` | the tree an outsider can fetch is the tree this review examined: `parity-pushed` (the reviewed commit is on its upstream) and `parity-sha` (the default branch carries it) — and the documented commands run on *that* tree | yes — a commit that is not HEAD, and a commit that never reached its upstream |
 | `relative-links` | file paths named in the docs exist (declared non-files excepted) | yes — a path that is not there |
 | `citation` | CITATION.cff complete, version-consistent, no silent placeholder, DOI only if it resolves | yes — missing title, fake DOI |
 | `license` | LICENSE / pyproject / CITATION agree and NOTICE exists | yes — MIT in pyproject |
@@ -81,7 +81,7 @@ Two honesty notes about this round:
 | `machine` | llms.txt and JSON/YAML entry points exist and parse | yes — llms.txt removed |
 | `redteam` | the judgment core survives the probes, and every probe can fail | yes — one sabotaged probe is reported VACUOUS |
 
-`--selftest` runs all eleven mutations and requires a failing finding from each:
+`--selftest` runs all fourteen mutations and requires a failing finding from each:
 `SELFTEST PASS` is the output, and the selftest is itself a check that can fail.
 
 Latest machine output: `review/evidence/pre_release_latest.json` (the run's own
@@ -140,6 +140,12 @@ The same sweep found the sibling item on the open list: **R19**, `lgd-gate --all
 was documented but only implemented on the demo CLI. It is now implemented on the
 console entry (`--all CASES_DIR`, summary line, `64` on usage error), pinned by
 probe `E4`.
+
+| # | Finding | Was | Now |
+|---|---|---|---|
+| R20 | **`parity` answered two different questions with one verdict.** "Nobody can fetch what we reviewed" and "the review is not merged yet" are different failures with different owners — a stranger cannot *see* the work vs. a stranger sees an older tree. Reporting one number let the first hide inside the second | `origin/main behind HEAD` — one failing finding, no way to tell `ahead 7` (unpushed) from `behind 17` (unmerged) | split into `parity-pushed` (is the reviewed commit on its upstream?) and `parity-sha` (does the default branch carry it?). On `87cf070`: pushed **PASS**, sha **FAIL**. Mutant `parity/unpushed` builds a repo whose only commit never reached `origin/main` and requires the *fail* wording — a `blocked` finding does not count as detection |
+| R21 | **The self-test was slow enough to be skipped**, which is the same as absent. `--selftest` spent the release path's `4 × 30 s` retry budget proving that a deliberately dead URL is dead: 3 m 22 s, killed by its own wrapper twice during this session | `--selftest` → >3 m, no output for the first 2 m (network retries on `example.invalid`) | `--selftest` lowers `RETRIES`/`TIMEOUT` to `1`/`8 s` for its own mutants only, with the reason in a comment: the self-test asks "does this check detect a defect?", not "does it tolerate a flaky upstream?". **49 s**, same mutants, same verdict |
+| R22 | **A stale count nobody re-counted.** `CHANGELOG.md` said "20 adversarial probes" for two commits after the harness reached 22 — the only place the docs-claims check did not look. `gate_bot` check 5 re-counts the README's stage/domain counts; nothing re-counted the probe count | `grep "probes" CHANGELOG.md` → `20`; harness registers 22 | `docs-claims` now re-counts every "N probes" claim in `README.md`, `llms.txt` and `CHANGELOG.md` against the `@probe` registrations; mutant `docs-claims/probe-count` edits the CHANGELOG to `999` and requires a failure. The check is literal by design — it cannot tell a claim from a quotation — so history is written out in words |
 
 ### Still open (not defects in the gate; they are release decisions)
 
@@ -240,9 +246,13 @@ deliberate: a review of a tree nobody can fetch answers the wrong question, so
 The verdict *here* is a judgement about the world, and it is **BLOCKED** for
 three reasons that no patch can close:
 
-1. **The fixes are on a branch.** `parity` measures the gap: the public default
-   branch is 14 commits behind this branch and still carries the old counts and
-   the unbacked review claim. An outside reader sees what we have not shipped.
+1. **The fixes are pushed, not merged.** `parity` splits the question in two,
+   because the two answers call for different actions. `parity-pushed` asks
+   "can a stranger fetch exactly what was reviewed?" — **PASS** as of
+   `87cf070` on `origin/fix/s6-review-20261104`. `parity-sha` asks "does a
+   stranger landing on the default branch get it?" — **FAIL**, `origin/main`
+   is 17 commits behind. The remaining action is a merge by the repository
+   owner, not another commit from this session.
 2. **No DOI, no tag, no release.** `CITATION.cff` correctly carries no DOI until
    Zenodo mints one; minting requires the account holder to enable the GitHub
    integration. Publishing a citation entry without an identifier would break the
@@ -254,19 +264,17 @@ three reasons that no patch can close:
    `release-prep/STANDARDS_CONTRIBUTION_READINESS.md` track these; two of them are
    entity-level decisions, not patches.
 
-Push and merge are also blocked from this session: every outbound `git` call was
-cut off by the host before it completed, so the four commits behind this review
-are **local only** — `git status` says `ahead 4`, and that is the honest state.
-The exact command to finish it is `git push origin fix/s6-review-20261104`, after
-which `python review/pre_release_review.py` should report `parity` as PASS and the
-machine verdict as PASS.
+The earlier drafts of this section said push was blocked and the branch was
+`ahead 4` — that was true when written and is false now, so it is replaced rather
+than left to rot: all seven commits are on the remote, and `parity-pushed` is the
+finding that proves it rather than the sentence that claims it.
 
 Re-run before any release:
 
 ```bash
 python review/redteam_probe.py --selfcheck           # 22 probes, each proven able to fail
 python review/pre_release_review.py --json review/evidence/pre_release_latest.json
-python review/pre_release_review.py --selftest       # proves all 11 checks can fail
+python review/pre_release_review.py --selftest       # proves all 11 checks (14 mutants) can fail
 python review/pre_release_review.py --only legal     # the legal artefacts, substance not presence
 python framework/gate_bot.py                         # 6 checks
 python docs/validate_openapi.py                      # contract/code lockstep, 20/20

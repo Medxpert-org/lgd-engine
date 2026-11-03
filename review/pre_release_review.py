@@ -368,6 +368,25 @@ def check_parity(root: Path, ref: str = "origin/main") -> list[dict]:
                         f"{ref} is not present in this clone (no network to fetch it); "
                         f"published-vs-reviewed parity is unverified from here")]
 
+    # Two distinct facts, deliberately not collapsed into one: "pushed" (a stranger
+    # can fetch and check this commit) and "merged" (a stranger landing on the
+    # default branch gets it without looking). Only the second one is a release
+    # blocker, but a review that cannot tell them apart sends the reader to fix
+    # the wrong thing.
+    upstream = _git(root, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}")
+    if upstream:
+        contained = (_git(root, "branch", "-r", "--contains", head) or "").split()
+        pushed = upstream in contained
+        out.append(finding("parity-pushed", pushed, "pass" if pushed else "fail",
+                           (f"reviewed commit {head[:7]} is on {upstream}: a stranger can "
+                            f"fetch exactly what was reviewed")
+                           if pushed else
+                           f"reviewed commit {head[:7]} is not on {upstream}: nobody can "
+                           f"fetch what was reviewed"))
+    else:
+        out.append(finding("parity-pushed", False, "blocked",
+                           "HEAD has no upstream branch, so there is nothing to compare against"))
+
     if base == head:
         out.append(finding("parity-sha", True, "pass",
                            f"published tree == reviewed tree ({head[:7]})"))
@@ -375,7 +394,8 @@ def check_parity(root: Path, ref: str = "origin/main") -> list[dict]:
         ahead = _git(root, "rev-list", "--count", f"{base}..{head}") or "?"
         out.append(finding("parity-sha", False, "fail",
                            f"{ref} is {ahead} commit(s) behind HEAD ({base[:7]} vs "
-                           f"{head[:7]}): the published tree is not the reviewed tree"))
+                           f"{head[:7]}): the published tree is not the reviewed tree "
+                           f"until this lands on {ref}"))
 
     # What a stranger gets from the published ref, run verbatim.
     steps = []
@@ -467,6 +487,28 @@ def check_docs_claims(root: Path) -> list[dict]:
         ok = claimed == actual
         out.append(finding("readme-demo2-count", ok, "pass" if ok else "fail",
                            f"README {claimed}, run {actual}"))
+
+    # Every "N probes" claim in every doc must equal the harness's own
+    # registrations. The CHANGELOG said "20 adversarial probes" for two commits
+    # after the harness reached 22 and nothing re-counted it — the exact failure
+    # mode this check exists for, found by applying it to the docs it had skipped.
+    harness = root / "review" / "redteam_probe.py"
+    if harness.exists():
+        real = len(re.findall(r"^@probe\(", read(harness), re.M))
+        claims = []
+        for name in ("README.md", "llms.txt", "CHANGELOG.md"):
+            for mm in re.finditer(r"(\d+)\s+(?:adversarial\s+)?probes\b", read(root / name)):
+                claims.append((name, int(mm.group(1))))
+        wrong = [f"{n}={c}" for n, c in claims if c != real]
+        if not claims:
+            out.append(finding("docs-probe-count", False, "fail",
+                               f"no document states the probe count (harness has {real})"))
+        else:
+            out.append(finding("docs-probe-count", not wrong, "pass" if not wrong else "fail",
+                               (f"{len(claims)} probe-count claim(s) all say {real}, "
+                                f"matching the harness")
+                               if not wrong else
+                               f"harness has {real} probes; these claims disagree: {wrong}"))
     return out
 
 
@@ -845,6 +887,13 @@ def _clone(src: Path, dest: Path) -> Path:
 
 
 def selftest(root: Path) -> int:
+    global TIMEOUT, RETRIES
+    # The self-test asks "does this check detect a defect?", not "does this check
+    # tolerate a flaky upstream?" — so it deliberately declines to spend the
+    # release path's 4x30s retry budget on URLs that are meant to be dead. A
+    # self-test slow enough to be skipped protects nothing.
+    TIMEOUT, RETRIES = 8, 1
+
     work = Path(tempfile.mkdtemp(prefix="lgd_pr_selftest_"))
     failures = []
 
@@ -879,8 +928,49 @@ def selftest(root: Path) -> int:
         p.write_text(re.sub(r"\((\w+) checks\)", "(four checks)", read(p)), encoding="utf-8")
         expect_fail("docs-claims/wrong-count", check_docs_claims(t2))
 
+        # docs-claims/probe-count: a stale probe count in the CHANGELOG must not
+        # survive — the harness's own registrations are the only truth.
+        t2b = _clone(root, work / "t_claims_probes")
+        c2 = t2b / "CHANGELOG.md"
+        c2.write_text(re.sub(r"\b\d+(\s+(?:adversarial\s+)?probes)", r"999\1",
+                             read(c2)), encoding="utf-8")
+        expect_fail("docs-claims/probe-count", check_docs_claims(t2b))
+
         # parity: point the published-tree comparison at a commit that is not HEAD
         expect_fail("parity/stale-ref", check_parity(root, "HEAD~3"))
+
+        # parity-pushed: a commit that exists locally but never reached its upstream
+        # must be called out. "Reviewed" and "fetchable" are different facts, and a
+        # check that cannot tell them apart sends the reader to fix the wrong thing.
+        t_un = work / "t_unpushed"
+        t_un.mkdir(parents=True)
+
+        def _g(*a):
+            return subprocess.run(["git", *a], cwd=str(t_un),
+                                  capture_output=True, text=True)
+
+        _g("init", "-q")
+        _g("config", "user.email", "selftest@example.invalid")
+        _g("config", "user.name", "selftest")
+        _g("remote", "add", "origin", "https://example.invalid/none.git")
+        (t_un / "README.md").write_text("base\n", encoding="utf-8")
+        _g("add", "-A")
+        _g("commit", "-qm", "base")
+        _g("update-ref", "refs/remotes/origin/main", _g("rev-parse", "HEAD").stdout.strip())
+        _g("checkout", "-q", "-b", "work")
+        (t_un / "README.md").write_text("local only\n", encoding="utf-8")
+        _g("commit", "-qam", "unpushed")
+        _g("config", "branch.work.remote", "origin")
+        _g("config", "branch.work.merge", "refs/heads/main")
+        pushed = [f for f in check_parity(t_un, "origin/main") if f["id"] == "parity-pushed"]
+        # A blocked finding is not detection: assert the *fail* wording, so the
+        # mutant cannot pass by failing to set up its own premise.
+        ok = bool(pushed) and pushed[0]["status"] == "fail" and "is not on" in pushed[0]["detail"]
+        print(f"  {'PASS' if ok else 'FAIL'}  parity/unpushed: "
+              + (f"{pushed[0]['status']} — {pushed[0]['detail'][:80]}" if pushed
+                 else "no parity-pushed finding"))
+        if not ok:
+            failures.append("parity/unpushed")
 
         # relative-links: point at a file that is not there
         t3 = _clone(root, work / "t_rel")
