@@ -5,6 +5,10 @@ Usage (from mvp/ directory):
     python -m demo1.change_gate --all
     python -m demo1.change_gate --case demo1/cases_postmarket/pm01_class1_software.json --domain postmarket
     python -m demo1.change_gate --case demo1/cases_jurisdiction/supplier_swap.json --jurisdiction NMPA
+
+Exit status is the verdict (single-case mode): 0 = go, 1 = hold, 2 = reject.
+A correct REJECT therefore exits 2 — CI wrappers must map the code to the
+verdict instead of treating any non-zero exit as a failed run.
 """
 from __future__ import annotations
 
@@ -123,7 +127,12 @@ def main(argv: list[str] | None = None) -> int:
     rep = run_case(cp, domain=args.domain,
                    jurisdiction=args.jurisdiction, mem=mem)
     mem.close()
-    return {"go": 0, "hold": 1, "reject": 2}[rep.verdict]
+    rc = {"go": 0, "hold": 1, "reject": 2}[rep.verdict]
+    print(f"\n[exit code] {rc} = {rep.verdict} — the exit code IS the verdict "
+          f"(0=go, 1=hold, 2=reject).")
+    print("             A correct REJECT therefore exits 2: CI wrappers must map "
+          "the code to the verdict, not treat non-zero as a failed run.")
+    return rc
 
 
 if __name__ == "__main__":
