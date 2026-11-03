@@ -42,6 +42,14 @@ into `main` ahead of the public 0.1 release.
 
 ### Fixed
 
+- **`--db` took any path** (R18): the demo CLI handed `--db` straight to SQLite,
+  which created parent directories wherever it was pointed and — on an existing
+  non-database file — died with a traceback and exit 1 instead of a usage error.
+  It now rejects an empty value and a non-SQLite target with exit **64**, and
+  always prints the resolved path it will write to. Probe `E3`.
+- **`lgd-gate --all` was documented but not implemented** (R19): the console entry
+  had no `--all`, so the documented command errored out. Implemented as
+  `--all CASES_DIR` with a summary line and `64` on usage errors. Probe `E4`.
 - **Inverted evidence axis**: `evidence_sufficiency="none"` — the worst value —
   returned `go` while `"needs_supplement"` held. `R-MAJ-03` now covers both.
 - **Predicate inversion**: `function_config_change` with

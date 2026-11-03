@@ -106,6 +106,37 @@ class _Parser(argparse.ArgumentParser):
         raise SystemExit(RC_USAGE)
 
 
+def _guard_db_path(raw: str) -> str:
+    """Validate --db before SQLite touches it.
+
+    `--db` used to be handed straight to sqlite: the CLI would create parent
+    directories at any path and, when the target was an existing non-database
+    file, die with a sqlite traceback instead of a usage error (R18). It still
+    writes wherever it is told — that is what the flag is for — but it now says
+    where, refuses an empty value, and refuses to open a file that is not a
+    SQLite database rather than failing obscurely.
+    """
+    p = (raw or "").strip()
+    if not p:
+        print("error: --db needs a path (empty value given)", file=sys.stderr)
+        raise SystemExit(RC_USAGE)
+    path = Path(p).expanduser()
+    if not path.is_absolute():
+        path = (Path.cwd() / path).resolve()
+    if path.exists() and path.is_file():
+        try:
+            with open(path, "rb") as f:
+                magic = f.read(16)
+        except OSError as exc:
+            print(f"error: --db {path} is not readable ({exc.strerror})", file=sys.stderr)
+            raise SystemExit(RC_USAGE)
+        if magic and not magic.startswith(b"SQLite format 3\x00"):
+            print(f"error: --db {path} exists and is not a SQLite database — "
+                  f"refusing to open it", file=sys.stderr)
+            raise SystemExit(RC_USAGE)
+    return str(path)
+
+
 def main(argv: list[str] | None = None) -> int:
     p = _Parser(description="lgd-engine Demo1 CLI")
     p.add_argument("--case", type=str, help="path to a case JSON")
@@ -117,7 +148,9 @@ def main(argv: list[str] | None = None) -> int:
                    default=str(_HERE / "demo1_memory.sqlite"))
     args = p.parse_args(argv)
 
-    mem = LocalMemory(args.db)
+    db_path = _guard_db_path(args.db)
+    print(f"[memory] decisions recorded in {db_path}")
+    mem = LocalMemory(db_path)
 
     if args.all:
         root = _HERE / ("cases_postmarket" if args.domain == "postmarket" else "cases")

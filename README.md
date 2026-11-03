@@ -274,7 +274,7 @@ numbers above.
 ## Adversarial probes — the fail-closed claim, executable
 
 ```bash
-python review/redteam_probe.py              # 20 probes over the real judges, MCP and CLI
+python review/redteam_probe.py              # 22 probes over the real judges, MCP and CLI
 python review/redteam_probe.py --selfcheck  # proves every probe can fail
 ```
 
@@ -308,7 +308,7 @@ for LLM Applications (2025) to concrete defenses in this tree;
 ## Verified test evidence (2026-11-04)
 
 - demo1 change-gate gold tests: **5/5 PASS**; demo2 five-seat review: **26/26 PASS**
-- Adversarial probes: **20/20 PASS**, and `--selfcheck` confirms every probe
+- Adversarial probes: **22/22 PASS**, and `--selfcheck` confirms every probe
   fails against its own mutant. The same harness found 10 defects on the
   pre-fix tree — evidence is kept in `review/evidence/redteam_before.json`
   (9/19 passing) next to the post-fix run

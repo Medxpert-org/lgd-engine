@@ -38,7 +38,7 @@ so a soft-404 or a login wall cannot pass as a live link.
 | Seat | What it does | Independence |
 |---|---|---|
 | **Automated gate** (`review/pre_release_review.py`) | 11 checks, exit 1 on anything that is not a pass, `--selftest` proves each check can fail | runs against a clean export of the committed tree, not the working copy |
-| **Probe harness** (`review/redteam_probe.py`) | 20 probes over the real judges, MCP surface and CLI; `--selfcheck` proves each probe can fail | the probes run against mutants as well as the product, so a probe that measures nothing fails the run |
+| **Probe harness** (`review/redteam_probe.py`) | 22 probes over the real judges, MCP surface and CLI; `--selfcheck` proves each probe can fail | the probes run against mutants as well as the product, so a probe that measures nothing fails the run |
 | **Independent red team** (separate agent seat, S7 round) | injection, tool-permission boundary, forged evidence, gate mutation, exit-code semantics, publish integrity | did not write the code under test; reported FAIL |
 | **Outsider** (separate agent seat, no project context, S7 round) | copies the repo, reads only `README.md` + `llms.txt`, follows them literally | was told not to read source to guess usage |
 | **External vantage** | an outside fetcher reads the public surfaces anonymously (no token) | different network path from this machine |
@@ -120,20 +120,31 @@ in `review/redteam_probe.py`, with the pre-fix run kept verbatim in
 | R15 | `F1`,`F2` | **Contract drifted from code**: `change_type` enum lacked `supplier_substitution`; `source_refs` typed `array of string` while the judges require `{kind, ref}` objects — a contract-conforming client could never satisfy law 2. Also six `mvp/` paths that do not exist, an example naming a domain and rule that do not exist, and no `errors`/`jurisdiction`/`equivalence_declared` | `docs/validate_openapi.py` 20/20; probes F1/F2 | **fixed** |
 | — | `A1`,`C3`,`C4`,`C5`,`E2` | **Additional holes found by the same harness**: inverted `evidence_sufficiency` axis (`none` → go while `needs_supplement` held); blank refs satisfied law 2 in the postmarket judge; unknown recall class / cause / severity / distribution rode out as `go`; a raising rule predicate was swallowed (`except: pass`); a Class 2 recall only held for `maintenance_execution`, so `design_defect` riding it exited `0` | see `review/evidence/redteam_before.json` | **fixed** as classes, not instances: every enumerated axis now holds on an unknown value in both judges |
 
-### Withdrawn
+### Correction — a finding I withdrew for the wrong reason
 
-The S7 report also listed "`--db` accepts an arbitrary path, so the CLI writes
-wherever it is told". **Not reproducible on this tree**: neither `demo2/session.py`
-nor any other entry point defines a `--db` flag (`argparse` declares `--case`,
-`--auto`, `--parallel` only). `DecisionStore(db_path)` is a library constructor
-that a host application calls with its own path — normal for a library, and not a
-CLI surface. Recorded here as withdrawn rather than quietly deleted.
+The S7 report listed "`--db` accepts an arbitrary path, so the CLI writes wherever
+it is told". I withdrew it after checking `demo2/session.py`, which declares only
+`--case`, `--auto` and `--parallel`, and concluding that no entry point had the
+flag. **That conclusion was wrong**: `demo1/change_gate.py` line 116 declares
+`--db` and hands it to `LocalMemory`, which `makedirs` the parent and opens SQLite
+there. The search was too narrow and the negative claim was stated as if it were
+global — anti-pattern 45, committed by the review that quotes anti-pattern 45.
+
+Reinstated and fixed as **R18**, with probe `E3`:
+
+| # | Probe | Finding | Was | Now |
+|---|---|---|---|---|
+| R18 | `E3` | `--db` took any path: created parent directories anywhere, and on an existing non-database file died with a sqlite traceback instead of a usage error | `--db notes.txt` → traceback, exit 1 | empty value or non-SQLite target → **exit 64** with a sentence, and the resolved path is always printed (`[memory] decisions recorded in …`) |
+
+The same sweep found the sibling item on the open list: **R19**, `lgd-gate --all`
+was documented but only implemented on the demo CLI. It is now implemented on the
+console entry (`--all CASES_DIR`, summary line, `64` on usage error), pinned by
+probe `E4`.
 
 ### Still open (not defects in the gate; they are release decisions)
 
 1. `.zenodo.json` precedence: only `CITATION.cff` exists today, which is correct.
    Adding a `.zenodo.json` later silently overrides it — a trap, not a bug.
-2. `lgd-gate --all` parity: the console entry has fewer flags than the demo CLI.
 
 ## 4. Outsider test — what a stranger hits
 
@@ -253,7 +264,7 @@ machine verdict as PASS.
 Re-run before any release:
 
 ```bash
-python review/redteam_probe.py --selfcheck           # 20 probes, each proven able to fail
+python review/redteam_probe.py --selfcheck           # 22 probes, each proven able to fail
 python review/pre_release_review.py --json review/evidence/pre_release_latest.json
 python review/pre_release_review.py --selftest       # proves all 11 checks can fail
 python review/pre_release_review.py --only legal     # the legal artefacts, substance not presence

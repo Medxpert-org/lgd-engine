@@ -145,6 +145,22 @@
       "suite": "real"
     },
     {
+      "id": "E3",
+      "family": "robustness",
+      "desc": "--db refuses to open a non-SQLite file and refuses an empty value (exit 64, no traceback) instead of writing a database wherever it is pointed",
+      "status": "PASS",
+      "detail": "64 / 64 / 0 as documented",
+      "suite": "real"
+    },
+    {
+      "id": "E4",
+      "family": "contract",
+      "desc": "the console entry point implements the --all the docs advertise, and still exits 64 on a usage error",
+      "status": "PASS",
+      "detail": "parity with the documented CLI",
+      "suite": "real"
+    },
+    {
       "id": "F1",
       "family": "contract",
       "desc": "the published change_type enum covers every change type the judge accepts",

@@ -111,6 +111,23 @@ class RealEnv:
         return subprocess.run(argv, capture_output=True, text=True,
                               timeout=120).returncode
 
+    def cli_args(self, args: List[str]) -> tuple:
+        """Return (rc, stdout+stderr) for the demo1 CLI."""
+        p = subprocess.run([sys.executable, os.path.join(ROOT, "demo1", "change_gate.py"), *args],
+                           capture_output=True, text=True, timeout=120,
+                           encoding="utf-8", errors="replace")
+        return p.returncode, (p.stdout or "") + (p.stderr or "")
+
+    def console_all(self) -> tuple:
+        """(rc of `lgd-gate --all demo1/cases`, its output, rc of a usage error)."""
+        p = subprocess.run([sys.executable, "-m", "lgd_engine.cli", "--all", "demo1/cases"],
+                           cwd=ROOT, capture_output=True, text=True, timeout=180,
+                           encoding="utf-8", errors="replace")
+        usage = subprocess.run([sys.executable, "-m", "lgd_engine.cli", "--nope"],
+                               cwd=ROOT, capture_output=True, text=True, timeout=120,
+                               encoding="utf-8", errors="replace").returncode
+        return p.returncode, (p.stdout or "") + (p.stderr or ""), usage
+
 
 # ---------------------------------------------------------------------------
 # Mutants — deliberately broken implementations used as negative controls
@@ -139,6 +156,12 @@ class YesManEnv(RealEnv):
 
     def cli_rc(self, case_path, extra_args=None):  # noqa: D102
         return 0          # the defect: every case exits 0, the verdict is lost
+
+    def cli_args(self, args):  # noqa: D102
+        return 0, ""      # the defect: usage errors and bad --db pass silently
+
+    def console_all(self):  # noqa: D102
+        return 0, "", 0   # the defect: no summary, no usage separation
 
 
 class InverterEnv(RealEnv):
@@ -463,6 +486,49 @@ def p_exit_codes(env) -> tuple:
     if usage != 64:
         bad.append(f"usage error rc={usage} want 64")
     return (not bad), "; ".join(bad) or "0/1/2/64 as documented"
+
+
+@probe("E3", "robustness", "yesman",
+       "--db refuses to open a non-SQLite file and refuses an empty value (exit 64, "
+       "no traceback) instead of writing a database wherever it is pointed")
+def p_cli_db_guard(env) -> tuple:
+    tmp = tempfile.mkdtemp(prefix="probe-db-")
+    junk = os.path.join(tmp, "important.txt")
+    with open(junk, "w", encoding="utf-8") as f:
+        f.write("this is not a database\n")
+    case = os.path.join(tmp, "case.json")
+    with open(case, "w", encoding="utf-8") as f:
+        json.dump({"change_type": "label_correction", "safety_impact": "none",
+                   "recall_class": "none",
+                   "source_refs": [{"kind": "sop", "ref": "SOP-11"}]}, f)
+    bad_rc, bad_out = env.cli_args(["--case", case, "--db", junk])
+    empty_rc, _ = env.cli_args(["--case", case, "--db", ""])
+    ok_rc, _ = env.cli_args(["--case", case, "--db", os.path.join(tmp, "ok.sqlite")])
+    problems = []
+    if bad_rc != 64:
+        problems.append(f"non-SQLite --db rc={bad_rc} want 64")
+    if "Traceback" in bad_out:
+        problems.append("non-SQLite --db produced a traceback")
+    if empty_rc != 64:
+        problems.append(f"empty --db rc={empty_rc} want 64")
+    if ok_rc != 0:
+        problems.append(f"valid --db rc={ok_rc} want 0")
+    return (not problems), "; ".join(problems) or "64 / 64 / 0 as documented"
+
+
+@probe("E4", "contract", "yesman",
+       "the console entry point implements the --all the docs advertise, and still "
+       "exits 64 on a usage error")
+def p_console_all_parity(env) -> tuple:
+    rc, out, usage = env.console_all()
+    problems = []
+    if rc != 0:
+        problems.append(f"lgd-gate --all rc={rc} (want 0)")
+    if "cases match expected verdict" not in out:
+        problems.append("no summary line — --all is not implemented on this entry")
+    if usage != 64:
+        problems.append(f"usage error rc={usage} want 64")
+    return (not problems), "; ".join(problems) or "parity with the documented CLI"
 
 
 # --- F. published contract ---------------------------------------------------
