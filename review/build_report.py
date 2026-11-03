@@ -10,11 +10,13 @@ from __future__ import annotations
 
 import html
 import json
+import re
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 EVIDENCE = ROOT / "review" / "evidence" / "pre_release_latest.json"
+PROBE_EVIDENCE = ROOT / "review" / "evidence" / "redteam_after.json"
 OUT = ROOT / "review" / "report.html"
 
 STATUS_CLASS = {
@@ -47,14 +49,18 @@ REDTEAM = [
      "fixed", "prose now matches law 2 and the implementation"),
     ("R11", "CI did not run the suites the docs said were 'enforced in CI'",
      "fixed", "OpenAPI, injection/security and SSE smoke added to the workflow; demo2 moved into gate_bot"),
-    ("R12", "Predicate inversion: predicate_unchanged=false can score better than true",
-     "open", "needs a rule-table review, not a line edit"),
-    ("R13", "postmarket L2-EVIDENCED is unreachable dead code — that domain's law is decorative",
-     "open", "needs a behavioural fix"),
-    ("R14", "MCP role is ignored: any role reaches the same tool set; the audit line misleads",
-     "open", "needs an auth model decision"),
-    ("R15", "docs/openapi.yaml change_type enum lacks supplier_substitution (judge has rules for it)",
-     "open", "contract-valid input can crash the judge"),
+    ("R12", "Predicate inversion: predicate_unchanged=false (the worse direction) scored better than true",
+     "fixed", "new R-MAJ-08-predicate-changed; probe A1 sweeps the axis from four base change types"),
+    ("R13", "postmarket L2-EVIDENCED was unreachable dead code — that domain's law was decorative",
+     "fixed", "branch restructured so law 2 fires and appears in the reason chain; probe C2"),
+    ("R14", "MCP role was read, logged and quoted in denials, then never consulted; the documented {ctx:…} wrapper was ignored; non-object arguments were judged",
+     "fixed", "declared ROLE_TOOLS table failing closed, wrapper honoured, -32602 on bad arguments; probes D1/D3/D4"),
+    ("R15", "Published contract drifted from code: enum missing supplier_substitution, source_refs typed as strings, six dead mvp/ paths, an example naming a domain and rule that do not exist",
+     "fixed", "contract corrected; docs/validate_openapi.py 20/20 holds contract and code in lockstep; probes F1/F2"),
+    ("R16", "Inverted evidence axis: evidence_sufficiency=none returned go while needs_supplement held",
+     "fixed", "R-MAJ-03 covers both values; probe A1"),
+    ("R17", "A raising rule predicate was swallowed (except: pass) — fail open; unknown enum values and a Class 2 recall outside maintenance_execution also rode out as go",
+     "fixed", "predicate errors hold; every enumerated axis holds on an unknown value; R-MAJ-07; probes C3/C4/C5/E2"),
 ]
 
 OUTSIDER = [
@@ -117,6 +123,23 @@ def main() -> int:
                        else '<span class="chip bad">OPEN</span>'))
         os_rows.append(f"<tr><td>{esc(what)}</td><td>{badge}</td></tr>")
 
+    # Probe matrix — straight from the harness's own evidence file, grouped by
+    # the property family each probe belongs to.
+    probe_rows, probe_families = [], {}
+    try:
+        pe = json.loads(PROBE_EVIDENCE.read_text(encoding="utf-8"))
+        for p in pe.get("probes", []):
+            fam = p.get("family", "other")
+            probe_families[fam] = probe_families.get(fam, 0) + 1
+            badge = ('<span class="chip ok">PASS</span>' if p["status"] == "PASS"
+                     else ('<span class="chip warn">BLOCKED</span>' if p["status"] == "BLOCKED"
+                           else '<span class="chip bad">FAIL</span>'))
+            probe_rows.append(f"<tr><td class=mono>{esc(p['id'])}</td><td class=mono>{esc(fam)}</td>"
+                              f"<td>{esc(p['desc'])}</td><td>{badge}</td>"
+                              f"<td class=note>{esc(p.get('detail',''))[:120]}</td></tr>")
+    except Exception:
+        pass
+
     check_rows = []
     for c in checks:
         badge = '<span class="chip ok">PASS</span>' if c["ok"] else '<span class="chip bad">FAIL</span>'
@@ -132,10 +155,31 @@ def main() -> int:
         for f in sorted(link_rows, key=lambda x: (x.get("group") != "external_standards", x["id"]))
     )
 
-    # The automated gate can be green while the release is still blocked: open
-    # behavioural findings and an unmerged branch are what decide it.
-    verdict = "BLOCKED"
+    # Two verdicts, and they are different questions:
+    #   machine — did every automated check pass on this commit?
+    #   release — is the world able to see it? (branch, DOI, CLA)
+    # The page must not collapse them into one green tick.
+    machine = s.get("verdict", "FAIL")
+    machine_cls = {"PASS": "ok", "BLOCKED": "warn", "FAIL": "bad"}.get(machine, "bad")
+    open_rt = [r for r in REDTEAM if r[2] != "fixed"]
     when = rep["generated_at"]
+    machine_text = {
+        "PASS": "every automated check passed on this commit",
+        "BLOCKED": "every automated check that ran passed, but at least one vantage "
+                   "could not be reached — that is not a pass, and the page says so",
+        "FAIL": "at least one automated check failed on this commit",
+    }.get(machine, "the run did not produce a verdict")
+    release_reasons = ("the fixes are still only on this branch, there is no DOI or tag "
+                       "yet, and there is no CLA/DCO record for a standards contribution")
+
+    # Probe count comes from the redteam check's own finding, not from a constant.
+    probe_n = 0
+    for c in checks:
+        if c["id"] == "redteam":
+            for f in c["findings"]:
+                m = re.search(r"(\d+)/\d+ probes", f.get("detail", ""))
+                if m:
+                    probe_n = int(m.group(1))
 
     doc = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -195,16 +239,18 @@ code{{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgro
 </header>
 
 <div class="verdict">
-  <span class="chip bad" style="font-size:14px;padding:6px 12px">BLOCKED</span>
-  <div><b>Not releasable yet.</b> {s["failed"]} failing finding(s), {s["blocked"]} blocked vantage(s),
-  {total} findings across {s["checks"]} automated checks. Behavioural findings R12–R15 are open and the
-  fixes below are still on a branch, invisible to an outside reader until merge.</div>
+  <span class="chip {machine_cls}" style="font-size:14px;padding:6px 12px">MACHINE · {esc(machine)}</span>
+  <div><b>{esc(machine)}</b> — {esc(machine_text)}. {s["failed"]} failing finding(s),
+  {s["blocked"]} blocked vantage(s), {total} findings across {s["checks"]} automated checks.
+  <br><b>RELEASE · BLOCKED</b> — not because of the code: {esc(release_reasons)}.
+  {len(open_rt)} red-team item(s) still open.</div>
 </div>
 
 <div class="cards">
   <div class="card"><div class="n">{s["checks"]}</div><div class="k">automated checks</div></div>
   <div class="card"><div class="n">{total}</div><div class="k">findings</div></div>
   <div class="card"><div class="n">{klasses["ok"] + klasses["ok-ext"]}/{len(link_rows)}</div><div class="k">links reachable</div></div>
+  <div class="card"><div class="n">{probe_n}</div><div class="k">adversarial probes</div></div>
   <div class="card"><div class="n">{sum(1 for r in REDTEAM if r[2]=="fixed")}/{len(REDTEAM)}</div><div class="k">red-team items closed</div></div>
 </div>
 
@@ -220,19 +266,25 @@ code{{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgro
 {link_html}
 </tbody></table>
 
-<h2>3. Red team — verdict FAIL, and what came of it<span class="hint">an independent seat that was told to distrust the author</span></h2>
+<h2>3. Red team — two rounds, and what came of them<span class="hint">S7: an independent seat told to distrust the author · 2026-11-04: an executable probe harness</span></h2>
 <table><thead><tr><th>#</th><th>Finding</th><th>Status</th><th>Resolution</th></tr></thead>
 <tbody>
 {chr(10).join(rt_rows)}
 </tbody></table>
 
-<h2>4. Outsider test — a stranger following only the docs<span class="hint">18 gaps reported; those acted on are listed</span></h2>
+<h2>4. Probe matrix — the executable half of the red team<span class="hint">20 probes · {esc(", ".join(f"{k} {v}" for k, v in sorted(probe_families.items())))}</span></h2>
+<table><thead><tr><th>#</th><th>Family</th><th>Property under test</th><th>Result</th><th>What was observed</th></tr></thead>
+<tbody>
+{chr(10).join(probe_rows) if probe_rows else '<tr><td colspan=5 class=note>probe evidence not available for this run</td></tr>'}
+</tbody></table>
+
+<h2>5. Outsider test — a stranger following only the docs<span class="hint">18 gaps reported; those acted on are listed</span></h2>
 <table><thead><tr><th>Gap</th><th>Status</th></tr></thead>
 <tbody>
 {chr(10).join(os_rows)}
 </tbody></table>
 
-<h2>5. Why this is the gate</h2>
+<h2>6. Why this is the gate</h2>
 <ul>
 <li><b>ITU-T A.1 §3.1.6</b> — material submitted as a contribution is presumed to carry no
 distribution restrictions; §3.1.7 requires a software copyright and licensing declaration.</li>

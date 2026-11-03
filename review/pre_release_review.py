@@ -160,9 +160,33 @@ def fetch(url: str, follow: bool = True) -> dict:
     return last
 
 
+# A control URL on the same host, owned by nobody in this project. If it is also
+# unreachable, the network is down and an unreachable repo URL is a blocked
+# vantage, not a broken link. Without this distinction the review reports a
+# gateway outage as a defect in our own repository.
+VANTAGE_CONTROL_URL = "https://raw.githubusercontent.com/octocat/Hello-World/master/README"
+_VANTAGE: dict = {"checked": False, "ok": False, "detail": ""}
+
+
+def vantage_ok() -> bool:
+    if not _VANTAGE["checked"]:
+        r = fetch(VANTAGE_CONTROL_URL)
+        _VANTAGE["ok"] = (r["status"] == 200)
+        _VANTAGE["detail"] = (f"control {VANTAGE_CONTROL_URL} -> HTTP {r['status']}"
+                              if _VANTAGE["ok"] else
+                              f"control {VANTAGE_CONTROL_URL} unreachable "
+                              f"({r['err'][:120]}) — this vantage is blocked")
+        _VANTAGE["checked"] = True
+    return _VANTAGE["ok"]
+
+
+def unreachable_status() -> str:
+    """What to record when fetch() could not reach a URL at all."""
+    return "blocked_by_vantage" if not vantage_ok() else "fail"
+
+
 def read(path: Path) -> str:
-    try:
-        return path.read_text(encoding="utf-8", errors="replace")
+    try:        return path.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return ""
 
@@ -208,9 +232,10 @@ def check_links(root: Path, registry_path: Path | None = None) -> list[dict]:
                                    f"{ext.get('evidence')}",
                                    url=url, group=e["group"], why=e.get("why", "")))
             else:
-                out.append(finding(e["id"], False, "blocked",
+                out.append(finding(e["id"], False, unreachable_status(),
                                    f"unreachable from this vantage ({res['err']}); "
-                                   f"not counted as pass", url=url, group=e["group"],
+                                   f"{_VANTAGE['detail']}; not counted as pass",
+                                   url=url, group=e["group"],
                                    why=e.get("why", "")))
             continue
 
@@ -527,8 +552,9 @@ def check_public(root: Path, url: str | None = None) -> list[dict]:
             return [finding("public-anonymous", True, "pass_external",
                             f"unreachable here; confirmed {ext.get('method')} "
                             f"{ext.get('verified_at')}: {ext.get('evidence')}")]
-        return [finding("public-anonymous", False, "blocked",
-                        f"cannot reach {target} from this vantage ({r['err']})")]
+        return [finding("public-anonymous", False, unreachable_status(),
+                        f"cannot reach {target} from this vantage ({r['err']}); "
+                        f"{_VANTAGE['detail']}")]
     ok = 200 <= r["status"] < 300 and "LGD Engine" in body
     return [finding("public-anonymous", ok, "pass" if ok else "fail",
                     f"anonymous GET {target} -> HTTP {r['status']}"
@@ -633,9 +659,15 @@ def run(root: Path, only: str | None, tree: str) -> dict:
         results.append({"id": cid, "title": title, "ok": all(f["ok"] for f in fs),
                         "findings": fs})
     total = sum(len(r["findings"]) for r in results)
-    failed = sum(1 for r in results for f in r["findings"] if not f["ok"])
+    # A blocked finding is not a failure and not a pass. Counting it as a failure
+    # turned a proxy outage into "our repo is broken" (2026-11-04), so the three
+    # states are counted separately and the verdict says which one won.
+    NON_PASS_BLOCKING = ("blocked", "blocked_by_target", "blocked_by_vantage")
+    failed = sum(1 for r in results for f in r["findings"]
+                 if not f["ok"] and f["status"] not in NON_PASS_BLOCKING)
     blocked = sum(1 for r in results for f in r["findings"]
-                  if f["status"] in ("blocked", "blocked_by_target"))
+                  if f["status"] in NON_PASS_BLOCKING)
+    verdict = "FAIL" if failed else ("BLOCKED" if blocked else "PASS")
     return {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         # The evidence file is published, so it must not carry the reviewer's
@@ -646,7 +678,8 @@ def run(root: Path, only: str | None, tree: str) -> dict:
         "branch": _head_branch(root),
         "summary": {"checks": len(results), "findings": total,
                     "failed": failed, "blocked": blocked,
-                    "verdict": "PASS" if failed == 0 else "FAIL"},
+                    "verdict": verdict,
+                    "vantage": _VANTAGE["detail"]},
         "checks": results,
     }
 

@@ -113,7 +113,7 @@ until the public 0.1 release wires production endpoints (TLS, auth).
 | SSE event stream | tails append-only `demo2/events.jsonl`, 6 event types | `python -m demo2.sse_server --port 8770 --smoke` | exits 0 only after all 6 types appear (precondition: see the SSE note below) |
 | MCP server (stdio) | `lgd_engine/mcp_server.py` | `python lgd_engine/mcp_smoke.py` | smoke exercises initialize / tools list / judge / RBAC-deny (denied → -32003) |
 | TypeScript SDK | `lgd-engine-ts/` (zero-dep types mirroring OpenAPI) | `cd lgd-engine-ts && npm run smoke` | Node 18+; smoke exits 0 |
-| Container | `Dockerfile` + `docker-compose.yml` | `docker compose up` | REST demo on `127.0.0.1:18090` (verified Docker Desktop 4.89.0) |
+| Container | `Dockerfile` + `docker-compose.yml` | `docker compose up` | REST demo on `127.0.0.1:18090` — NOT VERIFIED in the 2026-11-04 review (no Docker on the reviewing host, no container step in CI) |
 
 > Contract status note: `docs/openapi.yaml` freezes the production wire
 > shape (`/v1/*`, TLS, bearer auth). No `/v1` service exists in the tree
@@ -271,6 +271,23 @@ the rows in `framework/ecosystem-map.md` (11) and
 `framework/13domains-mapping.md` (13) and fails if either drifts from the
 numbers above.
 
+## Adversarial probes — the fail-closed claim, executable
+
+```bash
+python review/redteam_probe.py              # 20 probes over the real judges, MCP and CLI
+python review/redteam_probe.py --selfcheck  # proves every probe can fail
+```
+
+The probes test properties, not examples: verdict monotonicity along every risk
+axis, "unknown is never a go" for every enumerated field, law 2 reachability,
+MCP role resolution, the documented `{ctx: {...}}` wrapper, exit-code semantics
+and contract/code lockstep.
+
+`--selfcheck` is the part that matters. Each probe declares a mutant — a
+deliberately broken stand-in for the component under test — and the run fails
+if that probe still passes against its mutant. A check that cannot fail is
+decoration, so a vacuous probe is a hard failure here, not a green tick.
+
 ## Gate bot (CI) & security baseline
 
 ```bash
@@ -291,8 +308,15 @@ for LLM Applications (2025) to concrete defenses in this tree;
 ## Verified test evidence (2026-11-04)
 
 - demo1 change-gate gold tests: **5/5 PASS**; demo2 five-seat review: **26/26 PASS**
+- Adversarial probes: **20/20 PASS**, and `--selfcheck` confirms every probe
+  fails against its own mutant. The same harness found 10 defects on the
+  pre-fix tree — evidence is kept in `review/evidence/redteam_before.json`
+  (9/19 passing) next to the post-fix run
 - `framework/gate_bot.py`: **6/6 checks PASS** (incl. doc-count drift and the demo2 suite); `security/security_scan.py`: **clean, 0 findings**
 - MCP smoke (tools list + judge + RBAC deny): **PASS**; SSE smoke: **6/6 event types**
+- TypeScript SDK: `cd lgd-engine-ts && npm run smoke` → `SMOKE OK` (exit 0) on
+  Node 24.14.0, 2026-11-04. The container surface is **NOT VERIFIED** — no Docker
+  on the reviewing host and no container step in CI.
 - GitHub Actions: `gate` CI and `CodeQL` **green on main**; Dependabot enabled;
   branch protection active (PR required + gate status check)
 - Negative controls (each one must be able to fail, and does): stdlib OpenAPI

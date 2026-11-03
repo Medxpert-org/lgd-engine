@@ -122,6 +122,17 @@ _MAJOR_RULES = [
             and c.get("predicate_unchanged", True)
         ),
     },
+    {
+        "rule": "R-MAJ-08-predicate-changed",
+        # The comparison basis moved, so equivalence is unproven — this is the
+        # *more* dangerous direction and used to score better than an unchanged
+        # predicate, because only `predicate_unchanged=true` matched a rule
+        # (predicate inversion, probe A1 axis 5).
+        "detail": "Predicate device changed (predicate_unchanged=false) — the "
+                  "equivalence basis is gone; hold pending a new 510(k) / PMA "
+                  "supplement.",
+        "when": lambda c: c.get("predicate_unchanged") is False,
+    },
 ]
 
 # Minor / green-path rules (log only; default go).

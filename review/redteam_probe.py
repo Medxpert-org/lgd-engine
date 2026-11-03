@@ -218,6 +218,8 @@ _AXES = {
     "safety_impact": ["none", "limited_reversible", "severe_life_threatening"],
     "evidence_sufficiency": ["sufficient", "needs_supplement", "none"],
     "requires_submission": [False, True],
+    # A changed predicate is the worse direction; it used to score better.
+    "predicate_unchanged": [True, False],
 }
 
 _BASE_510 = {
@@ -234,20 +236,31 @@ _BASE_510 = {
 }
 
 
+# The axis sweep runs over several base change types on purpose: a rule only
+# fires for the change types it names, so an axis is invisible from the wrong
+# base. The predicate inversion lived behind `function_config_change` and was
+# missed by a sweep anchored on `design_defect`.
+_BASE_TYPES = ("design_defect", "function_config_change",
+               "material_nonconforming", "supplier_substitution")
+
+
 @probe("A1", "monotonicity", "inverter",
-       "each 510(k) risk axis is monotone: a worse value never yields a better verdict")
+       "each 510(k) risk axis is monotone: a worse value never yields a better "
+       "verdict, from every base change type")
 def p_monotone_510(env) -> tuple:
     bad = []
-    for axis, values in _AXES.items():
-        prev = None
-        for v in values:
-            ctx = dict(_BASE_510, **{axis: v})
-            out = env.judge510(ctx)
-            cur = _sev(out.get("verdict"))
-            if prev is not None and cur < prev:
-                bad.append(f"{axis}={v!r} dropped {prev}->{cur}")
-            prev = cur if prev is None else max(prev, cur)
-    return (not bad), "; ".join(bad) or "monotone on all four axes"
+    for base in _BASE_TYPES:
+        for axis, values in _AXES.items():
+            prev = None
+            for v in values:
+                ctx = dict(_BASE_510, change_type=base, **{axis: v})
+                out = env.judge510(ctx)
+                cur = _sev(out.get("verdict"))
+                if prev is not None and cur < prev:
+                    bad.append(f"{base}/{axis}={v!r} dropped {prev}->{cur}")
+                prev = cur if prev is None else max(prev, cur)
+    return (not bad), "; ".join(bad) or \
+        f"monotone on {len(_AXES)} axes x {len(_BASE_TYPES)} base types"
 
 
 @probe("A2", "monotonicity", "yesman",

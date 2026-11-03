@@ -31,6 +31,16 @@ jobs:
           python -m pip install --quiet pyyaml
           python docs/validate_openapi.py
 
+      # The review's central claim — "the gate fails closed" — is a property, so
+      # CI runs it as one: 20 probes, and --selfcheck requires every probe to
+      # fail against its own mutant (a probe that cannot fail is a hard error).
+      # Runs after PyYAML is installed: two contract probes need it and would
+      # otherwise report BLOCKED instead of checking anything.
+      - name: Adversarial probes + self-check (each probe must be able to fail)
+        run: |
+          python -m pip install --quiet pyyaml
+          python review/redteam_probe.py --selfcheck
+
       - name: Security self-tests (injection defence + tree scan)
         run: |
           python security/prompt_injection_defense.py

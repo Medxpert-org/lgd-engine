@@ -12,6 +12,15 @@ into `main` ahead of the public 0.1 release.
 
 ### Added
 
+- `review/redteam_probe.py` — 20 adversarial probes over the real judges, the
+  MCP surface and the CLI, testing properties rather than examples: verdict
+  monotonicity along every risk axis, "unknown is never a go" for every
+  enumerated field, law 2 reachability, MCP role resolution, the documented
+  `{ctx: {...}}` wrapper, exit-code semantics and contract/code lockstep.
+  `--selfcheck` runs every probe against a deliberately broken mutant and
+  requires it to fail there; a probe that survives its own mutant is reported
+  VACUOUS and fails the run. The harness is wired into the pre-release review
+  as check 9 `redteam`.
 - `gate_bot.py` check 5 `readme-counts`: the README's `**N stages**` and
   `**N domains**` claims are re-counted against the numbered rows in
   `framework/ecosystem-map.md` and `framework/13domains-mapping.md`.
@@ -33,6 +42,41 @@ into `main` ahead of the public 0.1 release.
 
 ### Fixed
 
+- **Inverted evidence axis**: `evidence_sufficiency="none"` — the worst value —
+  returned `go` while `"needs_supplement"` held. `R-MAJ-03` now covers both.
+- **Predicate inversion**: `function_config_change` with
+  `predicate_unchanged=false` (the worse direction, the equivalence basis is
+  gone) scored better than `true`. New `R-MAJ-08-predicate-changed`.
+- **A Class 2 recall only held for one change type**: `R-MAJ-02` required
+  `maintenance_execution`, so a `design_defect` riding a Class 2 recall exited
+  `0` (go). New `R-MAJ-07-class2-recall-field-correction`.
+- **The postmarket "evidenced" law was dead code**: the branch that recorded
+  `L2-EVIDENCED` sat below a line that had already downgraded a zero-evidence
+  `go` to `hold`, so the law never fired and never appeared in the reason chain.
+  Restructured so it is reachable, and pinned by probe C2.
+- **Unknown enumerated values rode out as `go`** — recall class, cause type,
+  harm severity, distribution scope, safety impact, evidence sufficiency,
+  regulatory path. Fixed as a class in both judges: an unknown value holds with
+  `R-MAJ-06-unknown-<field>` / `PM-MAJ-06-unknown-<field>`.
+- **A rule predicate that raised was swallowed** in the postmarket judge
+  (`except: pass`), i.e. fail open. A predicate error is now a hold signal.
+- **MCP `role` was decorative**: it was read, logged, quoted in denial
+  messages, and never consulted, so an undeclared role behaved exactly like a
+  declared one. Now a declared `ROLE_TOOLS` table, failing closed.
+- **The documented `{ctx: {...}}` wrapper was ignored**, so a client following
+  the published schema judged an empty context; and non-object `arguments` were
+  judged instead of rejected. Both now return a proper JSON-RPC error or the
+  same report as flat arguments.
+- **Published contract drifted from the code**: `change_type` enum lacked
+  `supplier_substitution`, `source_refs` was typed `array of string` while the
+  judges require `{kind, ref}` objects (a contract-conforming client could never
+  satisfy law 2), `errors` was undocumented, `jurisdiction` and
+  `equivalence_declared` were missing, six `mvp/` paths did not exist, and the
+  response example named a domain and a rule that do not exist. All corrected;
+  `docs/validate_openapi.py` now checks enum coverage and the ref shape (20/20).
+- **The review counted a blocked vantage as a failure**, so a proxy outage read
+  as "our repository is broken". Failures and blocked vantages are now counted
+  separately and a network control URL distinguishes the two.
 - **Fail-open on an unclassified change**: an unknown or missing `change_type`
   returned `go` with zero reasons, and a blank `{"kind": "", "ref": ""}` counted
   as evidence. Unknown now yields `hold` with `R-MAJ-06`; blank refs are dropped

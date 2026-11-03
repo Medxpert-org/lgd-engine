@@ -94,7 +94,7 @@ until the public 0.1 release wires production endpoints (TLS, auth).
 | SSE event stream | tails append-only `demo2/events.jsonl`, 6 event types | `python -m demo2.sse_server --port 8770 --smoke` | exits 0 after asserting all 6 types |
 | MCP server (stdio) | `lgd_engine/mcp_server.py` | `python lgd_engine/mcp_smoke.py` | smoke exercises initialize / tools list / judge / RBAC-deny (denied → -32003) |
 | TypeScript SDK | `lgd-engine-ts/` (zero-dep types mirroring OpenAPI) | `cd lgd-engine-ts && npm run smoke` | Node 18+; smoke exits 0 |
-| Container | `Dockerfile` + `docker-compose.yml` | `docker compose up` | REST demo on `127.0.0.1:18090` (verified Docker Desktop 4.89.0) |
+| Container | `Dockerfile` + `docker-compose.yml` | `docker compose up` | REST demo on `127.0.0.1:18090` — NOT VERIFIED in the 2026-11-04 review (no Docker on the reviewing host, no container step in CI) |
 
 > Contract status note: `docs/openapi.yaml` freezes the production wire
 > shape (`/v1/*`, TLS, bearer auth). No `/v1` service exists in the tree

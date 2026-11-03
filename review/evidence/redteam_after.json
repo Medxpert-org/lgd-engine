@@ -3,9 +3,9 @@
     {
       "id": "A1",
       "family": "monotonicity",
-      "desc": "each 510(k) risk axis is monotone: a worse value never yields a better verdict",
+      "desc": "each 510(k) risk axis is monotone: a worse value never yields a better verdict, from every base change type",
       "status": "PASS",
-      "detail": "monotone on all four axes",
+      "detail": "monotone on 5 axes x 4 base types",
       "suite": "real"
     },
     {
