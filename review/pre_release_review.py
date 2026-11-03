@@ -286,15 +286,17 @@ def export_tree(root: Path, dest: Path, tree: str = "head") -> str:
             else:
                 shutil.copy2(item, dest / item.name)
         return "worktree"
-    proc = subprocess.run(["git", "-C", str(root), "archive", "--format=tar", "HEAD"],
+    proc = subprocess.run(["git", "-C", str(root), "archive", "--format=tar",
+                           "HEAD" if tree == "head" else tree],
                           capture_output=True)
     if proc.returncode != 0:
         raise RuntimeError(f"git archive failed: {proc.stderr.decode('utf-8', 'replace')[:300]}")
     with tarfile.open(fileobj=io.BytesIO(proc.stdout)) as tf:
         tf.extractall(dest, filter="data")  # py3.12+: refuse unsafe members
-    rev = subprocess.run(["git", "-C", str(root), "rev-parse", "--short", "HEAD"],
+    rev = subprocess.run(["git", "-C", str(root), "rev-parse", "--short",
+                          "HEAD" if tree == "head" else tree],
                          capture_output=True, text=True).stdout.strip()
-    return f"HEAD@{rev}"
+    return f"{'HEAD' if tree == 'head' else tree}@{rev}"
 
 
 def check_outsider(root: Path, tree: str = "head") -> list[dict]:
@@ -327,6 +329,66 @@ def check_outsider(root: Path, tree: str = "head") -> list[dict]:
             out.append(finding(s["id"], ok, "pass" if ok else "fail", detail,
                                step=" ".join(s["cmd"]), tree=rev,
                                why=s.get("why", "")))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# 2b. parity — is the tree an outsider can actually get the tree we reviewed?
+# ---------------------------------------------------------------------------
+def check_parity(root: Path, ref: str = "origin/main") -> list[dict]:
+    """Compare the published tree with the reviewed tree, and run the docs on it.
+
+    A review of a branch nobody can see answers the wrong question. This check
+    resolves `ref` (default: the public default branch as this clone last fetched
+    it), reports the commit gap, and then runs the same documented commands
+    against *that* tree — which is what a stranger gets today.
+    """
+    out: list[dict] = []
+    head = _git(root, "rev-parse", "HEAD")
+    base = _git(root, "rev-parse", ref)
+    if not head:
+        return [finding("parity", False, "blocked", "not a git checkout")]
+    if not base:
+        return [finding("parity", False, "blocked_by_vantage",
+                        f"{ref} is not present in this clone (no network to fetch it); "
+                        f"published-vs-reviewed parity is unverified from here")]
+
+    if base == head:
+        out.append(finding("parity-sha", True, "pass",
+                           f"published tree == reviewed tree ({head[:7]})"))
+    else:
+        ahead = _git(root, "rev-list", "--count", f"{base}..{head}") or "?"
+        out.append(finding("parity-sha", False, "fail",
+                           f"{ref} is {ahead} commit(s) behind HEAD ({base[:7]} vs "
+                           f"{head[:7]}): the published tree is not the reviewed tree"))
+
+    # What a stranger gets from the published ref, run verbatim.
+    steps = []
+    try:
+        reg = json.loads(read(root / "review" / "registry.json"))
+        steps = reg.get("outsider_steps", [])
+    except Exception:
+        pass
+    tmp = Path(tempfile.mkdtemp(prefix="lgd_parity_"))
+    try:
+        export_tree(root, tmp, ref)
+        for s in steps[:3]:            # the quickstart + gold suites; enough to see if it runs
+            try:
+                proc = subprocess.run([sys.executable] + s["cmd"], cwd=str(tmp),
+                                      capture_output=True, text=True, timeout=300,
+                                      encoding="utf-8", errors="replace")
+                ok = proc.returncode == s.get("expect_rc", 0)
+                detail = (f"{ref}: rc={proc.returncode} (expect {s.get('expect_rc', 0)}) | "
+                          f"{(proc.stdout or proc.stderr or '').strip().splitlines()[-1][:120]}")
+            except Exception as exc:
+                ok, detail = False, f"{ref}: could not run ({type(exc).__name__})"
+            out.append(finding(f"parity-run:{s['id']}", ok, "pass" if ok else "fail",
+                               detail, step=" ".join(s["cmd"])))
+    except Exception as exc:
+        out.append(finding("parity-export", False, "blocked",
+                           f"could not export {ref}: {type(exc).__name__}"))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     return out
@@ -634,6 +696,8 @@ CHECKS = [
     ("links", "Every cited URL resolves and carries its expected text", check_links),
     ("outsider", "The committed tree runs the documented commands verbatim", check_outsider),
     ("docs-claims", "Numbers in the docs match what the tree produces", check_docs_claims),
+    ("parity", "The tree an outsider can fetch is the tree this review examined",
+     check_parity),
     ("relative-links", "File paths named in the docs exist", check_relative_links),
     ("citation", "Citation metadata is complete and honest", check_citation),
     ("license", "LICENSE / pyproject / CITATION agree", check_license),
@@ -760,6 +824,9 @@ def selftest(root: Path) -> int:
         p = t2 / "README.md"
         p.write_text(re.sub(r"\((\w+) checks\)", "(four checks)", read(p)), encoding="utf-8")
         expect_fail("docs-claims/wrong-count", check_docs_claims(t2))
+
+        # parity: point the published-tree comparison at a commit that is not HEAD
+        expect_fail("parity/stale-ref", check_parity(root, "HEAD~3"))
 
         # relative-links: point at a file that is not there
         t3 = _clone(root, work / "t_rel")

@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-11-04T04:12:33+0800",
+  "generated_at": "2026-11-04T05:20:17+0800",
   "root": ".",
-  "commit": "c8c430c",
+  "commit": "fcb4fa5",
   "branch": "fix/s6-review-20261104",
   "summary": {
-    "checks": 9,
-    "findings": 42,
-    "failed": 0,
+    "checks": 10,
+    "findings": 46,
+    "failed": 1,
     "blocked": 0,
-    "verdict": "PASS",
+    "verdict": "FAIL",
     "vantage": ""
   },
   "checks": [
@@ -174,7 +174,7 @@
           "status": "pass",
           "detail": "rc=2 (expect 2) | ============================================================\n\n[exit code] 2 = reject — the exit code IS the verdict (0=go, 1=hold, 2=reject).\n             A correct REJECT therefore exits 2: CI wrappers must map the code to the verdict, not treat non-zero as a failed run.",
           "step": "-m demo1.change_gate --case demo1/cases/case01_red_pma_process.json",
-          "tree": "HEAD@c8c430c",
+          "tree": "HEAD@fcb4fa5",
           "why": "The first command in the README. Exit code is the verdict, so 2 is correct here, not a failure."
         },
         {
@@ -183,7 +183,7 @@
           "status": "pass",
           "detail": "rc=0 (expect 0) |   [PASS] INV unknown-jurisdiction         verdict=hold    reasons=1\n  [PASS] INV veto-not-softened            aggregate=reject per_judge={'reject'}\n\n[test_demo1] 5/5 cases PASS; 5/5 invariants PASS",
           "step": "demo1/test_demo1.py",
-          "tree": "HEAD@c8c430c",
+          "tree": "HEAD@fcb4fa5",
           "why": "README claims 5/5."
         },
         {
@@ -192,7 +192,7 @@
           "status": "pass",
           "detail": "rc=0 (expect 0) | \n============================================================\n结果：26/26 PASS，0 FAIL\n============================================================",
           "step": "demo2/test_demo2.py",
-          "tree": "HEAD@c8c430c",
+          "tree": "HEAD@fcb4fa5",
           "why": "README claims 26/26."
         },
         {
@@ -201,7 +201,7 @@
           "status": "pass",
           "detail": "rc=0 (expect 0) | [PASS] 5.doc-counts: all release docs agree the gate runs 6 checks (11 stages = 11 rows, 13 domains = 13 rows, README.md: 6/6, llms.txt: 6/6, release-prep/README.md: 6/6)\n[PASS] 6.demo2-suite: demo2 five-seat suite PASS (26/26)\n============================================================\nRESULT: PAS",
           "step": "framework/gate_bot.py",
-          "tree": "HEAD@c8c430c",
+          "tree": "HEAD@fcb4fa5",
           "why": "README tells the contributor to run this before opening a PR."
         },
         {
@@ -210,7 +210,7 @@
           "status": "pass",
           "detail": "rc=0 (expect 0) | PASS  source_refs items are {kind, ref} objects with ref required\nPASS  GateReport.errors present (judge-side failures visible)\n------------------------------------------------------------\nVALIDATION OK — 20/20 checks; openapi.yaml structurally consistent",
           "step": "docs/validate_openapi.py",
-          "tree": "HEAD@c8c430c",
+          "tree": "HEAD@fcb4fa5",
           "why": "Contract validation must pass without extra install."
         },
         {
@@ -219,7 +219,7 @@
           "status": "pass",
           "detail": "rc=0 (expect 0) |   [PASS] L3 sanitize redacts secret key and e-mail\n  [PASS] L3 sanitize leaves a visible [REDACTED] marker\n------------------------------------------------------------\n[summary] 6/6 checks passed — PASS",
           "step": "security/prompt_injection_defense.py",
-          "tree": "HEAD@c8c430c",
+          "tree": "HEAD@fcb4fa5",
           "why": "Security self-test must be able to report a count, not just print a demo."
         },
         {
@@ -228,7 +228,7 @@
           "status": "pass",
           "detail": "rc=0 (expect 0) |     judge_change verdict = hold\n--- req id=4 -> resp ---\n{\"jsonrpc\": \"2.0\", \"id\": 4, \"error\": {\"code\": -32003, \"message\": \"permission denied: 'merge_decision' not allowed for role=read-only\"}}\nSMOKE: PASS",
           "step": "lgd_engine/mcp_smoke.py",
-          "tree": "HEAD@c8c430c",
+          "tree": "HEAD@fcb4fa5",
           "why": "MCP surface smoke."
         }
       ]
@@ -255,6 +255,40 @@
           "ok": true,
           "status": "pass",
           "detail": "README 26/26, run 26/26"
+        }
+      ]
+    },
+    {
+      "id": "parity",
+      "title": "The tree an outsider can fetch is the tree this review examined",
+      "ok": false,
+      "findings": [
+        {
+          "id": "parity-sha",
+          "ok": false,
+          "status": "fail",
+          "detail": "origin/main is 14 commit(s) behind HEAD (c066fd3 vs fcb4fa5): the published tree is not the reviewed tree"
+        },
+        {
+          "id": "parity-run:quickstart-verdict",
+          "ok": true,
+          "status": "pass",
+          "detail": "origin/main: rc=2 (expect 2) | ============================================================",
+          "step": "-m demo1.change_gate --case demo1/cases/case01_red_pma_process.json"
+        },
+        {
+          "id": "parity-run:demo1-gold",
+          "ok": true,
+          "status": "pass",
+          "detail": "origin/main: rc=0 (expect 0) | [test_demo1] 5/5 cases PASS",
+          "step": "demo1/test_demo1.py"
+        },
+        {
+          "id": "parity-run:demo2-gold",
+          "ok": true,
+          "status": "pass",
+          "detail": "origin/main: rc=0 (expect 0) | ============================================================",
+          "step": "demo2/test_demo2.py"
         }
       ]
     },

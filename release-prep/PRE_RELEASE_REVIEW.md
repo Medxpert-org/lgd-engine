@@ -37,7 +37,7 @@ so a soft-404 or a login wall cannot pass as a live link.
 
 | Seat | What it does | Independence |
 |---|---|---|
-| **Automated gate** (`review/pre_release_review.py`) | 9 checks, exit 1 on anything that is not a pass, `--selftest` proves each check can fail | runs against a clean export of the committed tree, not the working copy |
+| **Automated gate** (`review/pre_release_review.py`) | 10 checks, exit 1 on anything that is not a pass, `--selftest` proves each check can fail | runs against a clean export of the committed tree, not the working copy |
 | **Probe harness** (`review/redteam_probe.py`) | 20 probes over the real judges, MCP surface and CLI; `--selfcheck` proves each probe can fail | the probes run against mutants as well as the product, so a probe that measures nothing fails the run |
 | **Independent red team** (separate agent seat, S7 round) | injection, tool-permission boundary, forged evidence, gate mutation, exit-code semantics, publish integrity | did not write the code under test; reported FAIL |
 | **Outsider** (separate agent seat, no project context, S7 round) | copies the repo, reads only `README.md` + `llms.txt`, follows them literally | was told not to read source to guess usage |
@@ -64,6 +64,7 @@ Two honesty notes about this round:
 | `links` | every cited URL resolves and contains its expected text | yes — bogus host, absent marker |
 | `outsider` | the committed tree runs every documented command verbatim | yes — a broken gold test |
 | `docs-claims` | numbers in the docs equal what the tree produces | yes — four checks claimed vs six run |
+| `parity` | the tree an outsider can fetch is the tree this review examined — and the documented commands run on *that* tree | yes — point it at any commit that is not HEAD |
 | `relative-links` | file paths named in the docs exist (declared non-files excepted) | yes — a path that is not there |
 | `citation` | CITATION.cff complete, version-consistent, no silent placeholder, DOI only if it resolves | yes — missing title, fake DOI |
 | `license` | LICENSE / pyproject / CITATION agree and NOTICE exists | yes — MIT in pyproject |
@@ -71,7 +72,7 @@ Two honesty notes about this round:
 | `machine` | llms.txt and JSON/YAML entry points exist and parse | yes — llms.txt removed |
 | `redteam` | the judgment core survives the probes, and every probe can fail | yes — one sabotaged probe is reported VACUOUS |
 
-`--selftest` runs all nine mutations and requires a failing finding from each:
+`--selftest` runs all ten mutations and requires a failing finding from each:
 `SELFTEST PASS` is the output, and the selftest is itself a check that can fail.
 
 Latest machine output: `review/evidence/pre_release_latest.json` (the run's own
@@ -159,9 +160,17 @@ Node version and the exact output recorded here.
 
 An outside fetcher read `https://github.com/Medxpert-org/lgd-engine`
 anonymously: **public, Apache-2.0 visible** — and the page still served the
-*main* branch, i.e. every fix on this branch is invisible to an outside reader
-until the PR is merged. That is the largest remaining gap between "what we fixed"
-and "what the world can see".
+*main* branch.
+
+Check `parity` turns that observation into a measurement: it resolves the public
+default branch as this clone last fetched it (`origin/main`), reports the commit
+gap, and then exports **that** tree and runs the documented commands against it.
+On this tree it reports `origin/main` **14 commits behind** the reviewed branch —
+the published tree is not the reviewed tree — while the quickstart and both gold
+suites still run on it (`rc=2` = reject for the quickstart case, `rc=0` for the
+5/5 and 26/26 suites). So a stranger's clone works; it is just old, and none of
+the fixes in this review are in it. That is the largest remaining gap between
+"what we fixed" and "what the world can see", and it is a merge, not a patch.
 
 Anonymous read of `raw.githubusercontent.com/.../main/README.md` is gate check
 `public`. On 2026-11-04 the proxy in front of this host returned `502` for part
@@ -173,12 +182,17 @@ evidence) rather than turning a network outage into a repository defect.
 **Not releasable yet — and this time the reason is not the code.**
 
 The machine verdict is whatever `review/evidence/pre_release_latest.json` says on
-the commit you are reading; the verdict *here* is a judgement about the world,
-and it is **BLOCKED** for three reasons that no patch can close:
+the commit you are reading. On this branch it is **FAIL, and the one failing
+finding is `parity`** — every other check passes, including the probes. That is
+deliberate: a review of a tree nobody can fetch answers the wrong question, so
+"published ≠ reviewed" is recorded as a failure rather than as a footnote.
 
-1. **The fixes are on a branch.** Until the PR is merged, `main` still shows the
-   old counts and the unbacked review claim. An outside reader sees the branch we
-   have not shipped.
+The verdict *here* is a judgement about the world, and it is **BLOCKED** for
+three reasons that no patch can close:
+
+1. **The fixes are on a branch.** `parity` measures the gap: the public default
+   branch is 14 commits behind this branch and still carries the old counts and
+   the unbacked review claim. An outside reader sees what we have not shipped.
 2. **No DOI, no tag, no release.** `CITATION.cff` correctly carries no DOI until
    Zenodo mints one; minting requires the account holder to enable the GitHub
    integration. Publishing a citation entry without an identifier would break the
@@ -187,12 +201,19 @@ and it is **BLOCKED** for three reasons that no patch can close:
    and a public record of the contribution; this repository has neither a CLA bot
    nor a `Signed-off-by` requirement.
 
+Push and merge are also blocked from this session: every outbound `git` call was
+cut off by the host before it completed, so the four commits behind this review
+are **local only** — `git status` says `ahead 4`, and that is the honest state.
+The exact command to finish it is `git push origin fix/s6-review-20261104`, after
+which `python review/pre_release_review.py` should report `parity` as PASS and the
+machine verdict as PASS.
+
 Re-run before any release:
 
 ```bash
 python review/redteam_probe.py --selfcheck           # 20 probes, each proven able to fail
 python review/pre_release_review.py --json review/evidence/pre_release_latest.json
-python review/pre_release_review.py --selftest       # proves all 9 checks can fail
+python review/pre_release_review.py --selftest       # proves all 10 checks can fail
 python framework/gate_bot.py                         # 6 checks
 python docs/validate_openapi.py                      # contract/code lockstep, 20/20
 ```
