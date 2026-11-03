@@ -142,6 +142,14 @@ def smoke_client(host: str, port: int, want_types: int = 6, timeout: float = 10.
     print(f"[smoke] received types ({len(got)}/{len(want)}): {sorted(got)}")
     if missing:
         print(f"[smoke] MISSING: {sorted(missing)}")
+        if not got:
+            print("[smoke] The event log is empty — generate events first:")
+        elif "HOLDED" in missing:
+            print("[smoke] HOLDED only appears on a hold path — also run:")
+        else:
+            print("[smoke] Regenerate the missing event types, then retry:")
+        print("        python -m demo2.session --case demo2/case_gate_report.json --auto")
+        print("        python -m demo2.session --case demo2/case_gate_report_critical.json --auto")
         return 1
     print("[smoke] ALL SIX event types received (POSTED/COMMENTED/HOLDED/VOTED/FINALIZED/DECISION_LOGGED)")
     return 0
