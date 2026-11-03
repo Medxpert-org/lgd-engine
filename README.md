@@ -98,7 +98,7 @@ until the public 0.1 release wires production endpoints (TLS, auth).
 |---|---|---|---|
 | REST (demo) | stdlib HTTP, `127.0.0.1:8765`, `POST /judge` | `python -m demo1.web` | `curl -X POST http://127.0.0.1:8765/judge -H 'Content-Type: application/json' -d @demo1/cases/case01_red_pma_process.json` |
 | REST contract | OpenAPI 3.1, `docs/openapi.yaml` (`/v1/judge`, `/v1/decisions`) | — | `python docs/validate_openapi.py` — 5 text checks on a stdlib install, 17/17 structural once `pip install "lgd-engine[yaml]"` is present; the script prints an explicit warning when it had to skip the 12 structural checks |
-| SSE event stream | tails append-only `demo2/events.jsonl`, 6 event types | `python -m demo2.sse_server --port 8770 --smoke` | exits 0 after asserting all 6 types |
+| SSE event stream | tails append-only `demo2/events.jsonl`, 6 event types | `python -m demo2.sse_server --port 8770 --smoke` | exits 0 only after all 6 types appear (precondition: see the SSE note below) |
 | MCP server (stdio) | `lgd_engine/mcp_server.py` | `python lgd_engine/mcp_smoke.py` | smoke exercises initialize / tools list / judge / RBAC-deny (denied → -32003) |
 | TypeScript SDK | `lgd-engine-ts/` (zero-dep types mirroring OpenAPI) | `cd lgd-engine-ts && npm run smoke` | Node 18+; smoke exits 0 |
 | Container | `Dockerfile` + `docker-compose.yml` | `docker compose up` | REST demo on `127.0.0.1:18090` (verified Docker Desktop 4.89.0) |
@@ -165,6 +165,12 @@ Platform notes:
 
 ## The LGD Foundation
 
+**Theory home vs. engine home.** This repository is the engine
+implementation. The theory itself — the doctrine, the domain papers and the
+standards participation (ITU FG-TIDA, W3C) — is maintained in
+[lgd-theory](https://github.com/zhaoxinghua09-cell/lgd-theory) under the
+theory line; this repository neither restates nor owns it.
+
 LGD Engine is not a hollow scaffold: it is the executable expression of a
 complete theory-and-evidence stack, all distilled into runnable rules.
 
@@ -197,9 +203,11 @@ The rest of the stack:
   `framework/eco-regulatory-matrix.md`, 11 stages × 8 jurisdictions). Two
   domain judges are implemented in this release (510(k) change
   classification, post-market); the remaining domains are roadmap adapters.
-- **International alignment** — the roadmap tracks the ITU FG-TIDA and W3C
-  AI-agent memory/interop threads, so the rules follow where global
-  standards are heading.
+- **International alignment** — standards tracking lives in the theory line:
+  the ITU FG-TIDA and W3C AI-agent memory/interop threads are followed in
+  [lgd-theory](https://github.com/zhaoxinghua09-cell/lgd-theory), and this
+  repository implements the rules those threads settle rather than tracking
+  them itself.
 
 Every judge carries an explicit evidence source, making the chain
 theory → code → verifiable test (enforced in CI).

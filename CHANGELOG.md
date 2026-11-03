@@ -45,6 +45,10 @@ into `main` ahead of the public 0.1 release.
 - README and `demo2/sse_server.py` document the SSE smoke precondition (the
   log must contain both a pass and a hold path); on failure the smoke names
   the missing types and the exact commands that generate them.
+- README separates the theory home from the engine home: theory, domain
+  papers and standards participation (ITU FG-TIDA, W3C) are stated as
+  maintained in `lgd-theory`; this repository implements the rules instead
+  of tracking those threads itself (S6 review, positioning fix, option i).
 
 ### Fixed
 
