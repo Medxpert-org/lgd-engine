@@ -118,6 +118,10 @@ reproducible in CI.
 
 - Repository: https://github.com/Medxpert-org/lgd-engine
 - README: https://github.com/Medxpert-org/lgd-engine/blob/main/README.md
+- Contributing: https://github.com/Medxpert-org/lgd-engine/blob/main/CONTRIBUTING.md
+- Security policy / disclosure: https://github.com/Medxpert-org/lgd-engine/security/policy
+- Changelog: https://github.com/Medxpert-org/lgd-engine/blob/main/CHANGELOG.md
+- Citation (CFF): https://github.com/Medxpert-org/lgd-engine/blob/main/CITATION.cff
 - Theory rules: `lgd_engine/theory/laws.yaml`
 - Judges: `lgd_engine/judges/` (base, 510(k) change classification, post-market)
 - Gate engine: `lgd_engine/gate/engine.py`

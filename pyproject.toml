@@ -11,6 +11,27 @@ requires-python = ">=3.9"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Zhao, X." }]
 dependencies = []  # stdlib only at MVP
+keywords = [
+  "medical devices",
+  "change control",
+  "regulatory compliance",
+  "510(k)",
+  "post-market surveillance",
+  "SaMD",
+  "AI governance",
+  "decision support",
+  "MCP",
+  "model context protocol",
+]
+
+[project.urls]
+Homepage   = "https://github.com/Medxpert-org/lgd-engine"
+Repository = "https://github.com/Medxpert-org/lgd-engine"
+Issues     = "https://github.com/Medxpert-org/lgd-engine/issues"
+"Bug Tracker" = "https://github.com/Medxpert-org/lgd-engine/issues"
+Changelog  = "https://github.com/Medxpert-org/lgd-engine/blob/main/CHANGELOG.md"
+"Security Policy" = "https://github.com/Medxpert-org/lgd-engine/security/policy"
+"Contributing" = "https://github.com/Medxpert-org/lgd-engine/blob/main/CONTRIBUTING.md"
 
 [project.optional-dependencies]
 vector = ["fastembed>=0.3"]
