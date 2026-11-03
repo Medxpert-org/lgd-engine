@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0B3B5C"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Gate / door arch: every touchpoint is a gate -->
+    <path d="M150 400 L150 220 Q150 140 256 140 Q362 140 362 220 L362 400"/>
+    <line x1="150" y1="400" x2="362" y2="400"/>
+  </g>
+  <!-- Threshold line -->
+  <line x1="196" y1="400" x2="316" y2="400" stroke="#7FC8E0" stroke-width="16" stroke-linecap="round"/>
+  <!-- Three dots: three laws (registered / evidenced / gated) -->
+  <circle cx="206" cy="300" r="16" fill="#7FC8E0"/>
+  <circle cx="256" cy="300" r="16" fill="#7FC8E0"/>
+  <circle cx="306" cy="300" r="16" fill="#7FC8E0"/>
+  <!-- Verdict gauge arc: risk-hold-pass -->
+  <path d="M196 380 A70 70 0 0 1 316 380" stroke="#FFD166" stroke-width="18" fill="none"/>
+  <text x="256" y="450" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="bold" fill="#FFFFFF" text-anchor="middle" letter-spacing="10">LGD</text>
+  <text x="256" y="492" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#7FC8E0" text-anchor="middle" letter-spacing="6">ENGINE</text>
+</svg>
