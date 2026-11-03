@@ -64,8 +64,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "review" / "registry.json"
 UA = "Mozilla/5.0 (compatible; lgd-pre-release-review/1.0; +https://github.com/Medxpert-org/lgd-engine)"
+# Some hosts sit behind a WAF that drops bot-shaped User-Agents outright
+# (force11.org does: RemoteDisconnected, while curl -A Mozilla gets 200). The
+# question this check asks is "can a human open this URL?", so a browser UA is a
+# legitimate second transport — and the finding records that it was needed,
+# instead of hiding behind an external vantage.
+UA_BROWSER = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " \
+             "(KHTML, like Gecko) Chrome/122.0 Safari/537.36"
 TIMEOUT = 30
-RETRIES = 3
+RETRIES = 4   # a single flake upstream must not decide a release gate
 
 REQUIRED_CFF = ["cff-version", "message", "title", "authors", "version",
                 "license", "repository-code"]
@@ -80,9 +87,9 @@ def finding(fid: str, ok: bool, status: str, detail: str, **extra) -> dict:
     return d
 
 
-def _request(url: str, follow: bool):
+def _request(url: str, follow: bool, ua: str = UA):
     req = urllib.request.Request(url, headers={
-        "User-Agent": UA,
+        "User-Agent": ua,
         "Accept": "*/*",
         "Accept-Language": "en,zh;q=0.8",
     })
@@ -132,12 +139,14 @@ def _curl(url: str, follow: bool) -> dict:
 
 
 def fetch(url: str, follow: bool = True) -> dict:
-    """Return {status, final, body, err}. status 0 = could not reach at all."""
-    last = {"status": 0, "final": url, "body": b"", "err": "not attempted"}
+    """Return {status, final, body, err, note}. status 0 = could not reach at all."""
+    last = {"status": 0, "final": url, "body": b"", "err": "not attempted", "note": ""}
     for attempt in range(RETRIES):
+        ua = UA if attempt < RETRIES - 1 else UA_BROWSER
         try:
-            status, final, body = _request(url, follow)
-            return {"status": status, "final": final, "body": body, "err": ""}
+            status, final, body = _request(url, follow, ua)
+            note = "" if ua == UA else "required a browser User-Agent (host blocks bot UAs)"
+            return {"status": status, "final": final, "body": body, "err": "", "note": note}
         except urllib.error.HTTPError as e:
             body = b""
             try:
@@ -146,7 +155,8 @@ def fetch(url: str, follow: bool = True) -> dict:
                 pass
             # 3xx with follow=False surfaces as HTTPError only for 4xx/5xx
             return {"status": e.code, "final": getattr(e, "url", url),
-                    "body": body, "err": f"HTTP {e.code}"}
+                    "body": body, "err": f"HTTP {e.code}",
+                    "note": "" if ua == UA else "browser User-Agent"}
         except Exception as e:                      # URLError, timeout, reset
             last = {"status": 0, "final": url, "body": b"",
                     "err": f"{type(e).__name__}: {e}"}
@@ -155,6 +165,7 @@ def fetch(url: str, follow: bool = True) -> dict:
     alt = _curl(url, follow)
     if alt["status"] != 0:
         alt["err"] = (alt["err"] + " [transport: curl]").strip()
+        alt["note"] = "curl transport"
         return alt
     last["err"] += f" (curl also failed: {alt['err'][:80]})"
     return last
@@ -266,8 +277,10 @@ def check_links(root: Path, registry_path: Path | None = None) -> list[dict]:
                                why=e.get("why", "")))
             continue
 
+        note = res.get("note") or ""
         out.append(finding(e["id"], True, "pass",
-                           f"HTTP {status}" + (f", marker {marker!r} found" if marker else ""),
+                           f"HTTP {status}" + (f", marker {marker!r} found" if marker else "")
+                           + (f" ({note})" if note else ""),
                            url=url, group=e["group"], why=e.get("why", "")))
     return out
 
@@ -692,6 +705,45 @@ def check_redteam(root: Path) -> list[dict]:
     return [finding("redteam", ok, "pass" if ok else "fail", detail)]
 
 
+def check_legal(root: Path) -> list[dict]:
+    """The four legal artifacts a standards contribution depends on.
+
+    Each one is presence-of-substance, not presence-of-file: a LICENSE without
+    the patent grant, a NOTICE without a holder, a CONTRIBUTING with only an
+    outbound licence, and a readiness note whose negative claims declare no
+    retrieval scope are all "files that exist and prove nothing".
+    """
+    out = []
+    lic = read(root / "LICENSE")
+    out.append(finding("patent-grant", "Grant of Patent License" in lic, 
+                       "pass" if "Grant of Patent License" in lic else "fail",
+                       "Apache-2.0 §3 patent grant present" if "Grant of Patent License" in lic
+                       else "LICENSE has no §3 patent grant — a standards body reads that "
+                            "as an unresolved patent position"))
+
+    notice = read(root / "NOTICE")
+    has_holder = bool(re.search(r"Copyright\s+\(c\)\s*\d{4}\s+\S+", notice, re.I))
+    out.append(finding("notice-holder", has_holder, "pass" if has_holder else "fail",
+                       "NOTICE names a copyright holder" if has_holder
+                       else "NOTICE has no 'Copyright (c) <year> <holder>' line — ITU-T A.1 "
+                            "§3.1.7 wants a copyright and licensing declaration"))
+
+    contrib = read(root / "CONTRIBUTING.md")
+    inbound = bool(re.search(r"inbound", contrib, re.I)) and "Apache License 2.0" in contrib
+    out.append(finding("inbound-licence", inbound, "pass" if inbound else "fail",
+                       "CONTRIBUTING states inbound = outbound licensing" if inbound
+                       else "CONTRIBUTING covers the outbound licence only — a third-party PR "
+                            "would carry no inbound licence and the redistribution chain breaks"))
+
+    readiness = read(root / "release-prep" / "STANDARDS_CONTRIBUTION_READINESS.md")
+    scoped = bool(readiness) and "检索范围" in readiness and "未查" in readiness
+    out.append(finding("readiness-scope", scoped, "pass" if scoped else "fail",
+                       "readiness note states its retrieval scope and what it did not check"
+                       if scoped else "readiness note missing, or its negative claims declare "
+                                      "no retrieval scope (anti-pattern 45)"))
+    return out
+
+
 CHECKS = [
     ("links", "Every cited URL resolves and carries its expected text", check_links),
     ("outsider", "The committed tree runs the documented commands verbatim", check_outsider),
@@ -701,6 +753,8 @@ CHECKS = [
     ("relative-links", "File paths named in the docs exist", check_relative_links),
     ("citation", "Citation metadata is complete and honest", check_citation),
     ("license", "LICENSE / pyproject / CITATION agree", check_license),
+    ("legal", "The legal artifacts a standards contribution depends on carry substance",
+     check_legal),
     ("public", "The default branch is readable without a token", check_public),
     ("machine", "Agent-facing entry points exist and parse", check_machine),
     ("redteam", "The judgment core survives adversarial probes, and each probe can fail",
@@ -850,6 +904,14 @@ def selftest(root: Path) -> int:
         py.write_text(re.sub(r'license\s*=\s*\{[^}]*\}', 'license = { text = "MIT" }', read(py)),
                       encoding="utf-8")
         expect_fail("license/mismatch", check_license(t6))
+
+        # legal: strip the patent grant from a copy and the check must notice
+        t6b = _clone(root, work / "t_legal")
+        lic_copy = t6b / "LICENSE"
+        lic_copy.write_text(
+            re.sub(r"3\. Grant of Patent License.*?(?=\n\s*4\.)", "",
+                   read(lic_copy), flags=re.S), encoding="utf-8")
+        expect_fail("legal/no-patent-grant", check_legal(t6b))
 
         # public: a path that is not our repository
         expect_fail("public/nonexistent",

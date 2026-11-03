@@ -49,23 +49,23 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgrou
 </style></head><body><div class="wrap">
 
 <header>
-  <div class="eyebrow">Pre-release review · generated 2026-11-04T05:20:17+0800</div>
+  <div class="eyebrow">Pre-release review · generated 2026-11-04T05:32:36+0800</div>
   <h1>lgd-engine — can an outside reader reach it, run it, and verify it?</h1>
   <div class="sub">Repository <span class="mono">Medxpert-org/lgd-engine</span> · branch
-  <span class="mono">fix/s6-review-20261104</span> · commit <span class="mono">fcb4fa5</span></div>
+  <span class="mono">fix/s6-review-20261104</span> · commit <span class="mono">467e9d0</span></div>
 </header>
 
 <div class="verdict">
   <span class="chip bad" style="font-size:14px;padding:6px 12px">MACHINE · FAIL</span>
   <div><b>FAIL</b> — at least one automated check failed on this commit. 1 failing finding(s),
-  0 blocked vantage(s), 46 findings across 10 automated checks.
+  0 blocked vantage(s), 50 findings across 11 automated checks.
   <br><b>RELEASE · BLOCKED</b> — not because of the code: the fixes are still only on this branch, there is no DOI or tag yet, and there is no CLA/DCO record for a standards contribution.
   0 red-team item(s) still open.</div>
 </div>
 
 <div class="cards">
-  <div class="card"><div class="n">10</div><div class="k">automated checks</div></div>
-  <div class="card"><div class="n">46</div><div class="k">findings</div></div>
+  <div class="card"><div class="n">11</div><div class="k">automated checks</div></div>
+  <div class="card"><div class="n">50</div><div class="k">findings</div></div>
   <div class="card"><div class="n">17/17</div><div class="k">links reachable</div></div>
   <div class="card"><div class="n">20</div><div class="k">adversarial probes</div></div>
   <div class="card"><div class="n">17/17</div><div class="k">red-team items closed</div></div>
@@ -81,6 +81,7 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgrou
 <tr><td class=mono>relative-links</td><td>File paths named in the docs exist</td><td><span class="chip ok">PASS</span></td><td class=num>1/1</td></tr>
 <tr><td class=mono>citation</td><td>Citation metadata is complete and honest</td><td><span class="chip ok">PASS</span></td><td class=num>5/5</td></tr>
 <tr><td class=mono>license</td><td>LICENSE / pyproject / CITATION agree</td><td><span class="chip ok">PASS</span></td><td class=num>4/4</td></tr>
+<tr><td class=mono>legal</td><td>The legal artifacts a standards contribution depends on carry substance</td><td><span class="chip ok">PASS</span></td><td class=num>4/4</td></tr>
 <tr><td class=mono>public</td><td>The default branch is readable without a token</td><td><span class="chip ok">PASS</span></td><td class=num>1/1</td></tr>
 <tr><td class=mono>machine</td><td>Agent-facing entry points exist and parse</td><td><span class="chip ok">PASS</span></td><td class=num>4/4</td></tr>
 <tr><td class=mono>redteam</td><td>The judgment core survives adversarial probes, and each probe can fail</td><td><span class="chip ok">PASS</span></td><td class=num>1/1</td></tr>
@@ -93,7 +94,7 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgrou
 <tr><td class=mono>datacite-schema</td><td><span class="chip ok">PASS</span></td><td><a href="https://schema.datacite.org/" target="_blank" rel="noopener">https://schema.datacite.org/</a></td><td class=note>HTTP 200, marker &#x27;Metadata Schema&#x27; found</td></tr>
 <tr><td class=mono>fair4rs-doi</td><td><span class="chip ok">PASS</span></td><td><a href="https://doi.org/10.15497/RDA00068" target="_blank" rel="noopener">https://doi.org/10.15497/RDA00068</a></td><td class=note>DOI resolves (HTTP 302) -&gt; https://doi.org/10.15497/RDA00068</td></tr>
 <tr><td class=mono>force11-doi</td><td><span class="chip ok">PASS</span></td><td><a href="https://doi.org/10.7717/peerj-cs.86" target="_blank" rel="noopener">https://doi.org/10.7717/peerj-cs.86</a></td><td class=note>DOI resolves (HTTP 302) -&gt; https://doi.org/10.7717/peerj-cs.86</td></tr>
-<tr><td class=mono>force11-principles</td><td><span class="chip ok-ext">PASS*</span></td><td><a href="https://force11.org/info/software-citation-principles-published-2016/" target="_blank" rel="noopener">https://force11.org/info/software-citation-principles-published-2016/</a></td><td class=note>unreachable from here (RemoteDisconnected: Remote end closed connection without response (curl also failed: )); confirmed search-provider fetch (returned the page body, incl. its title and principle list) on 2026-11-04: provider returned the published page text for this URL; the same text was reachable by direct fetch twice (200 in 6.0s / 2.1s) but the host resets this machine&#x27;s connection intermittently</td></tr>
+<tr><td class=mono>force11-principles</td><td><span class="chip ok">PASS</span></td><td><a href="https://force11.org/info/software-citation-principles-published-2016/" target="_blank" rel="noopener">https://force11.org/info/software-citation-principles-published-2016/</a></td><td class=note>HTTP 200, marker &#x27;Software Citation Principles&#x27; found (required a browser User-Agent (host blocks bot UAs))</td></tr>
 <tr><td class=mono>github-citation-files</td><td><span class="chip ok">PASS</span></td><td><a href="https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-citation-files" target="_blank" rel="noopener">https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-citation-files</a></td><td class=note>HTTP 200, marker &#x27;CITATION&#x27; found</td></tr>
 <tr><td class=mono>itu-a1</td><td><span class="chip ok">PASS</span></td><td><a href="https://www.itu.int/en/ITU-T/wtsa12/Documents/resolutions/ITU-T%20A.1.pdf" target="_blank" rel="noopener">https://www.itu.int/en/ITU-T/wtsa12/Documents/resolutions/ITU-T%20A.1.pdf</a></td><td class=note>HTTP 200, PDF magic found (marker text not searched: binary body)</td></tr>
 <tr><td class=mono>itu-ipr</td><td><span class="chip ok">PASS</span></td><td><a href="https://www.itu.int/en/ITU-T/ipr/Pages/policy.aspx" target="_blank" rel="noopener">https://www.itu.int/en/ITU-T/ipr/Pages/policy.aspx</a></td><td class=note>HTTP 200, marker &#x27;patent&#x27; found</td></tr>
@@ -183,7 +184,7 @@ resolvable identifier fails the principle, so <code>CITATION.cff</code> carries 
 <footer>
 Generated by <span class="mono">review/build_report.py</span> from
 <span class="mono">review/evidence/pre_release_latest.json</span>, which names the
-commit the review examined (<span class="mono">fcb4fa5</span>) —
+commit the review examined (<span class="mono">467e9d0</span>) —
 the commit that stores this page is necessarily one later. Re-run:
 <code>python review/pre_release_review.py --json review/evidence/pre_release_latest.json &amp;&amp; python review/build_report.py</code>.
 This page is self-contained: no CDN, no web font, no JavaScript.

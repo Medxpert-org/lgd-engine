@@ -58,12 +58,7 @@
       "url": "https://force11.org/info/software-citation-principles-published-2016/",
       "marker": "Software Citation Principles",
       "why": "Six principles: importance, credit and attribution, unique identification, persistence, accessibility, specificity.",
-      "applies_to": "how the software is cited",
-      "external_vantage": {
-        "method": "search-provider fetch (returned the page body, incl. its title and principle list)",
-        "verified_at": "2026-11-04",
-        "evidence": "provider returned the published page text for this URL; the same text was reachable by direct fetch twice (200 in 6.0s / 2.1s) but the host resets this machine's connection intermittently"
-      }
+      "applies_to": "how the software is cited"
     },
     {
       "id": "force11-doi",

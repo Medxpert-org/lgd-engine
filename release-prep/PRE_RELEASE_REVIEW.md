@@ -37,7 +37,7 @@ so a soft-404 or a login wall cannot pass as a live link.
 
 | Seat | What it does | Independence |
 |---|---|---|
-| **Automated gate** (`review/pre_release_review.py`) | 10 checks, exit 1 on anything that is not a pass, `--selftest` proves each check can fail | runs against a clean export of the committed tree, not the working copy |
+| **Automated gate** (`review/pre_release_review.py`) | 11 checks, exit 1 on anything that is not a pass, `--selftest` proves each check can fail | runs against a clean export of the committed tree, not the working copy |
 | **Probe harness** (`review/redteam_probe.py`) | 20 probes over the real judges, MCP surface and CLI; `--selfcheck` proves each probe can fail | the probes run against mutants as well as the product, so a probe that measures nothing fails the run |
 | **Independent red team** (separate agent seat, S7 round) | injection, tool-permission boundary, forged evidence, gate mutation, exit-code semantics, publish integrity | did not write the code under test; reported FAIL |
 | **Outsider** (separate agent seat, no project context, S7 round) | copies the repo, reads only `README.md` + `llms.txt`, follows them literally | was told not to read source to guess usage |
@@ -45,12 +45,20 @@ so a soft-404 or a login wall cannot pass as a live link.
 
 Two honesty notes about this round:
 
-1. A fresh independent agent seat could **not** be dispatched for this run — the
-   host's credit stop-flag was active. The S7 seat reports above stand, and the
-   machine harness now covers the same claims mechanically, but "a new human-side
-   seat reviewed commit `c8c430c`" is **NOT VERIFIED**. It is written here rather
-   than implied.
-2. Vantages matter: from this host, `github.com` and `zenodo.org` are reset at the
+1. A fresh **engineering** agent seat could **not** be dispatched for this run —
+   the host's credit stop-flag was active. The S7 seat reports above stand, and the
+   machine harness covers the same claims mechanically, but "a new human-side
+   engineering seat reviewed commit `c8c430c`" is **NOT VERIFIED**. It is written
+   here rather than implied. What did run: the **S7 compliance seat** (the legal and
+   process gate, `release-prep/STANDARDS_CONTRIBUTION_READINESS.md`) — and because
+   that seat is not the author of the code, its verdict on the legal artifacts is
+   separated from the author's own claims.
+2. Red line 1 of the team charter ("the verifier must not be the author") is **not
+   satisfied by the probe harness**: it was written by the implementer. The harness
+   buys falsifiability (every probe is proven able to fail against a mutant), not
+   institutional independence. Anything called "independent" in this file means
+   *role separation*, never a third party.
+3. Vantages matter: from this host, `github.com` and `zenodo.org` are reset at the
    connection level, `raw.githubusercontent.com` works most of the time, and on
    2026-11-04 the proxy in front of this machine returned `502` for a stretch.
    The gate therefore records `BLOCKED` — never `PASS` — for a host it cannot
@@ -68,11 +76,12 @@ Two honesty notes about this round:
 | `relative-links` | file paths named in the docs exist (declared non-files excepted) | yes — a path that is not there |
 | `citation` | CITATION.cff complete, version-consistent, no silent placeholder, DOI only if it resolves | yes — missing title, fake DOI |
 | `license` | LICENSE / pyproject / CITATION agree and NOTICE exists | yes — MIT in pyproject |
+| `legal` | the legal artifacts a standards contribution rests on carry substance: §3 patent grant, a NOTICE that names a holder, an inbound (not just outbound) contribution licence, and a readiness note whose negative claims declare their retrieval scope | yes — strip §3 from a copy of LICENSE |
 | `public` | the default branch is readable without a token | yes — a nonexistent repo |
 | `machine` | llms.txt and JSON/YAML entry points exist and parse | yes — llms.txt removed |
 | `redteam` | the judgment core survives the probes, and every probe can fail | yes — one sabotaged probe is reported VACUOUS |
 
-`--selftest` runs all ten mutations and requires a failing finding from each:
+`--selftest` runs all eleven mutations and requires a failing finding from each:
 `SELFTEST PASS` is the output, and the selftest is itself a check that can fail.
 
 Latest machine output: `review/evidence/pre_release_latest.json` (the run's own
@@ -177,7 +186,37 @@ Anonymous read of `raw.githubusercontent.com/.../main/README.md` is gate check
 of the run; the check recorded `BLOCKED` (with the control URL's failure as
 evidence) rather than turning a network outage into a repository defect.
 
-## 6. Verdict
+## 6. Legal and process gate — the S7 compliance seat
+
+The engineering checks cannot see the obligations that actually decide whether a
+standards body can accept a contribution, so a separate seat reviewed them:
+**`release-prep/STANDARDS_CONTRIBUTION_READINESS.md`** (13 items, each with the
+standard it comes from, the artefact that satisfies it and a
+pass / risk / blocked verdict — plus the retrieval scope behind every negative
+claim, so "we found nothing" cannot masquerade as "there is nothing").
+
+What it found, in one line each:
+
+- **Fixed this round:** `CONTRIBUTING.md` had an *outbound* licence and no
+  *inbound* one. A third-party pull request would therefore carry no licence at
+  all, and "redistributable without restriction" (ITU-T A.1 §3.1.6) would break at
+  the first outside contribution. It now states inbound = outbound, and states
+  plainly that there is **no CLA** and **no enforced DCO** rather than implying
+  otherwise.
+- **Risk, with material present:** the paper declaration that accompanies an
+  ITU-T submission (§3.1.7) is not written; no Patent Statement has been filed and
+  no essential-patent search has been done (Apache-2.0 §3 grants a licence, which
+  is not the same as a declaration to the venue); the DOI is absent until Zenodo
+  mints one, and `CITATION.cff` correctly does not invent one.
+- **Blocked, and not by code:** the 12-calendar-day submission window (§3.1.8) has
+  no schedule, and the W3C Community Group CLA needs a decision on who signs —
+  an individual or the entity.
+
+Three items are escalated rather than decided here, because they are outside what
+a code review can settle: which patent declaration to file, who holds the CLA, and
+whether to submit as a document contribution or a software contribution.
+
+## 7. Verdict
 
 **Not releasable yet — and this time the reason is not the code.**
 
@@ -197,9 +236,12 @@ three reasons that no patch can close:
    Zenodo mints one; minting requires the account holder to enable the GitHub
    integration. Publishing a citation entry without an identifier would break the
    FORCE11 persistence principle.
-3. **No CLA and no DCO.** A W3C Community Group contribution needs a signed CLA
-   and a public record of the contribution; this repository has neither a CLA bot
-   nor a `Signed-off-by` requirement.
+3. **No CLA, no DCO, and no paper declaration.** A W3C Community Group
+   contribution needs a signed CLA (and a decision on who signs it); an ITU-T
+   submission needs the §3.1.7 paper declaration and a patent position; this
+   repository has neither a CLA bot nor a `Signed-off-by` requirement. §6 and
+   `release-prep/STANDARDS_CONTRIBUTION_READINESS.md` track these; two of them are
+   entity-level decisions, not patches.
 
 Push and merge are also blocked from this session: every outbound `git` call was
 cut off by the host before it completed, so the four commits behind this review
@@ -213,7 +255,8 @@ Re-run before any release:
 ```bash
 python review/redteam_probe.py --selfcheck           # 20 probes, each proven able to fail
 python review/pre_release_review.py --json review/evidence/pre_release_latest.json
-python review/pre_release_review.py --selftest       # proves all 10 checks can fail
+python review/pre_release_review.py --selftest       # proves all 11 checks can fail
+python review/pre_release_review.py --only legal     # the legal artefacts, substance not presence
 python framework/gate_bot.py                         # 6 checks
 python docs/validate_openapi.py                      # contract/code lockstep, 20/20
 ```
