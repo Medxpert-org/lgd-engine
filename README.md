@@ -3,6 +3,7 @@
 [![status](https://img.shields.io/badge/status-MVP%20draft-lightgrey)]()
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue)]()
 [![python](https://img.shields.io/badge/python-3.10%2B-green)]()
+[![gate CI](https://img.shields.io/github/actions/workflow/status/Medxpert-org/lgd-engine/gate.yml?branch=main&label=gate%20CI)]()
 
 **LGD Engine is the judgment core for medical-device AI change control.**
 While general agent frameworks orchestrate LLMs, LGD Engine supplies the
