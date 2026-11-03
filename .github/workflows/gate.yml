@@ -7,14 +7,17 @@ jobs:
     runs-on: ubuntu-latest
     name: LGD gate (gold-test / license / no-plaintext / manifest)
     steps:
-      - name: Checkout
-        run: git clone --depth 1 "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" .
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: "3.11"
 
       - name: Gate bot (gold test + LICENSE/NOTICE + no plaintext keys + manifest syntax)
-        run: python3 framework/gate_bot.py
+        run: python framework/gate_bot.py
 
       - name: Demo2 five-seat review self-test
-        run: python3 demo2/test_demo2.py
+        run: python demo2/test_demo2.py
 
       - name: MCP server smoke (tools list + judge + RBAC deny)
-        run: python3 lgd_engine/mcp_smoke.py
+        run: python lgd_engine/mcp_smoke.py
