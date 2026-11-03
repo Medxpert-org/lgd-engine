@@ -25,6 +25,13 @@ python -m demo1.change_gate --case demo1/cases/case01_red_pma_process.json
 # exit code: 0 = go, 1 = hold, 2 = reject
 ```
 
+> **Exit codes are verdicts.** In single-case mode the process exit code *is*
+> the verdict: `0` = go, `1` = hold, `2` = reject. A correct reject therefore
+> exits `2` — CI wrappers must map the code to the verdict instead of treating
+> any non-zero exit as a failed run. `--all` instead exits `0` only when every
+> case matches its expected verdict, and `1` on any mismatch. The CLI prints
+> the same mapping on its last line.
+
 Verify the whole gate before trusting it (stock Python 3.9+, stdlib only):
 
 ```bash
@@ -90,7 +97,7 @@ until the public 0.1 release wires production endpoints (TLS, auth).
 | Interface | Transport / entry | Run it | Verify it |
 |---|---|---|---|
 | REST (demo) | stdlib HTTP, `127.0.0.1:8765`, `POST /judge` | `python -m demo1.web` | `curl -X POST http://127.0.0.1:8765/judge -H 'Content-Type: application/json' -d @demo1/cases/case01_red_pma_process.json` |
-| REST contract | OpenAPI 3.1, `docs/openapi.yaml` (`/v1/judge`, `/v1/decisions`) | — | `python docs/validate_openapi.py` (17/17 checks, stdlib) |
+| REST contract | OpenAPI 3.1, `docs/openapi.yaml` (`/v1/judge`, `/v1/decisions`) | — | `python docs/validate_openapi.py` — 5 text checks on a stdlib install, 17/17 structural once `pip install "lgd-engine[yaml]"` is present; the script prints an explicit warning when it had to skip the 12 structural checks |
 | SSE event stream | tails append-only `demo2/events.jsonl`, 6 event types | `python -m demo2.sse_server --port 8770 --smoke` | exits 0 after asserting all 6 types |
 | MCP server (stdio) | `lgd_engine/mcp_server.py` | `python lgd_engine/mcp_smoke.py` | smoke exercises initialize / tools list / judge / RBAC-deny (denied → -32003) |
 | TypeScript SDK | `lgd-engine-ts/` (zero-dep types mirroring OpenAPI) | `cd lgd-engine-ts && npm run smoke` | Node 18+; smoke exits 0 |
@@ -100,6 +107,14 @@ until the public 0.1 release wires production endpoints (TLS, auth).
 > shape (`/v1/*`, TLS, bearer auth). No `/v1` service exists in the tree
 > yet — `demo1/web.py` (`/judge`, no `/v1` prefix) is the behavioral
 > reference for request/response semantics.
+
+> **SSE smoke precondition.** The smoke asserts all six event types, so the
+> append-only log must already contain both a pass path and a hold path:
+> `python -m demo2.session --case demo2/case_gate_report.json --auto` and
+> `python -m demo2.session --case demo2/case_gate_report_critical.json --auto`
+> (or `.\demo2\run_demo2.ps1` plus `.\demo2\run_demo2.ps1 critical`). On a
+> fresh clone the log is empty, the smoke exits `1`, and it now names the
+> missing types and the exact command to generate them.
 
 ### MCP client config (copy-paste, local-trust)
 
@@ -188,6 +203,45 @@ The rest of the stack:
 
 Every judge carries an explicit evidence source, making the chain
 theory → code → verifiable test (enforced in CI).
+
+### Where the rest of the stack lives
+
+This repository is the engine. The theory, the evidence catalog and the
+challenge core are maintained in their own repositories, so this README
+links out instead of duplicating them:
+
+- Theory flagship (doctrine, three laws, domain papers):
+  https://github.com/zhaoxinghua09-cell/lgd-theory
+- Doctrine DOI — concept record: https://doi.org/10.5281/zenodo.22456647
+  (current version v1.7.0: https://doi.org/10.5281/zenodo.23446125)
+- Portal (all public surfaces in one place):
+  https://zhaoxinghua09-cell.github.io/lgd-hub/
+- Silent-failure catalog (failure modes this gate is built to catch):
+  https://github.com/zhaoxinghua09-cell/silent-failure-catalog
+- uibc-core — verifiable evidence packages for autonomous agents
+  (software DOI https://doi.org/10.5281/zenodo.22821834):
+  https://github.com/zhaoxinghua09-cell/uibc-core
+
+### Three counts, three scopes
+
+`11 stages` and `13 domains` appear throughout this repository and they
+measure different things — neither is a count of the other:
+
+- **11 stages** — the engine's implemented lifecycle model, i.e. the
+  adapter family enumerated in `framework/ecosystem-map.md` (11 stages ×
+  8 jurisdictions). This is an engineering projection: it covers the
+  stages the gate can judge today or has a named adapter for.
+- **13 domains** — the judgment-domain taxonomy (clinical evaluation,
+  postmarket, UDI, SaMD, …) mapped onto those stages in
+  `framework/13domains-mapping.md`. Several domains are cross-stage
+  (compliance grading, risk management), which is why 13 ≠ 11.
+- **14 links (14 环)** — the ecosystem-level industry-chain caliber used
+  in LGD ecosystem publications. It is the coarsest of the three and is
+  not re-listed here (single source of truth): the 11-stage model is this
+  engine's projection of that chain, not a competing count.
+
+So: 14 环 = industry chain (ecosystem), 13 域 = judgment domains
+(knowledge), 11 阶段 = implemented stages (this engine).
 
 ## Gate bot (CI) & security baseline
 

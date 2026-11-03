@@ -26,6 +26,33 @@ into `main` ahead of the public 0.1 release.
   `license = { text = "Apache-2.0" }`, package discovery via
   `[tool.setuptools.packages.find]`).
 
+### Changed
+
+- `docs/validate_openapi.py` reports its mode instead of an unqualified pass:
+  a stdlib-only install runs the 5 substring checks and prints an explicit
+  warning that 12 structural checks were skipped; the summary line reads
+  `5/17 (text-scan only)` vs `17/17`. The README says the same where it used
+  to claim "17/17 checks, stdlib".
+- `demo1.change_gate` exit-code semantics are now stated where people look:
+  Quickstart in the README, the module docstring, and a `[exit code]` line in
+  the CLI output. Single-case exit code is the verdict (0/1/2) by design, so
+  a correct REJECT exits 2; `--all` exits 0 only when every case matches.
+- README links the rest of the stack — theory repository, doctrine DOIs
+  (concept + v1.7.0), portal, silent-failure catalog, uibc-core — and the
+  repository Homepage now points at the portal.
+- README explains 11 stages / 13 domains / 14 links as three different
+  scopes rather than leaving three numbers unexplained.
+- README and `demo2/sse_server.py` document the SSE smoke precondition (the
+  log must contain both a pass and a hold path); on failure the smoke names
+  the missing types and the exact commands that generate them.
+
+### Fixed
+
+- `security/prompt_injection_defense.py` self-test now asserts every
+  expectation and prints `[summary] N/N checks passed`, exiting 1 on any
+  failure. Previously it printed no summary and always exited 0, so CI could
+  not detect a regression in the guards.
+
 ## [0.1.0] - unreleased
 
 Planned first public release. Contents to be promoted from
