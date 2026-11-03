@@ -156,11 +156,27 @@ def main() -> int:
                     help="run the stdlib smoke client against a running server")
     args = ap.parse_args()
 
-    if args.smoke:
-        return smoke_client(args.host, args.port)
-
     log_path = Path(args.log)
+    if not log_path.exists():
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_path.write_text("", encoding="utf-8")
+        print(f"[sse] created empty event log {log_path} — run demo2 first to populate events")
     _H.log_path = log_path
+
+    if args.smoke:
+        # Self-hosted smoke: start the server in a thread, stream, then exit.
+        # (R4 role test 2026-11-03: --smoke used to expect an externally running
+        # server, which made the documented one-liner fail for a fresh clone.)
+        srv = ThreadingHTTPServer((args.host, args.port), _H)
+        t = threading.Thread(target=srv.serve_forever, daemon=True)
+        t.start()
+        try:
+            rc = smoke_client(args.host, args.port)
+        finally:
+            srv.shutdown()
+            srv.server_close()
+        return rc
+
     srv = ThreadingHTTPServer((args.host, args.port), _H)
     print(f"SSE server: http://{args.host}:{args.port}/events/stream  (tail {log_path})  Ctrl+C to stop")
     try:

@@ -101,10 +101,12 @@ class GateEngine:
                 all_reasons.append(r)
                 if r["level"] == "critical":
                     any_critical = True
-                    if r["rule"] == "L2-EVIDENCED":
-                        law_hits.append("L2-EVIDENCED: go-without-evidence downgraded")
                 elif r["level"] == "major":
                     any_hold = True
+                # L2 downgrade is a hold signal regardless of how the judge tags
+                # it; detect by rule name, not by level (LGD-EVAL-2026-009 H1).
+                if r["rule"] == "L2-EVIDENCED":
+                    law_hits.append("L2-EVIDENCED: go-without-evidence downgraded")
 
             for e in v.get("evidence", []):
                 all_evidence.append(e)

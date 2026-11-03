@@ -21,6 +21,12 @@ SENSITIVE_PATTERNS = [
     re.compile(r"disregard (the )?above", re.I),
     re.compile(r"reveal (your )?(system )?(prompt|secret|api key)", re.I),
     re.compile(r"system\s*prompt", re.I),
+    # synonym-expanded set (red-team fix M4, 2026-11-03)
+    re.compile(r"\b(ignore|disregard|forget|bypass|override|skip)\b.{0,40}\b(instructions|rules|guidelines|prompt)\b", re.I),
+    re.compile(r"\b(initial|developer|system)\s+(instructions?|message|prompt)\b", re.I),
+    re.compile(r"\b(jailbreak|DAN|hypothetical)\b", re.I),
+    re.compile(r"\breveal\b.{0,30}\b(password|credentials|token|key)\b", re.I),
+    re.compile(r"\b(give|print|output|show)\b.{0,20}\b(all|your)\b.{0,20}\b(secrets?|prompt|instructions?)\b", re.I),
 ]
 
 # --- L2: RBAC table: role -> set of allowed tools ---

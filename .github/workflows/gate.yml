@@ -16,6 +16,9 @@ jobs:
       - name: Gate bot (gold test + LICENSE/NOTICE + no plaintext keys + manifest syntax)
         run: python framework/gate_bot.py
 
+      - name: Ecosystem map self-test (13-domain / 11-stage alignment)
+        run: python demo1/test_ecosystem.py
+
       - name: Demo2 five-seat review self-test
         run: python demo2/test_demo2.py
 

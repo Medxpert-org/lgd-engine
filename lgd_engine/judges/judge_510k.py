@@ -188,17 +188,44 @@ class Judge510kChange:
                 verdict = "go"
 
         # L2-EVIDENCED: if verdict says go but there is zero evidence, downgrade.
+        # NOTE: this is a hold signal (major), NOT a critical veto — a missing
+        # evidence package must never flip a verdict to reject (red-team fix
+        # 2026-11-03: LGD-EVAL-2026-009 H1).
         if verdict == "go" and not evidence:
             reasons.append(Reason(
-                rule="L2-EVIDENCED", level="critical",
+                rule="L2-EVIDENCED", level="major",
                 detail="go verdict with zero evidence refs — LGD L2 law downgrades "
                        "to hold pending documented evidence.",
             ))
             verdict = "hold"
 
+        # R-MAJ-05: supplier substitution without a filed equivalence declaration
+        # is never self-declarable — hold pending equivalence evidence (FDA 807.81
+        # and NMPA 登记事项 routes both require the declaration). Non-boolean
+        # truthy values (e.g. the string "yes") count as no declaration.
+        if (
+            ctx.get("change_type") == "supplier_substitution"
+            and ctx.get("equivalence_declared") is not True
+        ):
+            reasons.append(Reason(
+                rule="R-MAJ-05-supplier-no-equivalence",
+                level="major",
+                detail="Supplier substitution without a filed equivalence "
+                       "declaration — hold pending equivalence evidence "
+                       "(both FDA 807.81 and NMPA 登记事项 routes require it).",
+            ))
+            verdict = "hold"
+
         # ---- jurisdiction-specific override (⑭) ----
-        jur = (ctx.get("jurisdiction") or "FDA").upper()
-        if jur == "NMPA" and not any(r.level == "critical" for r in reasons):
+        jur = (ctx.get("jurisdiction") or "FDA").strip().upper()
+        if jur not in {"FDA", "NMPA"}:
+            reasons.append(Reason(
+                rule="R-JUR-UNKNOWN", level="major",
+                detail=f"Unknown jurisdiction '{ctx.get('jurisdiction')}' — "
+                       "conservative hold pending jurisdiction routing.",
+            ))
+            verdict = "hold"
+        elif jur == "NMPA" and not any(r.level in ("critical", "major") for r in reasons):
             # NMPA 登记事项变更: equivalent supplier substitution with full
             # validation evidence may be self-declared (no 变更注册 needed),
             # whereas FDA 807.81 would still expect a 510(k).

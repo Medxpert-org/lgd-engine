@@ -34,6 +34,8 @@ SECRET_PATTERNS = [
     re.compile(r"sk-[A-Za-z0-9]{16,}"),
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"ghp_[A-Za-z0-9]{20,}"),
+    re.compile(r"github_pat_[A-Za-z0-9_]{20,}"),
+    re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----"),
     re.compile(r"xox[baprs]-[A-Za-z0-9-]{10,}"),
     re.compile(r"\d{4}-\d{4}-\d{4}-\d{3}[\dX]"),          # ORCID-shaped
     re.compile(r"put" + r"_code"),                          # identifiers.toml key
@@ -59,15 +61,24 @@ def check_gold_test(root: Path) -> tuple[bool, str]:
 
 def check_license_files(root: Path) -> tuple[bool, str]:
     problems = []
-    for fname in ("LICENSE", "NOTICE"):
-        p = root / "release-prep" / fname
-        if not p.exists():
-            problems.append(f"missing release-prep/{fname}")
-        elif p.stat().st_size < 100:
-            problems.append(f"release-prep/{fname} suspiciously small ({p.stat().st_size}B)")
+    # LICENSE: presence + size + Apache-2.0 text marker (red-team fix: a
+    # 150-byte file or a MIT text used to pass the size-only check).
+    p = root / "release-prep" / "LICENSE"
+    if not p.exists():
+        problems.append("missing release-prep/LICENSE")
+    elif p.stat().st_size < 100:
+        problems.append(f"release-prep/LICENSE suspiciously small ({p.stat().st_size}B)")
+    elif b"Apache License" not in p.read_bytes():
+        problems.append("release-prep/LICENSE lacks the Apache-2.0 text marker")
+    # NOTICE: presence + size (provenance text is project-specific).
+    p = root / "release-prep" / "NOTICE"
+    if not p.exists():
+        problems.append("missing release-prep/NOTICE")
+    elif p.stat().st_size < 100:
+        problems.append(f"release-prep/NOTICE suspiciously small ({p.stat().st_size}B)")
     if problems:
         return False, "; ".join(problems)
-    return True, "LICENSE and NOTICE present in release-prep/"
+    return True, "LICENSE (Apache-2.0 text) and NOTICE present in release-prep/"
 
 
 def scan_files(root: Path):
@@ -140,6 +151,7 @@ def load_manifest(path: Path):
 
 def check_manifests(root: Path) -> tuple[bool, str]:
     candidates = sorted((root / "framework" / "examples").glob("*.yaml"))
+    candidates += sorted((root / "framework").glob("*.yaml"))
     candidates += sorted(root.glob("**/skill.yaml"))
     candidates = [c for c in candidates if c not in candidates[:0]]  # de-dup below
     seen, uniq = set(), []
@@ -162,6 +174,9 @@ def check_manifests(root: Path) -> tuple[bool, str]:
             problems.append(f"{path.name}: bad gate_tag '{data.get('gate_tag')}'")
         if "permissions" in data and str(data.get("permissions")) not in VALID_PERMISSIONS:
             problems.append(f"{path.name}: bad permissions '{data.get('permissions')}'")
+        entry = data.get("entry")
+        if isinstance(entry, str) and (".." in entry or entry.startswith("/")):
+            problems.append(f"{path.name}: entry path traversal / absolute path: '{entry}'")
     if problems:
         return False, "manifest problems: " + " ;; ".join(problems)
     return True, f"{len(uniq)} manifest(s) valid: " + ", ".join(p.name for p in uniq)
