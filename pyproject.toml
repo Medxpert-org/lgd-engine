@@ -9,7 +9,7 @@ description = "Theory-bound judgment core for medical-device AI change control (
 readme = "release-prep/README.md"
 requires-python = ">=3.9"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Zhao, X.", affiliation = "Independent Researcher" }]
+authors = [{ name = "Zhao, X." }]
 dependencies = []  # stdlib only at MVP
 
 [project.optional-dependencies]
