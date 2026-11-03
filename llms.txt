@@ -1,0 +1,127 @@
+# LGD Engine
+
+> LLM/agent-friendly entry point for the repository
+> `https://github.com/Medxpert-org/lgd-engine`
+> (served at the repository root as `llms.txt`, per the llms.txt convention).
+
+## What this is
+
+LGD Engine is an open-source **judgment core for medical-device AI change control**.
+It does not orchestrate LLM agents; it supplies the theory-bound gate that decides
+whether a change to a regulated medical device (or to an AI system touching one)
+may go, must hold, or must be rejected. Every verdict is produced by an auditable,
+offline-testable judgment chain with zero runtime dependencies.
+
+## Core concepts (the three laws)
+
+The judgment chain is grounded in the LGD theory, expressed as three laws:
+
+1. **有籍 · Registered** — every judgment is tied to a registered context: a
+   device record, a predicate, a case identifier. No context, no verdict.
+2. **有证 · Evidenced** — every decision rule must cite evidence (a precedent id,
+   a case entry, a regulation citation). A `go` with zero evidence refs is
+   downgraded to `hold`.
+3. **有门禁 · Gated** — every touchpoint is a gate (触点即门): release decisions,
+   agent tool calls, MCP invocations and CI pushes all pass through the same
+   three-state gate (`go` / `hold` / `reject`).
+
+Domain judges are adapters over this core; today's release implements the 510(k)
+change-classification judge and a post-market judge. The 13-domain judgment map
+(clinical evaluation, post-market surveillance, UDI, SaMD, …) is documented in
+`framework/` and the remaining domains are roadmap adapters.
+
+## Core interface
+
+```python
+from lgd_engine.gate import GateEngine
+from lgd_engine.judges.judge_510k import Judge510kChange
+
+engine = GateEngine()
+engine.register(Judge510kChange())
+report = engine.evaluate({
+    "change_type": "label_correction",        # change taxonomy token
+    "device_risk_class": "II",
+    "safety_impact": "none",
+    "source_refs": [{"kind": "x", "ref": "y"}],
+})
+```
+
+`report` is a `GateReport` with:
+
+- `verdict`: `"go" | "hold" | "reject"` (three-state release gate)
+- `reasons`: ordered reason chain, each `{rule, level, detail}` (levels
+  `minor` / `major` / `critical`; any `critical` forces `reject`, any `major`
+  forces `hold` unless overridden)
+- `per_judge`: per-domain verdicts
+- `law_enforcements`: which of the three laws fired and how
+- `evidence`: cited evidence refs
+
+Exit-code convention of the CLI: `0=go, 1=hold, 2=reject`.
+
+## How to run
+
+```bash
+git clone https://github.com/Medxpert-org/lgd-engine.git
+cd lgd-engine
+
+# Windows (stock Python 3.9+)
+.\demo1\run_demo1.ps1        # 5/5 + 6/6 change-gate self-tests
+.\demo2\run_demo2.ps1        # 26/26 five-seat review self-tests
+
+# Any OS
+python demo1/test_demo1.py
+python demo2/test_demo2.py
+python framework/gate_bot.py     # CI gate: gold test / LICENSE / no keys / manifest
+
+# One decision from a case JSON
+python -m demo1.change_gate --case demo1/cases/case01_red_pma_process.json
+python -m demo1.change_gate --case demo1/cases_jurisdiction/supplier_swap.json --jurisdiction NMPA
+python -m demo1.change_gate --all
+```
+
+Offline by default: the core gate runs with no LLM required, so verdicts are
+reproducible in CI.
+
+## Interface layer (Beta)
+
+- **REST / OpenAPI 3.1** — `docs/openapi.yaml` (`/v1/judge`, `/v1/decisions`);
+  validate: `python docs/validate_openapi.py` (17/17).
+- **SSE event stream** — `demo2/sse_server.py` tails `demo2/events.jsonl`;
+  `python -m demo2.sse_server --smoke` self-hosts, asserts all 6 event types, exits.
+- **MCP server (stdio)** — `lgd_engine/mcp_server.py`; `python lgd_engine/mcp_smoke.py`
+  exercises initialize / tools / judge / RBAC-deny. Local-trust adapter: it trusts
+  the caller's role claim; treat it as local, not a network auth boundary.
+- **TypeScript SDK skeleton** — `lgd-engine-ts/` (zero-dependency, mirrors the
+  OpenAPI contract); `cd lgd-engine-ts && npm run smoke`.
+- **Container** — `Dockerfile` + `docker-compose.yml` (Docker Desktop 4.89.0
+  verified; REST demo binds `127.0.0.1:18090`).
+
+## Verified test evidence (2026-11-03)
+
+- demo1 change-gate gold tests: **5/5 PASS**
+- demo1 ecosystem map self-test: **PASS**
+- demo2 five-seat review tests: **26/26 PASS**
+- `framework/gate_bot.py` (CI gate): **4/4 checks PASS** — including adversarial
+  re-checks: 150-byte / MIT-text LICENSE rejected, manifest entry path-traversal
+  rejected, `github_pat_` / PEM secret shapes detected
+- `security/security_scan.py`: **clean, 0 findings**
+- `security/prompt_injection_defense.py` (3-layer): **self-test PASS**
+- MCP smoke (tools list + judge + RBAC deny): **PASS**
+- `release-prep/desanitize_check.py`: **0 leaks**
+- SSE smoke: **6/6 event types received**
+- GitHub Actions: `gate` CI **success on main**; CodeQL **success**; Dependabot
+  enabled; branch protection active (PR required + gate status check).
+- Red-team / LGD-Eval review: 7-dimension security review and independent eval
+  closed with no open high-severity findings (LGD-EVAL-2026-009).
+
+## Key files & links
+
+- Repository: https://github.com/Medxpert-org/lgd-engine
+- README: https://github.com/Medxpert-org/lgd-engine/blob/main/README.md
+- Theory rules: `lgd_engine/theory/laws.yaml`
+- Judges: `lgd_engine/judges/` (base, 510(k) change classification, post-market)
+- Gate engine: `lgd_engine/gate/engine.py`
+- Framework docs: `framework/skill-manifest-spec.md`, `framework/plugin-adapter.md`,
+  `framework/ecosystem-map.md`, `framework/13domains-mapping.md`
+- Security baseline: `security/security_baseline.md`
+- License: Apache-2.0 (`LICENSE`); provenance in `NOTICE`
