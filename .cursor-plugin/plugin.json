@@ -1,0 +1,18 @@
+{
+  "name": "lgd-engine",
+  "version": "0.1.0",
+  "description": "Theory-bound judgment core for medical-device AI change control (LGD three laws, 有籍有证有门禁, 触点即门). Exposes the lgd-engine MCP server for auditable, offline-testable change verdicts.",
+  "author": {
+    "name": "Zhao, X."
+  },
+  "repository": "https://github.com/Medxpert-org/lgd-engine",
+  "license": "Apache-2.0",
+  "keywords": ["medical-device", "ai-governance", "mcp", "change-control", "lgd"],
+  "mcpServers": {
+    "lgd-engine": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "lgd_engine.mcp_server"]
+    }
+  }
+}
