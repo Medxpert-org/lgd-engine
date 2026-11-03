@@ -13,6 +13,16 @@ offline-testable judgment chain grounded in the LGD theory (three laws,
 有籍有证有门禁 / registered-evidenced-gated, 触点即门 / every touchpoint
 is a gate). Zero runtime dependencies — the core gate runs with no LLM.
 
+## Prerequisites
+
+- Python 3.9+ (`python --version`). Nothing else: the gate, the judges and the
+  CLI are stdlib-only.
+- `git`, if you are cloning rather than downloading a zip.
+- Optional: PyYAML only for the 17-check OpenAPI validation
+  (`pip install -e ".[yaml]"` from a checkout). Without it the validator says so
+  and runs 5 text checks instead of pretending it ran 17.
+- Node 18+ only for the TypeScript SDK smoke; Docker only for the compose demo.
+
 ## Quickstart
 
 Shortest path — clone, run the gold tests, get your first verdict, then
@@ -42,7 +52,8 @@ Verify the whole gate before trusting it (stock Python 3.9+, stdlib only):
 # Any OS
 python demo1/test_demo1.py       # change-gate gold tests
 python demo2/test_demo2.py       # five-seat review tests
-python framework/gate_bot.py     # CI gate (five checks)
+python demo1/test_ecosystem.py   # 13-domain / 11-stage alignment tests
+python framework/gate_bot.py     # CI gate (six checks)
 ```
 
 One decision from a case JSON:
@@ -97,7 +108,8 @@ until the public 0.1 release wires production endpoints (TLS, auth).
 | Interface | Transport / entry | Run it | Verify it |
 |---|---|---|---|
 | REST (demo) | stdlib HTTP, `127.0.0.1:8765`, `POST /judge` | `python -m demo1.web` | `curl -X POST http://127.0.0.1:8765/judge -H 'Content-Type: application/json' -d @demo1/cases/case01_red_pma_process.json` |
-| REST contract | OpenAPI 3.1, `docs/openapi.yaml` (`/v1/judge`, `/v1/decisions`) | — | `python docs/validate_openapi.py` — 5 text checks on a stdlib install, 17/17 structural once `pip install "lgd-engine[yaml]"` is present; the script prints an explicit warning when it had to skip the 12 structural checks |
+| REST contract | OpenAPI 3.1, `docs/openapi.yaml` (`/v1/judge`, `/v1/decisions`) | — | `python docs/validate_openapi.py` — 5 text checks on a stdlib install, 17/17 structural once the `yaml` extra is installed from a checkout
+(`pip install -e ".[yaml]"`; the package is not on PyPI yet); the script prints an explicit warning when it had to skip the 12 structural checks |
 | SSE event stream | tails append-only `demo2/events.jsonl`, 6 event types | `python -m demo2.sse_server --port 8770 --smoke` | exits 0 only after all 6 types appear (precondition: see the SSE note below) |
 | MCP server (stdio) | `lgd_engine/mcp_server.py` | `python lgd_engine/mcp_smoke.py` | smoke exercises initialize / tools list / judge / RBAC-deny (denied → -32003) |
 | TypeScript SDK | `lgd-engine-ts/` (zero-dep types mirroring OpenAPI) | `cd lgd-engine-ts && npm run smoke` | Node 18+; smoke exits 0 |
@@ -279,7 +291,7 @@ for LLM Applications (2025) to concrete defenses in this tree;
 ## Verified test evidence (2026-11-04)
 
 - demo1 change-gate gold tests: **5/5 PASS**; demo2 five-seat review: **26/26 PASS**
-- `framework/gate_bot.py`: **5/5 checks PASS** (incl. README-count drift); `security/security_scan.py`: **clean, 0 findings**
+- `framework/gate_bot.py`: **6/6 checks PASS** (incl. doc-count drift and the demo2 suite); `security/security_scan.py`: **clean, 0 findings**
 - MCP smoke (tools list + judge + RBAC deny): **PASS**; SSE smoke: **6/6 event types**
 - GitHub Actions: `gate` CI and `CodeQL` **green on main**; Dependabot enabled;
   branch protection active (PR required + gate status check)
@@ -287,8 +299,11 @@ for LLM Applications (2025) to concrete defenses in this tree;
   scan → `5/17 (text-scan only)`; injection self-test with a broken guard →
   `5/6`, exit 1; SSE smoke on an empty log → explicit empty-log error;
   README claiming 12 stages → gate check 5 FAIL
-- Independent red-team / eval: 7-dimension security review closed with no open
-  high-severity findings (LGD-EVAL-2026-009)
+- Pre-release review: `release-prep/PRE_RELEASE_REVIEW.md` carries the red-team,
+  outsider and external-AI results, including findings that are **still
+  open**. Earlier revisions of this file claimed a closed 7-dimension
+  review (LGD-EVAL-2026-009) with no artifact behind it; that claim was
+  removed rather than restated.
 
 ## Repository map
 
@@ -309,7 +324,8 @@ PRs welcome. Before opening one:
 1. Run `python framework/gate_bot.py` — it must exit 0.
 2. Every new judge or rule must ship with a gold test and an explicit
    evidence source (precedent id / case entry / regulation citation);
-   a `go` verdict with zero evidence refs is rejected by the gate.
+   a `go` verdict with zero evidence refs is downgraded to `hold` (law 2 — it is
+   never silently released, and never turned into a `reject` either).
 3. Keep the core offline and stdlib-only at MVP — optional extras go in
    `[project.optional-dependencies]`.
 

@@ -1,0 +1,385 @@
+{
+  "generated_at": "2026-11-04T01:50:44+0800",
+  "root": "D:\\Workbuddy\\_work\\lgd-engine",
+  "summary": {
+    "checks": 8,
+    "findings": 41,
+    "failed": 0,
+    "blocked": 0,
+    "verdict": "PASS"
+  },
+  "checks": [
+    {
+      "id": "links",
+      "title": "Every cited URL resolves and carries its expected text",
+      "ok": true,
+      "findings": [
+        {
+          "id": "itu-a1",
+          "ok": true,
+          "status": "pass",
+          "detail": "HTTP 200, PDF magic found (marker text not searched: binary body)",
+          "url": "https://www.itu.int/en/ITU-T/wtsa12/Documents/resolutions/ITU-T%20A.1.pdf",
+          "group": "external_standards",
+          "why": "ITU-T A.1: contributions reach TSB 12 calendar days before a meeting; material submitted as a contribution is presumed to carry no distribution restrictions; software contributions need a copyright and licensing declaration."
+        },
+        {
+          "id": "itu-ipr",
+          "ok": true,
+          "status": "pass",
+          "detail": "HTTP 200, marker 'patent' found",
+          "url": "https://www.itu.int/en/ITU-T/ipr/Pages/policy.aspx",
+          "group": "external_standards",
+          "why": "Common Patent Policy ITU-T/ITU-R/ISO/IEC: early disclosure, patent statement and licensing declaration form."
+        },
+        {
+          "id": "itu-templates",
+          "ok": true,
+          "status": "pass",
+          "detail": "HTTP 200, marker 'template' found",
+          "url": "https://www.itu.int/en/ITU-T/studygroups/Pages/templates.aspx",
+          "group": "external_standards",
+          "why": "A contribution that does not use the study group template is returned."
+        },
+        {
+          "id": "w3c-cg-about",
+          "ok": true,
+          "status": "pass",
+          "detail": "HTTP 200, marker 'Community Group' found",
+          "url": "https://www.w3.org/community/about",
+          "group": "external_standards",
+          "why": "Community Groups are open to all, free, and require public communications; reports are not W3C standards."
+        },
+        {
+          "id": "w3c-cg-faq",
+          "ok": true,
+          "status": "pass",
+          "detail": "HTTP 200, marker 'Contributor License Agreement' found",
+          "url": "https://www.w3.org/community/faq",
+          "group": "external_standards",
+          "why": "Joining a group means signing the CLA; most groups take contributions as GitHub pull requests; the contribution record matters for IPR."
+        },
+        {
+          "id": "zenodo-zenodo-json",
+          "ok": true,
+          "status": "pass",
+          "detail": "HTTP 200, marker 'CITATION.cff' found",
+          "url": "https://help.zenodo.org/docs/github/describe-software/zenodo-json",
+          "group": "external_standards",
+          "why": "If both .zenodo.json and CITATION.cff exist, Zenodo uses .zenodo.json and ignores CITATION.cff for the release archive."
+        },
+        {
+          "id": "zenodo-describe-software",
+          "ok": true,
+          "status": "pass",
+          "detail": "HTTP 200, marker 'CITATION.cff' found",
+          "url": "https://help.zenodo.org/docs/github/describe-software/",
+          "group": "external_standards",
+          "why": "Zenodo extends its schema with CodeMeta fields and supports CITATION.cff / .zenodo.json for GitHub releases."
+        },
+        {
+          "id": "force11-principles",
+          "ok": true,
+          "status": "pass_external",
+          "detail": "unreachable from here (RemoteDisconnected: Remote end closed connection without response (curl also failed: )); confirmed search-provider fetch (returned the page body, incl. its title and principle list) on 2026-11-04: provider returned the published page text for this URL; the same text was reachable by direct fetch twice (200 in 6.0s / 2.1s) but the host resets this machine's connection intermittently",
+          "url": "https://force11.org/info/software-citation-principles-published-2016/",
+          "group": "external_standards",
+          "why": "Six principles: importance, credit and attribution, unique identification, persistence, accessibility, specificity."
+        },
+        {
+          "id": "force11-doi",
+          "ok": true,
+          "status": "pass",
+          "detail": "DOI resolves (HTTP 302) -> https://doi.org/10.7717/peerj-cs.86",
+          "url": "https://doi.org/10.7717/peerj-cs.86",
+          "group": "external_standards",
+          "why": "The published FORCE11 Software Citation Principles paper (PeerJ CS 2:e86)."
+        },
+        {
+          "id": "fair4rs-doi",
+          "ok": true,
+          "status": "pass",
+          "detail": "DOI resolves (HTTP 302) -> https://doi.org/10.15497/RDA00068",
+          "url": "https://doi.org/10.15497/RDA00068",
+          "group": "external_standards",
+          "why": "FAIR Principles for Research Software (FAIR4RS) v1.0, RDA/ReSA/FORCE11."
+        },
+        {
+          "id": "cff-spec",
+          "ok": true,
+          "status": "pass",
+          "detail": "HTTP 200, marker 'Citation File Format' found",
+          "url": "https://citation-file-format.github.io/",
+          "group": "external_standards",
+          "why": "CITATION.cff schema and tooling; GitHub renders a 'Cite this repository' button from it."
+        },
+        {
+          "id": "datacite-schema",
+          "ok": true,
+          "status": "pass",
+          "detail": "HTTP 200, marker 'Metadata Schema' found",
+          "url": "https://schema.datacite.org/",
+          "group": "external_standards",
+          "why": "Metadata schema behind every 10.5281 DOI Zenodo mints."
+        },
+        {
+          "id": "github-citation-files",
+          "ok": true,
+          "status": "pass",
+          "detail": "HTTP 200, marker 'CITATION' found",
+          "url": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-citation-files",
+          "group": "external_standards",
+          "why": "GitHub surfaces CITATION.cff from the default branch as 'Cite this repository'."
+        },
+        {
+          "id": "repo-readme-raw",
+          "ok": true,
+          "status": "pass",
+          "detail": "HTTP 200, marker 'LGD Engine' found",
+          "url": "https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md",
+          "group": "own_surfaces",
+          "why": "Anonymous read of the default branch — proves the repository is public without hitting the API rate limit."
+        },
+        {
+          "id": "repo-llms-txt",
+          "ok": true,
+          "status": "pass",
+          "detail": "HTTP 200, marker 'LGD Engine' found",
+          "url": "https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/llms.txt",
+          "group": "own_surfaces",
+          "why": "The agent-facing entry point must be readable anonymously too."
+        },
+        {
+          "id": "portal",
+          "ok": true,
+          "status": "pass",
+          "detail": "HTTP 200",
+          "url": "https://zhaoxinghua09-cell.github.io/lgd-hub/",
+          "group": "own_surfaces",
+          "why": "Repository homepage target; an outside reader lands here first."
+        }
+      ]
+    },
+    {
+      "id": "outsider",
+      "title": "The committed tree runs the documented commands verbatim",
+      "ok": true,
+      "findings": [
+        {
+          "id": "quickstart-verdict",
+          "ok": true,
+          "status": "pass",
+          "detail": "rc=2 (expect 2) | ============================================================\n\n[exit code] 2 = reject — the exit code IS the verdict (0=go, 1=hold, 2=reject).\n             A correct REJECT therefore exits 2: CI wrappers must map the code to the verdict, not treat non-zero as a failed run.",
+          "step": "-m demo1.change_gate --case demo1/cases/case01_red_pma_process.json",
+          "tree": "HEAD@41f4ab3",
+          "why": "The first command in the README. Exit code is the verdict, so 2 is correct here, not a failure."
+        },
+        {
+          "id": "demo1-gold",
+          "ok": true,
+          "status": "pass",
+          "detail": "rc=0 (expect 0) |   [PASS] case04_yellow_traditional_510k.json        expected=hold    got=hold    reasons=2 evidence=1\n  [PASS] case05_green_label.json                    expected=go      got=go      reasons=1 evidence=1\n\n[test_demo1] 5/5 cases PASS",
+          "step": "demo1/test_demo1.py",
+          "tree": "HEAD@41f4ab3",
+          "why": "README claims 5/5."
+        },
+        {
+          "id": "demo2-gold",
+          "ok": true,
+          "status": "pass",
+          "detail": "rc=0 (expect 0) | \n============================================================\n结果：26/26 PASS，0 FAIL\n============================================================",
+          "step": "demo2/test_demo2.py",
+          "tree": "HEAD@41f4ab3",
+          "why": "README claims 26/26."
+        },
+        {
+          "id": "gate-bot",
+          "ok": true,
+          "status": "pass",
+          "detail": "rc=0 (expect 0) | [PASS] 4.manifest-syntax: 2 manifest(s) valid: change-gate-skill.yaml, touchpoint-gate-skill.yaml\n[PASS] 5.readme-counts: README counts match their source tables: 11 stages = 11 rows in framework/ecosystem-map.md, 13 domains = 13 rows in framework/13domains-mapping.md\n===============================",
+          "step": "framework/gate_bot.py",
+          "tree": "HEAD@41f4ab3",
+          "why": "README tells the contributor to run this before opening a PR."
+        },
+        {
+          "id": "openapi",
+          "ok": true,
+          "status": "pass",
+          "detail": "rc=0 (expect 0) | PASS  GateReport required keys sane\nPASS  ChangeContext requires change_type\n------------------------------------------------------------\nVALIDATION OK — 17/17 checks; openapi.yaml structurally consistent",
+          "step": "docs/validate_openapi.py",
+          "tree": "HEAD@41f4ab3",
+          "why": "Contract validation must pass without extra install."
+        },
+        {
+          "id": "injection-selftest",
+          "ok": true,
+          "status": "pass",
+          "detail": "rc=0 (expect 0) |   [PASS] L3 sanitize redacts secret key and e-mail\n  [PASS] L3 sanitize leaves a visible [REDACTED] marker\n------------------------------------------------------------\n[summary] 6/6 checks passed — PASS",
+          "step": "security/prompt_injection_defense.py",
+          "tree": "HEAD@41f4ab3",
+          "why": "Security self-test must be able to report a count, not just print a demo."
+        },
+        {
+          "id": "mcp-smoke",
+          "ok": true,
+          "status": "pass",
+          "detail": "rc=0 (expect 0) |     judge_change verdict = hold\n--- req id=4 -> resp ---\n{\"jsonrpc\": \"2.0\", \"id\": 4, \"error\": {\"code\": -32003, \"message\": \"permission denied: 'merge_decision' not allowed for role=read-only\"}}\nSMOKE: PASS",
+          "step": "lgd_engine/mcp_smoke.py",
+          "tree": "HEAD@41f4ab3",
+          "why": "MCP surface smoke."
+        }
+      ]
+    },
+    {
+      "id": "docs-claims",
+      "title": "Numbers in the docs match what the tree produces",
+      "ok": true,
+      "findings": [
+        {
+          "id": "readme-gate-count",
+          "ok": true,
+          "status": "pass",
+          "detail": "README says 'six' (6); gate_bot runs 6"
+        },
+        {
+          "id": "readme-demo1-count",
+          "ok": true,
+          "status": "pass",
+          "detail": "README 5/5, run 5/5"
+        },
+        {
+          "id": "readme-demo2-count",
+          "ok": true,
+          "status": "pass",
+          "detail": "README 26/26, run 26/26"
+        }
+      ]
+    },
+    {
+      "id": "relative-links",
+      "title": "File paths named in the docs exist",
+      "ok": true,
+      "findings": [
+        {
+          "id": "relative-links",
+          "ok": true,
+          "status": "pass",
+          "detail": "19 referenced path(s) all exist; declared non-files: ['.cursor/mcp.json (example destination the reader creates inside their own project, not a file this repo ships)', 'claude_desktop_config.json (example destination in the Claude Desktop app config directory, not a repo file)']"
+        }
+      ]
+    },
+    {
+      "id": "citation",
+      "title": "Citation metadata is complete and honest",
+      "ok": true,
+      "findings": [
+        {
+          "id": "cff-required",
+          "ok": true,
+          "status": "pass",
+          "detail": "all required keys present"
+        },
+        {
+          "id": "cff-version",
+          "ok": true,
+          "status": "pass",
+          "detail": "CITATION 0.1.0 vs pyproject 0.1.0"
+        },
+        {
+          "id": "cff-doi",
+          "ok": true,
+          "status": "pass",
+          "detail": "no DOI claimed (acceptable before Zenodo mints one)"
+        },
+        {
+          "id": "cff-placeholder",
+          "ok": true,
+          "status": "pass",
+          "detail": "placeholders are labelled 'do not cite'"
+        },
+        {
+          "id": "zenodo-precedence",
+          "ok": true,
+          "status": "pass",
+          "detail": "no .zenodo.json, so CITATION.cff is what Zenodo reads"
+        }
+      ]
+    },
+    {
+      "id": "license",
+      "title": "LICENSE / pyproject / CITATION agree",
+      "ok": true,
+      "findings": [
+        {
+          "id": "license-text",
+          "ok": true,
+          "status": "pass",
+          "detail": "Apache text found in LICENSE"
+        },
+        {
+          "id": "notice",
+          "ok": true,
+          "status": "pass",
+          "detail": "NOTICE present"
+        },
+        {
+          "id": "license-agreement",
+          "ok": true,
+          "status": "pass",
+          "detail": "pyproject Apache-2.0=True, CITATION Apache-2.0=True"
+        },
+        {
+          "id": "license-path",
+          "ok": true,
+          "status": "pass",
+          "detail": "README's `LICENSE` path resolves"
+        }
+      ]
+    },
+    {
+      "id": "public",
+      "title": "The default branch is readable without a token",
+      "ok": true,
+      "findings": [
+        {
+          "id": "public-anonymous",
+          "ok": true,
+          "status": "pass",
+          "detail": "anonymous GET https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md -> HTTP 200",
+          "url": "https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md"
+        }
+      ]
+    },
+    {
+      "id": "machine",
+      "title": "Agent-facing entry points exist and parse",
+      "ok": true,
+      "findings": [
+        {
+          "id": "llms-txt",
+          "ok": true,
+          "status": "pass",
+          "detail": "135 lines, runnable command=True"
+        },
+        {
+          "id": "json:.cursor-plugin/plugin.json",
+          "ok": true,
+          "status": "pass",
+          "detail": "parses"
+        },
+        {
+          "id": "json:review/registry.json",
+          "ok": true,
+          "status": "pass",
+          "detail": "parses"
+        },
+        {
+          "id": "openapi",
+          "ok": true,
+          "status": "pass",
+          "detail": "openapi.yaml present"
+        }
+      ]
+    }
+  ]
+}

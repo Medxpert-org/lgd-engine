@@ -35,7 +35,7 @@ Verify the whole gate before trusting it (stock Python 3.9+, stdlib only):
 # Any OS
 python demo1/test_demo1.py       # change-gate gold tests
 python demo2/test_demo2.py       # five-seat review tests
-python framework/gate_bot.py     # CI gate (four checks)
+python framework/gate_bot.py     # CI gate (six checks)
 ```
 
 One decision from a case JSON:
@@ -207,12 +207,14 @@ for LLM Applications (2025) to concrete defenses in this tree;
 ## Verified test evidence (2026-11-03)
 
 - demo1 change-gate gold tests: **5/5 PASS**; demo2 five-seat review: **26/26 PASS**
-- `framework/gate_bot.py`: **4/4 checks PASS**; `security/security_scan.py`: **clean, 0 findings**
+- `framework/gate_bot.py`: **6/6 checks PASS**; `security/security_scan.py`: **clean, 0 findings**
 - MCP smoke (tools list + judge + RBAC deny): **PASS**; SSE smoke: **6/6 event types**
 - GitHub Actions: `gate` CI and `CodeQL` **green on main**; Dependabot enabled;
   branch protection active (PR required + gate status check)
-- Independent red-team / eval: 7-dimension security review closed with no open
-  high-severity findings (LGD-EVAL-2026-009)
+- Pre-release review: `release-prep/PRE_RELEASE_REVIEW.md` — red-team, outsider and
+  external-AI results, open findings included. The earlier "7-dimension review
+  closed, no open high-severity findings (LGD-EVAL-2026-009)" line was removed:
+  no report artifact ever backed it, and the S7 red team contradicted it.
 
 ## Repository map
 

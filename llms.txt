@@ -87,7 +87,11 @@ reproducible in CI.
 - **REST / OpenAPI 3.1** — `docs/openapi.yaml` (`/v1/judge`, `/v1/decisions`);
   validate: `python docs/validate_openapi.py` (17/17).
 - **SSE event stream** — `demo2/sse_server.py` tails `demo2/events.jsonl`;
-  `python -m demo2.sse_server --smoke` self-hosts, asserts all 6 event types, exits.
+  `python -m demo2.sse_server --smoke` self-hosts and asserts all 6 event types.
+  Precondition: the log must already hold a pass **and** a hold path —
+  `python -m demo2.session --case demo2/case_gate_report.json --auto` then
+  `... case_gate_report_critical.json --auto`. On an empty log the smoke fails
+  and prints exactly these two commands.
 - **MCP server (stdio)** — `lgd_engine/mcp_server.py`; `python lgd_engine/mcp_smoke.py`
   exercises initialize / tools / judge / RBAC-deny. Local-trust adapter: it trusts
   the caller's role claim; treat it as local, not a network auth boundary.
@@ -101,7 +105,7 @@ reproducible in CI.
 - demo1 change-gate gold tests: **5/5 PASS**
 - demo1 ecosystem map self-test: **PASS**
 - demo2 five-seat review tests: **26/26 PASS**
-- `framework/gate_bot.py` (CI gate): **4/4 checks PASS** — including adversarial
+- `framework/gate_bot.py` (CI gate): **6/6 checks PASS** — including adversarial
   re-checks: 150-byte / MIT-text LICENSE rejected, manifest entry path-traversal
   rejected, `github_pat_` / PEM secret shapes detected
 - `security/security_scan.py`: **clean, 0 findings**
@@ -111,8 +115,8 @@ reproducible in CI.
 - SSE smoke: **6/6 event types received**
 - GitHub Actions: `gate` CI **success on main**; CodeQL **success**; Dependabot
   enabled; branch protection active (PR required + gate status check).
-- Red-team / LGD-Eval review: 7-dimension security review and independent eval
-  closed with no open high-severity findings (LGD-EVAL-2026-009).
+- Pre-release review: `release-prep/PRE_RELEASE_REVIEW.md` — red-team, outsider and
+  external-AI results, open findings included. No claim of a closed review is made.
 
 ## Key files & links
 

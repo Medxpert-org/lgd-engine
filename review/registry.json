@@ -1,0 +1,222 @@
+{
+  "version": 1,
+  "updated": "2026-11-04",
+  "note": "Every URL here is a claim we make to an outside reader. 'marker' is text that must be present in the fetched body, so a soft-404 or a login wall cannot pass as a live link.",
+  "external_standards": [
+    {
+      "id": "itu-a1",
+      "url": "https://www.itu.int/en/ITU-T/wtsa12/Documents/resolutions/ITU-T%20A.1.pdf",
+      "marker": "",
+      "why": "ITU-T A.1: contributions reach TSB 12 calendar days before a meeting; material submitted as a contribution is presumed to carry no distribution restrictions; software contributions need a copyright and licensing declaration.",
+      "applies_to": "any ITU-T contribution or TD we submit",
+      "marker_mode": "pdf"
+    },
+    {
+      "id": "itu-ipr",
+      "url": "https://www.itu.int/en/ITU-T/ipr/Pages/policy.aspx",
+      "marker": "patent",
+      "why": "Common Patent Policy ITU-T/ITU-R/ISO/IEC: early disclosure, patent statement and licensing declaration form.",
+      "applies_to": "contributions touching possibly essential claims"
+    },
+    {
+      "id": "itu-templates",
+      "url": "https://www.itu.int/en/ITU-T/studygroups/Pages/templates.aspx",
+      "marker": "template",
+      "why": "A contribution that does not use the study group template is returned.",
+      "applies_to": "every submitted contribution"
+    },
+    {
+      "id": "w3c-cg-about",
+      "url": "https://www.w3.org/community/about",
+      "marker": "Community Group",
+      "why": "Community Groups are open to all, free, and require public communications; reports are not W3C standards.",
+      "applies_to": "any Community Group submission"
+    },
+    {
+      "id": "w3c-cg-faq",
+      "url": "https://www.w3.org/community/faq",
+      "marker": "Contributor License Agreement",
+      "why": "Joining a group means signing the CLA; most groups take contributions as GitHub pull requests; the contribution record matters for IPR.",
+      "applies_to": "code or text contributed to a Community Group"
+    },
+    {
+      "id": "zenodo-zenodo-json",
+      "url": "https://help.zenodo.org/docs/github/describe-software/zenodo-json",
+      "marker": "CITATION.cff",
+      "why": "If both .zenodo.json and CITATION.cff exist, Zenodo uses .zenodo.json and ignores CITATION.cff for the release archive.",
+      "applies_to": "release metadata consistency"
+    },
+    {
+      "id": "zenodo-describe-software",
+      "url": "https://help.zenodo.org/docs/github/describe-software/",
+      "marker": "CITATION.cff",
+      "why": "Zenodo extends its schema with CodeMeta fields and supports CITATION.cff / .zenodo.json for GitHub releases.",
+      "applies_to": "release metadata"
+    },
+    {
+      "id": "force11-principles",
+      "url": "https://force11.org/info/software-citation-principles-published-2016/",
+      "marker": "Software Citation Principles",
+      "why": "Six principles: importance, credit and attribution, unique identification, persistence, accessibility, specificity.",
+      "applies_to": "how the software is cited",
+      "external_vantage": {
+        "method": "search-provider fetch (returned the page body, incl. its title and principle list)",
+        "verified_at": "2026-11-04",
+        "evidence": "provider returned the published page text for this URL; the same text was reachable by direct fetch twice (200 in 6.0s / 2.1s) but the host resets this machine's connection intermittently"
+      }
+    },
+    {
+      "id": "force11-doi",
+      "url": "https://doi.org/10.7717/peerj-cs.86",
+      "marker": "",
+      "why": "The published FORCE11 Software Citation Principles paper (PeerJ CS 2:e86).",
+      "applies_to": "citation of this principle set",
+      "doi_only": true
+    },
+    {
+      "id": "fair4rs-doi",
+      "url": "https://doi.org/10.15497/RDA00068",
+      "marker": "",
+      "why": "FAIR Principles for Research Software (FAIR4RS) v1.0, RDA/ReSA/FORCE11.",
+      "applies_to": "machine-actionable reuse",
+      "doi_only": true
+    },
+    {
+      "id": "cff-spec",
+      "url": "https://citation-file-format.github.io/",
+      "marker": "Citation File Format",
+      "why": "CITATION.cff schema and tooling; GitHub renders a 'Cite this repository' button from it.",
+      "applies_to": "citation metadata format"
+    },
+    {
+      "id": "datacite-schema",
+      "url": "https://schema.datacite.org/",
+      "marker": "Metadata Schema",
+      "why": "Metadata schema behind every 10.5281 DOI Zenodo mints.",
+      "applies_to": "DOI metadata"
+    },
+    {
+      "id": "github-citation-files",
+      "url": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-citation-files",
+      "marker": "CITATION",
+      "why": "GitHub surfaces CITATION.cff from the default branch as 'Cite this repository'.",
+      "applies_to": "how an outside reader gets a citation"
+    }
+  ],
+  "own_surfaces": [
+    {
+      "id": "repo-readme-raw",
+      "url": "https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md",
+      "marker": "LGD Engine",
+      "why": "Anonymous read of the default branch — proves the repository is public without hitting the API rate limit.",
+      "vantage": "external_required"
+    },
+    {
+      "id": "repo-llms-txt",
+      "url": "https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/llms.txt",
+      "marker": "LGD Engine",
+      "why": "The agent-facing entry point must be readable anonymously too.",
+      "vantage": "external_required"
+    },
+    {
+      "id": "portal",
+      "url": "https://zhaoxinghua09-cell.github.io/lgd-hub/",
+      "marker": "",
+      "why": "Repository homepage target; an outside reader lands here first.",
+      "vantage": "local_ok"
+    }
+  ],
+  "relative_link_exceptions": [
+    {
+      "path": ".cursor/mcp.json",
+      "why": "example destination the reader creates inside their own project, not a file this repo ships"
+    },
+    {
+      "path": "claude_desktop_config.json",
+      "why": "example destination in the Claude Desktop app config directory, not a repo file"
+    }
+  ],
+  "outsider_steps": [
+    {
+      "id": "quickstart-verdict",
+      "cmd": [
+        "-m",
+        "demo1.change_gate",
+        "--case",
+        "demo1/cases/case01_red_pma_process.json"
+      ],
+      "expect_rc": 2,
+      "expect_contains": [
+        "VERDICT",
+        "reject"
+      ],
+      "why": "The first command in the README. Exit code is the verdict, so 2 is correct here, not a failure."
+    },
+    {
+      "id": "demo1-gold",
+      "cmd": [
+        "demo1/test_demo1.py"
+      ],
+      "expect_rc": 0,
+      "expect_contains": [
+        "5/5"
+      ],
+      "why": "README claims 5/5."
+    },
+    {
+      "id": "demo2-gold",
+      "cmd": [
+        "demo2/test_demo2.py"
+      ],
+      "expect_rc": 0,
+      "expect_contains": [
+        "26/26"
+      ],
+      "why": "README claims 26/26."
+    },
+    {
+      "id": "gate-bot",
+      "cmd": [
+        "framework/gate_bot.py"
+      ],
+      "expect_rc": 0,
+      "expect_contains": [
+        "RESULT: PASS"
+      ],
+      "why": "README tells the contributor to run this before opening a PR."
+    },
+    {
+      "id": "openapi",
+      "cmd": [
+        "docs/validate_openapi.py"
+      ],
+      "expect_rc": 0,
+      "expect_contains": [
+        "VALIDATION OK"
+      ],
+      "why": "Contract validation must pass without extra install."
+    },
+    {
+      "id": "injection-selftest",
+      "cmd": [
+        "security/prompt_injection_defense.py"
+      ],
+      "expect_rc": 0,
+      "expect_contains": [
+        "[summary]"
+      ],
+      "why": "Security self-test must be able to report a count, not just print a demo."
+    },
+    {
+      "id": "mcp-smoke",
+      "cmd": [
+        "lgd_engine/mcp_smoke.py"
+      ],
+      "expect_rc": 0,
+      "expect_contains": [
+        "PASS"
+      ],
+      "why": "MCP surface smoke."
+    }
+  ]
+}
