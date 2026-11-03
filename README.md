@@ -268,7 +268,9 @@ powershell -File framework/gate.ps1  # Windows wrapper
 
 Checks: offline gold tests, LICENSE/NOTICE present, no plaintext keys,
 manifest syntax (including adversarial re-checks: path-traversal manifest
-entries and known secret shapes are rejected).
+entries and known secret shapes are rejected), and README count drift (the
+`11 stages` / `13 domains` claims above are re-counted against their tables
+on every run).
 
 `security/security_baseline.md` maps OWASP Top 10 (2021) and OWASP Top 10
 for LLM Applications (2025) to concrete defenses in this tree;
