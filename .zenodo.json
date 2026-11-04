@@ -1,0 +1,14 @@
+{
+  "title": "LGD Engine — Lifecycle Governance Doctrine gate engine",
+  "upload_type": "software",
+  "description": "Reference implementation of the LGD three-law gate (有籍/有证/有门禁) for medical-device change control.",
+  "creators": [
+    { "name": "Zhao, Xinghua", "affiliation": "LGD" }
+  ],
+  "access_right": "open",
+  "license": "MIT",
+  "keywords": ["governance", "medical-device", "ITU-FG-TIDA", "LGD"],
+  "related_identifiers": [
+    { "identifier": "https://github.com/Medxpert-org/lgd-engine", "relation": "isSourceOf" }
+  ]
+}
