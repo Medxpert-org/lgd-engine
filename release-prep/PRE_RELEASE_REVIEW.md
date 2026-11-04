@@ -266,8 +266,28 @@ three reasons that no patch can close:
 
 The earlier drafts of this section said push was blocked and the branch was
 `ahead 4` — that was true when written and is false now, so it is replaced rather
-than left to rot: all seven commits are on the remote, and `parity-pushed` is the
+than left to rot: all nine commits are on the remote, and `parity-pushed` is the
 finding that proves it rather than the sentence that claims it.
+
+### Verified from outside — 2026-11-04
+
+Not "it is on GitHub" but "here is what a stranger gets from it". A fresh shallow
+clone of the pushed branch, over the transport a stranger uses, was handed only
+the repository:
+
+```bash
+git clone --depth 1 --branch fix/s6-review-20261104 \
+    https://github.com/Medxpert-org/lgd-engine.git
+# HEAD = 103105a
+python review/redteam_probe.py --selfcheck            # 22/22 probes PASS, SELFCHECK PASS
+python review/pre_release_review.py --selftest        # SELFTEST PASS, 14 mutants
+# review/report.html -> MACHINE · FAIL / RELEASE · BLOCKED
+```
+
+Every number in that list came from the clone, not from this machine: no path in
+the tree points back here, and the two harnesses need nothing that is not in the
+repository. The one question the clone cannot settle is `parity-sha` — only the
+owner merging it settles that, which is item 1 above.
 
 Re-run before any release:
 
