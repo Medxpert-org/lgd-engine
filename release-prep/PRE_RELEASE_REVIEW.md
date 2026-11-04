@@ -37,7 +37,7 @@ so a soft-404 or a login wall cannot pass as a live link.
 
 | Seat | What it does | Independence |
 |---|---|---|
-| **Automated gate** (`review/pre_release_review.py`) | 11 checks, exit 1 on anything that is not a pass, `--selftest` proves each check can fail | runs against a clean export of the committed tree, not the working copy |
+| **Automated gate** (`review/pre_release_review.py`) | 12 checks, exit 1 on anything that is not a pass, `--selftest` proves each check can fail | runs against a clean export of the committed tree, not the working copy |
 | **Probe harness** (`review/redteam_probe.py`) | 22 probes over the real judges, MCP surface and CLI; `--selfcheck` proves each probe can fail | the probes run against mutants as well as the product, so a probe that measures nothing fails the run |
 | **Independent red team** (separate agent seat, S7 round) | injection, tool-permission boundary, forged evidence, gate mutation, exit-code semantics, publish integrity | did not write the code under test; reported FAIL |
 | **Outsider** (separate agent seat, no project context, S7 round) | copies the repo, reads only `README.md` + `llms.txt`, follows them literally | was told not to read source to guess usage |
@@ -80,8 +80,9 @@ Two honesty notes about this round:
 | `public` | the default branch is readable without a token | yes — a nonexistent repo |
 | `machine` | llms.txt and JSON/YAML entry points exist and parse | yes — llms.txt removed |
 | `redteam` | the judgment core survives the probes, and every probe can fail | yes — one sabotaged probe is reported VACUOUS |
+| `identity` | the public wording claims nothing about standing we cannot support: no reverse assertion about entity status, no self-claim to be a standard, a copyright holder that reads as a person, a participation docket that states the identity and names the channels that require a legal entity, and no brand-as-business reference in public docs | yes — five mutants, one per wording |
 
-`--selftest` runs all fourteen mutations and requires a failing finding from each:
+`--selftest` runs all nineteen mutations and requires a failing finding from each:
 `SELFTEST PASS` is the output, and the selftest is itself a check that can fail.
 
 Latest machine output: `review/evidence/pre_release_latest.json` (the run's own
@@ -146,6 +147,7 @@ probe `E4`.
 | R20 | **`parity` answered two different questions with one verdict.** "Nobody can fetch what we reviewed" and "the review is not merged yet" are different failures with different owners — a stranger cannot *see* the work vs. a stranger sees an older tree. Reporting one number let the first hide inside the second | `origin/main behind HEAD` — one failing finding, no way to tell `ahead 7` (unpushed) from `behind 17` (unmerged) | split into `parity-pushed` (is the reviewed commit on its upstream?) and `parity-sha` (does the default branch carry it?). On `87cf070`: pushed **PASS**, sha **FAIL**. Mutant `parity/unpushed` builds a repo whose only commit never reached `origin/main` and requires the *fail* wording — a `blocked` finding does not count as detection |
 | R21 | **The self-test was slow enough to be skipped**, which is the same as absent. `--selftest` spent the release path's `4 × 30 s` retry budget proving that a deliberately dead URL is dead: 3 m 22 s, killed by its own wrapper twice during this session | `--selftest` → >3 m, no output for the first 2 m (network retries on `example.invalid`) | `--selftest` lowers `RETRIES`/`TIMEOUT` to `1`/`8 s` for its own mutants only, with the reason in a comment: the self-test asks "does this check detect a defect?", not "does it tolerate a flaky upstream?". **49 s**, same mutants, same verdict |
 | R22 | **A stale count nobody re-counted.** `CHANGELOG.md` said "20 adversarial probes" for two commits after the harness reached 22 — the only place the docs-claims check did not look. `gate_bot` check 5 re-counts the README's stage/domain counts; nothing re-counted the probe count | `grep "probes" CHANGELOG.md` → `20`; harness registers 22 | `docs-claims` now re-counts every "N probes" claim in `README.md`, `llms.txt` and `CHANGELOG.md` against the `@probe` registrations; mutant `docs-claims/probe-count` edits the CHANGELOG to `999` and requires a failure. The check is literal by design — it cannot tell a claim from a quotation — so history is written out in words |
+| R23 | **Internal business reasoning in a public tree.** `framework/adapter-roadmap.md` justified its P0 priorities with a note about the business direction of a brand — an internal product decision, published. A reader of a standards contribution learns from that what our commercial priorities are, which is exactly the line the participation rules draw around third-party submissions | one internal note in `framework/adapter-roadmap.md`, found by scanning the public docs for the brand name | reworded to a technical justification, and **mechanised**: check 12 `identity` fails on any brand reference outside the repository URL (mutant `identity/brand-in-docs`), on any reverse assertion about entity status, on any self-claim to be a standard, on a corporate copyright holder, and on a missing participation docket. The check is literal, so even an example command quoting the name trips it |
 
 ### Still open (not defects in the gate; they are release decisions)
 
@@ -233,6 +235,30 @@ Three items are escalated rather than decided here, because they are outside wha
 a code review can settle: which patent declaration to file, who holds the CLA, and
 whether to submit as a document contribution or a software contribution.
 
+### What we may submit, and as whom
+
+The participation rules are not advice; they decide whether a submission is
+accepted at all, so they are recorded and gated rather than remembered:
+
+- **`release-prep/STANDARDS_PARTICIPATION_DOCKET.md`** — the channel table (what
+  an individual may use, and what requires a legal entity we do not claim), the
+  in-flight window ledger, and the twelve red lines with this round's verdict on
+  each. It is the progress source of truth, not a narrative.
+- **`contributions/itu-fg-tida/TD-executable-assurance-gates.md`** — a first
+  contribution drafted to the shape a focus group takes: plain language first,
+  then four clauses written as text that could be pasted into a draft, then the
+  commands and exit statuses that show the clauses can be executed, then what the
+  contribution does *not* cover. It claims no standing, carries no DOI, and points
+  at the repository in a single line instead of pasting our publication into
+  someone else's process repository.
+- **Check 12 `identity`** keeps the wording honest mechanically, because wording
+  is the part that rots silently.
+
+The one action this repository cannot take is the submission itself: it is
+irreversible, it is made in a named individual's capacity, and the deadline is
+still unknown pending the secretariat's answer. That stays with the person whose
+name it would carry.
+
 ## 7. Verdict
 
 **Not releasable yet — and this time the reason is not the code.**
@@ -280,7 +306,7 @@ git clone --depth 1 --branch fix/s6-review-20261104 \
     https://github.com/Medxpert-org/lgd-engine.git
 # HEAD = 103105a
 python review/redteam_probe.py --selfcheck            # 22/22 probes PASS, SELFCHECK PASS
-python review/pre_release_review.py --selftest        # SELFTEST PASS, 14 mutants
+python review/pre_release_review.py --selftest        # SELFTEST PASS, 19 mutants
 # review/report.html -> MACHINE · FAIL / RELEASE · BLOCKED
 ```
 
@@ -294,7 +320,7 @@ Re-run before any release:
 ```bash
 python review/redteam_probe.py --selfcheck           # 22 probes, each proven able to fail
 python review/pre_release_review.py --json review/evidence/pre_release_latest.json
-python review/pre_release_review.py --selftest       # proves all 11 checks (14 mutants) can fail
+python review/pre_release_review.py --selftest       # proves all 12 checks (19 mutants) can fail
 python review/pre_release_review.py --only legal     # the legal artefacts, substance not presence
 python framework/gate_bot.py                         # 6 checks
 python docs/validate_openapi.py                      # contract/code lockstep, 20/20

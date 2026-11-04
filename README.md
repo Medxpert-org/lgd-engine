@@ -328,6 +328,12 @@ for LLM Applications (2025) to concrete defenses in this tree;
   open**. Earlier revisions of this file claimed a closed 7-dimension
   review (LGD-EVAL-2026-009) with no artifact behind it; that claim was
   removed rather than restated.
+- Standards participation: `release-prep/STANDARDS_PARTICIPATION_DOCKET.md` states
+  which channels an individual may use, which require a legal entity we do not
+  claim, and the red lines we hold ourselves to; the first contribution draft is
+  `contributions/itu-fg-tida/TD-executable-assurance-gates.md` — four clauses, each
+  paired with a command and the exit status it produces. **No submission has been
+  made**, and the docket says so rather than implying progress.
 
 ## Repository map
 

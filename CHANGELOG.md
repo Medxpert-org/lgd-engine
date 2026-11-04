@@ -21,7 +21,7 @@ into `main` ahead of the public 0.1 release.
   requires it to fail there; a probe that survives its own mutant is reported
   VACUOUS and fails the run. The harness is wired into the pre-release review
   as check 9 `redteam`.
-- `review/pre_release_review.py` — the eleven-check pre-release gate, each check
+- `review/pre_release_review.py` — the twelve-check pre-release gate, each check
   paired with a mutant that must make it fail (`--selftest`). `links`, `outsider`,
   `docs-claims`, `parity`, `relative-links`, `citation`, `license`, `legal`,
   `public`, `machine`, `redteam`. It exits non-zero on any finding that is not a

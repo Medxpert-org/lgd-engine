@@ -126,6 +126,10 @@ reproducible in CI.
   enabled; branch protection active (PR required + gate status check).
 - Pre-release review: `release-prep/PRE_RELEASE_REVIEW.md` — red-team, outsider and
   external-AI results, open findings included. No claim of a closed review is made.
+- Standards participation: `release-prep/STANDARDS_PARTICIPATION_DOCKET.md` (usable
+  channels, in-flight window, twelve red lines) and
+  `contributions/itu-fg-tida/TD-executable-assurance-gates.md` (contribution draft).
+  Nothing has been submitted; the docket is the progress source of truth.
 
 ## Key files & links
 

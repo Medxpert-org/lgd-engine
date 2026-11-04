@@ -517,6 +517,18 @@ def check_docs_claims(root: Path) -> list[dict]:
         out.append(finding("readme-demo2-count", ok, "pass" if ok else "fail",
                            f"README {claimed}, run {actual}"))
 
+    # The review's own check count is a number in the docs like any other, and it
+    # drifted the moment a check was added — the same failure as the probe count,
+    # so it gets the same treatment: compare against the list, not against memory.
+    review_doc = read(root / "release-prep" / "PRE_RELEASE_REVIEW.md")
+    m = re.search(r"`review/pre_release_review\.py`\)\s*\|\s*(\d+)\s+checks", review_doc)
+    if m:
+        claimed = int(m.group(1))
+        real = len(CHECKS)
+        out.append(finding("docs-check-count", claimed == real,
+                           "pass" if claimed == real else "fail",
+                           f"PRE_RELEASE_REVIEW says {claimed} checks; CHECKS defines {real}"))
+
     # Every "N probes" claim in every doc must equal the harness's own
     # registrations. The CHANGELOG said "20 adversarial probes" for two commits
     # after the harness reached 22 and nothing re-counted it — the exact failure
@@ -815,6 +827,106 @@ def check_legal(root: Path) -> list[dict]:
     return out
 
 
+# ---------------------------------------------------------------------------
+# 12. identity — the wording rules a standards contribution is judged by
+# ---------------------------------------------------------------------------
+# A contribution is read as a claim about who is speaking. Three wordings carry
+# risk that no licence file can cure, so each is checked mechanically rather than
+# trusted to review:
+#   · a *reverse* assertion about entity status ("not a registered corporate
+#     entity") — falsifiable, and the correction is worse than the omission;
+#   · a self-claim to be a standard ("an international standard for ...") — the
+#     forum decides that, we do not;
+#   · a corporate suffix on the copyright holder — a standing claim in the one
+#     place a reader looks for standing.
+REVERSE_ENTITY = re.compile(
+    r"not a registered (?:corporate |legal )?entity|not a legal entity|"
+    r"非注册实体|不是法人|we are not a company|no registered company", re.I)
+STANDARD_CLAIM = re.compile(
+    r"\b(?:is|are|becomes?)\s+(?:the\s+|an?\s+)?international standard\b|"
+    r"\bthe international standard for\b|国际标准（我们|我方）|our standard\b", re.I)
+CORPORATE_SUFFIX = re.compile(
+    r"\b(?:Inc|Ltd|LLC|GmbH|Corp|Corporation|Co)\b\.?|有限公司|股份有限公司")
+
+
+def check_identity(root: Path) -> list[dict]:
+    out: list[dict] = []
+
+    docs = []
+    for p in sorted(root.rglob("*")):
+        if ".git" in p.parts or "__pycache__" in p.parts:
+            continue
+        if p.suffix.lower() in (".md", ".txt", ".cff") and p.is_file():
+            docs.append(p)
+
+    def hits(pattern):
+        found = []
+        for p in docs:
+            for i, line in enumerate(read(p).splitlines(), 1):
+                if pattern.search(line):
+                    found.append((p.relative_to(root).as_posix(), i, line.strip()[:90]))
+        return found
+
+    bad = hits(REVERSE_ENTITY)
+    out.append(finding("identity-no-reverse-assertion", not bad,
+                       "pass" if not bad else "fail",
+                       "no document asserts what we are not, entity-wise"
+                       if not bad else
+                       f"{len(bad)} reverse assertion(s) about entity status, e.g. "
+                       f"{bad[0][0]}:{bad[0][1]} — {bad[0][2]}"))
+
+    bad = hits(STANDARD_CLAIM)
+    out.append(finding("identity-no-standard-claim", not bad, "pass" if not bad else "fail",
+                       "no document claims to be a standard"
+                       if not bad else
+                       f"{len(bad)} self-claim(s) to standard status, e.g. "
+                       f"{bad[0][0]}:{bad[0][1]} — {bad[0][2]}"))
+
+    notice = read(root / "NOTICE")
+    if not notice:
+        out.append(finding("identity-notice-holder", False, "fail", "NOTICE missing"))
+    else:
+        line = next((l for l in notice.splitlines() if "copyright" in l.lower()), "")
+        suffix = CORPORATE_SUFFIX.search(line)
+        out.append(finding("identity-notice-holder", not suffix and bool(line),
+                           "pass" if line and not suffix else "fail",
+                           f"copyright holder reads as a person: {line.strip()[:70]}"
+                           if line and not suffix else
+                           (f"NOTICE claims a corporate holder: {line.strip()[:70]}"
+                            if line else "NOTICE has no copyright line")))
+
+    docket = root / "release-prep" / "STANDARDS_PARTICIPATION_DOCKET.md"
+    text = read(docket)
+    if not text:
+        out.append(finding("identity-docket", False, "fail",
+                           "release-prep/STANDARDS_PARTICIPATION_DOCKET.md missing — "
+                           "no record of which channels we may use, as whom"))
+    else:
+        need = {"individual capacity": "the individual-capacity wording",
+                "independent expert": "the independent-expert identity",
+                "Individual": "the submitter-type rule",
+                "SAC/TC10": "the channels that require a legal entity, named as unusable"}
+        missing = [why for k, why in need.items() if k not in text]
+        out.append(finding("identity-docket", not missing, "pass" if not missing else "fail",
+                           "docket states identity, submitter type and the unusable channels"
+                           if not missing else
+                           f"docket is missing: {', '.join(missing)}"))
+
+    # The brand is a project name, not a business unit. A reader of the public
+    # tree should not learn our commercial priorities from it.
+    brand = []
+    for p in docs:
+        for i, line in enumerate(read(p).splitlines(), 1):
+            if "medxpert" in line.lower() and not re.search(r"medxpert-org|medxpert\.cn", line, re.I):
+                brand.append((p.relative_to(root).as_posix(), i, line.strip()[:90]))
+    out.append(finding("identity-brand-in-docs", not brand, "pass" if not brand else "fail",
+                       "the public docs carry no brand-as-business reference"
+                       if not brand else
+                       f"{len(brand)} brand reference(s) outside the repository URL, e.g. "
+                       f"{brand[0][0]}:{brand[0][1]} — {brand[0][2]}"))
+    return out
+
+
 CHECKS = [
     ("links", "Every cited URL resolves and carries its expected text", check_links),
     ("outsider", "The committed tree runs the documented commands verbatim", check_outsider),
@@ -830,6 +942,8 @@ CHECKS = [
     ("machine", "Agent-facing entry points exist and parse", check_machine),
     ("redteam", "The judgment core survives adversarial probes, and each probe can fail",
      check_redteam),
+    ("identity", "The public wording claims nothing about standing that we cannot support",
+     check_identity),
 ]
 
 
@@ -865,6 +979,11 @@ def run(root: Path, only: str | None, tree: str) -> dict:
         "root": ".",
         "commit": _head_sha(root),
         "branch": _head_branch(root),
+        # The checks read the working tree, but the label above names a commit.
+        # When those two disagree the evidence would describe something that is
+        # not in the repository, so the disagreement is recorded instead of being
+        # left for a reader to discover.
+        "dirty": bool(_git(root, "status", "--porcelain")),
         "summary": {"checks": len(results), "findings": total,
                     "failed": failed, "blocked": blocked,
                     "verdict": verdict,
@@ -939,6 +1058,11 @@ def print_report(rep: dict) -> None:
 def _clone(src: Path, dest: Path) -> Path:
     shutil.copytree(src, dest, ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"))
     return dest
+
+
+def append(path: Path, text: str) -> None:
+    """Mutant helper: add a line, keeping the rest of the document intact."""
+    path.write_text(read(path) + text, encoding="utf-8")
 
 
 def selftest(root: Path) -> int:
@@ -1084,6 +1208,30 @@ def selftest(root: Path) -> int:
                 'return True, "always fine"', 1),
             encoding="utf-8")
         expect_fail("redteam/vacuous-probe", check_redteam(t8))
+
+        # identity: five wordings, each of which a standards forum would read as a
+        # claim about standing. Every one must be caught on a copy of the tree.
+        for name, mutate in (
+            ("identity/reverse-assertion",
+             lambda t: append(t / "README.md",
+                              "\nThis project is not a registered corporate entity.\n")),
+            ("identity/standard-claim",
+             lambda t: append(t / "README.md",
+                              "\nLGD Engine is an international standard for change control.\n")),
+            ("identity/notice-holder",
+             lambda t: (t / "NOTICE").write_text(
+                 re.sub(r"(?m)^Copyright \(c\) .*$",
+                        "Copyright (c) 2026 MedXpert Ltd", read(t / "NOTICE")),
+                 encoding="utf-8")),
+            ("identity/docket",
+             lambda t: (t / "release-prep" / "STANDARDS_PARTICIPATION_DOCKET.md").unlink()),
+            ("identity/brand-in-docs",
+             lambda t: append(t / "framework" / "adapter-roadmap.md",
+                              "\n用户的 MedXpert 业务主战场。\n")),
+        ):
+            t_id = _clone(root, work / ("t_" + name.replace("/", "_")))
+            mutate(t_id)
+            expect_fail(name, check_identity(t_id))
     finally:
         shutil.rmtree(work, ignore_errors=True)
 

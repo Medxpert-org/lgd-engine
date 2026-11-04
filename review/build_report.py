@@ -205,6 +205,12 @@ def main() -> int:
                 if m:
                     probe_n = int(m.group(1))
 
+    # The checks read the working tree; the label names a commit. If those differ,
+    # say so here rather than letting the header imply the repository contains
+    # what was measured.
+    dirty_note = (" · <b>working tree was not clean when measured</b>"
+                  if rep.get("dirty") else "")
+
     doc = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -259,7 +265,7 @@ code{{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgro
   <div class="eyebrow">Pre-release review · generated {esc(when)}</div>
   <h1>lgd-engine — can an outside reader reach it, run it, and verify it?</h1>
   <div class="sub">Repository <span class="mono">Medxpert-org/lgd-engine</span> · branch
-  <span class="mono">fix/s6-review-20261104</span> · commit <span class="mono">{esc(rep.get("commit",""))}</span></div>
+  <span class="mono">fix/s6-review-20261104</span> · commit <span class="mono">{esc(rep.get("commit",""))}</span>{dirty_note}</div>
 </header>
 
 <div class="verdict">

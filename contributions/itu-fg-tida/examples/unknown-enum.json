@@ -1,0 +1,18 @@
+{
+  "_purpose": "Clause C2 illustration: an enumerated field carries a value outside its known set. Expected: exit 1 (withhold), with rule R-MAJ-06-unknown-evidence_sufficiency in the reason chain — not an affirmative verdict.",
+  "case_id": "TD-C2-UNKNOWN-ENUM",
+  "device_description": "Class II lumbar interbody fusion spacer; labelling correction only, no product return. Identical to demo1/cases/case05_green_label.json except that the evidence-sufficiency field carries a value the judge cannot classify.",
+  "device_risk_class": "II",
+  "regulatory_path": "510k",
+  "change_type": "label_correction",
+  "safety_impact": "none",
+  "evidence_sufficiency": "mostly-there",
+  "recall_class": "class3",
+  "requires_submission": false,
+  "predicate_unchanged": true,
+  "source_refs": [
+    {"kind": "fda_recall", "ref": "Z-0893-2026 / Event 97862"}
+  ],
+  "expected_verdict": "hold",
+  "expected_rules": ["R-MAJ-06-unknown-evidence_sufficiency"]
+}
