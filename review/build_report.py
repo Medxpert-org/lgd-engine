@@ -176,9 +176,12 @@ def main() -> int:
     _parity = {f["id"]: f for c in checks if c["id"] == "parity" for f in c["findings"]}
     _pushed, _sha = _parity.get("parity-pushed"), _parity.get("parity-sha")
     if _pushed and _pushed["ok"] and _sha and not _sha["ok"]:
-        release_reasons = (f"the commit is pushed and fetchable, but not merged ({_sha['detail']}). "
-                           f"There is also no DOI or tag yet, and no CLA/DCO record for a "
-                           f"standards contribution")
+        # Quote the two findings rather than paraphrasing them: "pushed" here may
+        # rest on this clone's cache when the remote was unreachable, and a reader
+        # deserves to see which of the two answers they are being given.
+        release_reasons = (f"the commit is on its branch but not merged ({_sha['detail']}). "
+                           f"Push status per this run: {_pushed['detail']}. There is also no "
+                           f"DOI or tag yet, and no CLA/DCO record for a standards contribution")
     else:
         release_reasons = ("the fixes are not on a ref a stranger can fetch, there is no DOI or "
                            "tag yet, and there is no CLA/DCO record for a standards contribution")

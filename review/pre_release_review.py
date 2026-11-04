@@ -373,16 +373,45 @@ def check_parity(root: Path, ref: str = "origin/main") -> list[dict]:
     # default branch gets it without looking). Only the second one is a release
     # blocker, but a review that cannot tell them apart sends the reader to fix
     # the wrong thing.
+    #
+    # The remote is asked directly, over the transport a stranger uses. Reading
+    # refs/remotes/* instead measures this clone's last fetch: right after a push
+    # the cache still points at the previous commit, so the check would report a
+    # freshly pushed commit as unfetchable — a false accusation against the one
+    # person who just did the work.
     upstream = _git(root, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}")
     if upstream:
-        contained = (_git(root, "branch", "-r", "--contains", head) or "").split()
-        pushed = upstream in contained
-        out.append(finding("parity-pushed", pushed, "pass" if pushed else "fail",
-                           (f"reviewed commit {head[:7]} is on {upstream}: a stranger can "
-                            f"fetch exactly what was reviewed")
-                           if pushed else
-                           f"reviewed commit {head[:7]} is not on {upstream}: nobody can "
-                           f"fetch what was reviewed"))
+        remote, _, br = upstream.partition("/")
+        url = _public_url(_git(root, "remote", "get-url", remote))
+        listed = _git(root, "ls-remote", "--heads", url, br) if url else ""
+        remote_sha = (listed.split() or [""])[0]
+        if remote_sha:
+            pushed = remote_sha == head or \
+                _git_rc(root, "merge-base", "--is-ancestor", head, remote_sha) == 0
+            out.append(finding("parity-pushed", pushed, "pass" if pushed else "fail",
+                               (f"reviewed commit {head[:7]} is on {remote}/{br} "
+                                f"({url}): a stranger can fetch exactly what was reviewed")
+                               if pushed else
+                               f"{url} reports {br} at {remote_sha[:7]}, and {head[:7]} is "
+                               f"not in it: nobody can fetch what was reviewed"))
+        else:
+            # Could not ask the remote. The cache can confirm a push; it cannot
+            # disprove one — a clone that has not fetched since the push looks
+            # exactly like a clone that never pushed. Accusing the latter would be
+            # a false negative against the person who just did the work, so an
+            # unanswerable remote is BLOCKED, never a pass and never a fail.
+            cached = (_git(root, "branch", "-r", "--contains", head) or "").split()
+            if upstream in cached:
+                out.append(finding("parity-pushed", True, "pass",
+                                   f"{url} could not be reached (network/auth); this clone's "
+                                   f"cached {upstream} does contain {head[:7]}, so it was on "
+                                   f"the remote as of the last fetch"))
+            else:
+                out.append(finding("parity-pushed", False, "blocked_by_vantage",
+                                   f"{url} could not be reached and this clone's cached "
+                                   f"{upstream} does not contain {head[:7]}: whether that "
+                                   f"commit is fetchable is unverified from here "
+                                   f"(git fetch, then re-run)"))
     else:
         out.append(finding("parity-pushed", False, "blocked",
                            "HEAD has no upstream branch, so there is nothing to compare against"))
@@ -853,6 +882,32 @@ def _git(root: Path, *args: str) -> str:
         return ""
 
 
+def _git_rc(root: Path, *args: str) -> int:
+    """Exit status of a git command — for questions git answers with its exit code."""
+    try:
+        return subprocess.run(["git", "-C", str(root), *args],
+                              capture_output=True, text=True, timeout=30).returncode
+    except Exception:
+        return 1
+
+
+def _public_url(url: str) -> str:
+    """The URL a stranger would use: an ssh remote rewritten to anonymous https.
+
+    `ssh://git@host/org/repo` and `git@host:org/repo` both need keys; asking the
+    remote over them tells us what *this machine* can reach, not what the public
+    can fetch. The rewrite keeps the question honest and needs no credentials.
+    """
+    u = (url or "").strip()
+    m = re.match(r"git@([^:]+):(.+?)(?:\.git)?$", u)
+    if m:
+        return f"https://{m.group(1)}/{m.group(2)}.git"
+    m = re.match(r"ssh://git@([^/]+)/(.+?)(?:\.git)?$", u)
+    if m:
+        return f"https://{m.group(1)}/{m.group(2)}.git"
+    return u
+
+
 def _head_sha(root: Path) -> str:
     return _git(root, "rev-parse", "--short", "HEAD") or "unknown"
 
@@ -942,30 +997,36 @@ def selftest(root: Path) -> int:
         # parity-pushed: a commit that exists locally but never reached its upstream
         # must be called out. "Reviewed" and "fetchable" are different facts, and a
         # check that cannot tell them apart sends the reader to fix the wrong thing.
+        # A local bare repository stands in for the remote so the mutant answers
+        # *authoritatively* offline — a missing network must not be mistaken for
+        # the defect, nor the defect for a missing network.
+        t_remote = work / "t_remote.git"
         t_un = work / "t_unpushed"
         t_un.mkdir(parents=True)
 
-        def _g(*a):
-            return subprocess.run(["git", *a], cwd=str(t_un),
+        def _g(*a, cwd=t_un):
+            return subprocess.run(["git", *a], cwd=str(cwd),
                                   capture_output=True, text=True)
 
+        _g("init", "-q", "--bare", str(t_remote), cwd=work)
         _g("init", "-q")
         _g("config", "user.email", "selftest@example.invalid")
         _g("config", "user.name", "selftest")
-        _g("remote", "add", "origin", "https://example.invalid/none.git")
+        _g("remote", "add", "origin", str(t_remote))
         (t_un / "README.md").write_text("base\n", encoding="utf-8")
         _g("add", "-A")
         _g("commit", "-qm", "base")
-        _g("update-ref", "refs/remotes/origin/main", _g("rev-parse", "HEAD").stdout.strip())
-        _g("checkout", "-q", "-b", "work")
+        _g("push", "-q", "origin", "HEAD:refs/heads/main")
+        _g("fetch", "-q", "origin")
+        br = _g("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+        _g("config", f"branch.{br}.remote", "origin")
+        _g("config", f"branch.{br}.merge", "refs/heads/main")
         (t_un / "README.md").write_text("local only\n", encoding="utf-8")
         _g("commit", "-qam", "unpushed")
-        _g("config", "branch.work.remote", "origin")
-        _g("config", "branch.work.merge", "refs/heads/main")
         pushed = [f for f in check_parity(t_un, "origin/main") if f["id"] == "parity-pushed"]
-        # A blocked finding is not detection: assert the *fail* wording, so the
+        # A blocked finding is not detection: require the *fail* status, so the
         # mutant cannot pass by failing to set up its own premise.
-        ok = bool(pushed) and pushed[0]["status"] == "fail" and "is not on" in pushed[0]["detail"]
+        ok = bool(pushed) and pushed[0]["status"] == "fail"
         print(f"  {'PASS' if ok else 'FAIL'}  parity/unpushed: "
               + (f"{pushed[0]['status']} — {pushed[0]['detail'][:80]}" if pushed
                  else "no parity-pushed finding"))
