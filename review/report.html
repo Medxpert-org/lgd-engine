@@ -49,23 +49,23 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgrou
 </style></head><body><div class="wrap">
 
 <header>
-  <div class="eyebrow">Pre-release review · generated 2026-11-04T07:29:20+0800</div>
+  <div class="eyebrow">Pre-release review · generated 2026-11-04T08:02:42+0800</div>
   <h1>lgd-engine — can an outside reader reach it, run it, and verify it?</h1>
   <div class="sub">Repository <span class="mono">Medxpert-org/lgd-engine</span> · branch
-  <span class="mono">fix/s6-review-20261104</span> · commit <span class="mono">f402251</span></div>
+  <span class="mono">fix/s6-review-20261104</span> · commit <span class="mono">01c713e</span></div>
 </header>
 
 <div class="verdict">
   <span class="chip bad" style="font-size:14px;padding:6px 12px">MACHINE · FAIL</span>
   <div><b>FAIL</b> — at least one automated check failed on this commit. 1 failing finding(s),
-  0 blocked vantage(s), 50 findings across 11 automated checks.
-  <br><b>RELEASE · BLOCKED</b> — not because of the code: the fixes are still only on this branch, there is no DOI or tag yet, and there is no CLA/DCO record for a standards contribution.
+  0 blocked vantage(s), 52 findings across 11 automated checks.
+  <br><b>RELEASE · BLOCKED</b> — not because of the code: the commit is pushed and fetchable, but not merged (origin/main is 18 commit(s) behind HEAD (c066fd3 vs 01c713e): the published tree is not the reviewed tree until this lands on origin/main). There is also no DOI or tag yet, and no CLA/DCO record for a standards contribution.
   0 red-team item(s) still open.</div>
 </div>
 
 <div class="cards">
   <div class="card"><div class="n">11</div><div class="k">automated checks</div></div>
-  <div class="card"><div class="n">50</div><div class="k">findings</div></div>
+  <div class="card"><div class="n">52</div><div class="k">findings</div></div>
   <div class="card"><div class="n">17/17</div><div class="k">links reachable</div></div>
   <div class="card"><div class="n">22</div><div class="k">adversarial probes</div></div>
   <div class="card"><div class="n">17/17</div><div class="k">red-team items closed</div></div>
@@ -76,8 +76,8 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgrou
 <tbody>
 <tr><td class=mono>links</td><td>Every cited URL resolves and carries its expected text</td><td><span class="chip ok">PASS</span></td><td class=num>16/16</td></tr>
 <tr><td class=mono>outsider</td><td>The committed tree runs the documented commands verbatim</td><td><span class="chip ok">PASS</span></td><td class=num>7/7</td></tr>
-<tr><td class=mono>docs-claims</td><td>Numbers in the docs match what the tree produces</td><td><span class="chip ok">PASS</span></td><td class=num>3/3</td></tr>
-<tr><td class=mono>parity</td><td>The tree an outsider can fetch is the tree this review examined</td><td><span class="chip bad">FAIL</span></td><td class=num>3/4</td></tr>
+<tr><td class=mono>docs-claims</td><td>Numbers in the docs match what the tree produces</td><td><span class="chip ok">PASS</span></td><td class=num>4/4</td></tr>
+<tr><td class=mono>parity</td><td>The tree an outsider can fetch is the tree this review examined</td><td><span class="chip bad">FAIL</span></td><td class=num>4/5</td></tr>
 <tr><td class=mono>relative-links</td><td>File paths named in the docs exist</td><td><span class="chip ok">PASS</span></td><td class=num>1/1</td></tr>
 <tr><td class=mono>citation</td><td>Citation metadata is complete and honest</td><td><span class="chip ok">PASS</span></td><td class=num>5/5</td></tr>
 <tr><td class=mono>license</td><td>LICENSE / pyproject / CITATION agree</td><td><span class="chip ok">PASS</span></td><td class=num>4/4</td></tr>
@@ -85,6 +85,12 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgrou
 <tr><td class=mono>public</td><td>The default branch is readable without a token</td><td><span class="chip ok">PASS</span></td><td class=num>1/1</td></tr>
 <tr><td class=mono>machine</td><td>Agent-facing entry points exist and parse</td><td><span class="chip ok">PASS</span></td><td class=num>4/4</td></tr>
 <tr><td class=mono>redteam</td><td>The judgment core survives adversarial probes, and each probe can fail</td><td><span class="chip ok">PASS</span></td><td class=num>1/1</td></tr>
+</tbody></table>
+
+<h3>Everything that is not a pass on this commit</h3>
+<table><thead><tr><th>Check</th><th>Finding</th><th>Status</th><th>What was observed</th></tr></thead>
+<tbody>
+<tr><td class=mono>parity</td><td class=mono>parity-sha</td><td><span class="chip bad">FAIL</span></td><td>origin/main is 18 commit(s) behind HEAD (c066fd3 vs 01c713e): the published tree is not the reviewed tree until this lands on origin/main</td></tr>
 </tbody></table>
 
 <h2>2. Cited sources — every one fetched, not remembered<span class="hint">marker text must appear in the body, so a soft-404 cannot pass</span></h2>
@@ -106,7 +112,7 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgrou
 <tr><td class=mono>portal</td><td><span class="chip ok">PASS</span></td><td><a href="https://zhaoxinghua09-cell.github.io/lgd-hub/" target="_blank" rel="noopener">https://zhaoxinghua09-cell.github.io/lgd-hub/</a></td><td class=note>HTTP 200</td></tr>
 <tr><td class=mono>public-anonymous</td><td><span class="chip ok">PASS</span></td><td><a href="https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md" target="_blank" rel="noopener">https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md</a></td><td class=note>anonymous GET https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md -&gt; HTTP 200</td></tr>
 <tr><td class=mono>repo-llms-txt</td><td><span class="chip ok">PASS</span></td><td><a href="https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/llms.txt" target="_blank" rel="noopener">https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/llms.txt</a></td><td class=note>HTTP 200, marker &#x27;LGD Engine&#x27; found</td></tr>
-<tr><td class=mono>repo-readme-raw</td><td><span class="chip ok">PASS</span></td><td><a href="https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md" target="_blank" rel="noopener">https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md</a></td><td class=note>HTTP 200, marker &#x27;LGD Engine&#x27; found</td></tr>
+<tr><td class=mono>repo-readme-raw</td><td><span class="chip ok">PASS</span></td><td><a href="https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md" target="_blank" rel="noopener">https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md</a></td><td class=note>HTTP 200, marker &#x27;LGD Engine&#x27; found (curl transport)</td></tr>
 </tbody></table>
 
 <h2>3. Red team — two rounds, and what came of them<span class="hint">S7: an independent seat told to distrust the author · 2026-11-04: an executable probe harness</span></h2>
@@ -131,7 +137,7 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgrou
 <tr><td class=mono>R17</td><td>A raising rule predicate was swallowed (except: pass) — fail open; unknown enum values and a Class 2 recall outside maintenance_execution also rode out as go</td><td><span class="chip ok">FIXED</span></td><td class=note>predicate errors hold; every enumerated axis holds on an unknown value; R-MAJ-07; probes C3/C4/C5/E2</td></tr>
 </tbody></table>
 
-<h2>4. Probe matrix — the executable half of the red team<span class="hint">20 probes · authorization 2, contract 4, exit-code 1, fail-closed 9, monotonicity 2, reachability 1, regression 1, robustness 2</span></h2>
+<h2>4. Probe matrix — the executable half of the red team<span class="hint">22 probes · authorization 2, contract 4, exit-code 1, fail-closed 9, monotonicity 2, reachability 1, regression 1, robustness 2</span></h2>
 <table><thead><tr><th>#</th><th>Family</th><th>Property under test</th><th>Result</th><th>What was observed</th></tr></thead>
 <tbody>
 <tr><td class=mono>A1</td><td class=mono>monotonicity</td><td>each 510(k) risk axis is monotone: a worse value never yields a better verdict, from every base change type</td><td><span class="chip ok">PASS</span></td><td class=note>monotone on 5 axes x 4 base types</td></tr>
@@ -186,7 +192,7 @@ resolvable identifier fails the principle, so <code>CITATION.cff</code> carries 
 <footer>
 Generated by <span class="mono">review/build_report.py</span> from
 <span class="mono">review/evidence/pre_release_latest.json</span>, which names the
-commit the review examined (<span class="mono">f402251</span>) —
+commit the review examined (<span class="mono">01c713e</span>) —
 the commit that stores this page is necessarily one later. Re-run:
 <code>python review/pre_release_review.py --json review/evidence/pre_release_latest.json &amp;&amp; python review/build_report.py</code>.
 This page is self-contained: no CDN, no web font, no JavaScript.

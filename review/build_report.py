@@ -169,8 +169,29 @@ def main() -> int:
                    "could not be reached — that is not a pass, and the page says so",
         "FAIL": "at least one automated check failed on this commit",
     }.get(machine, "the run did not produce a verdict")
-    release_reasons = ("the fixes are still only on this branch, there is no DOI or tag "
-                       "yet, and there is no CLA/DCO record for a standards contribution")
+
+    # "Pushed" and "merged" are different answers, and the page must not flatten
+    # them into "the fixes are still only on this branch" — that sentence was true
+    # before the push and became a lie the moment it landed on the remote.
+    _parity = {f["id"]: f for c in checks if c["id"] == "parity" for f in c["findings"]}
+    _pushed, _sha = _parity.get("parity-pushed"), _parity.get("parity-sha")
+    if _pushed and _pushed["ok"] and _sha and not _sha["ok"]:
+        release_reasons = (f"the commit is pushed and fetchable, but not merged ({_sha['detail']}). "
+                           f"There is also no DOI or tag yet, and no CLA/DCO record for a "
+                           f"standards contribution")
+    else:
+        release_reasons = ("the fixes are not on a ref a stranger can fetch, there is no DOI or "
+                           "tag yet, and there is no CLA/DCO record for a standards contribution")
+
+    # Every finding that is not a pass, with its own sentence. A check-level
+    # FAIL badge without this is a verdict nobody can act on.
+    blocking = [(c["id"], f["id"], f["detail"], f["status"])
+                for c in checks for f in c["findings"] if not f["ok"]]
+    blocking_html = "\n".join(
+        f'<tr><td class=mono>{esc(cid)}</td><td class=mono>{esc(fid)}</td>'
+        f'<td>{chip(status)}</td><td>{esc(detail)}</td></tr>'
+        for cid, fid, detail, status in blocking) or \
+        '<tr><td colspan=4 class=note>none — every finding on this commit is a pass</td></tr>'
 
     # Probe count comes from the redteam check's own finding, not from a constant.
     probe_n = 0
@@ -260,6 +281,12 @@ code{{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgro
 {chr(10).join(check_rows)}
 </tbody></table>
 
+<h3>Everything that is not a pass on this commit</h3>
+<table><thead><tr><th>Check</th><th>Finding</th><th>Status</th><th>What was observed</th></tr></thead>
+<tbody>
+{blocking_html}
+</tbody></table>
+
 <h2>2. Cited sources — every one fetched, not remembered<span class="hint">marker text must appear in the body, so a soft-404 cannot pass</span></h2>
 <table><thead><tr><th>Source</th><th>Status</th><th>URL</th><th>What was observed</th></tr></thead>
 <tbody>
@@ -272,7 +299,7 @@ code{{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;backgro
 {chr(10).join(rt_rows)}
 </tbody></table>
 
-<h2>4. Probe matrix — the executable half of the red team<span class="hint">20 probes · {esc(", ".join(f"{k} {v}" for k, v in sorted(probe_families.items())))}</span></h2>
+<h2>4. Probe matrix — the executable half of the red team<span class="hint">{probe_n} probes · {esc(", ".join(f"{k} {v}" for k, v in sorted(probe_families.items())))}</span></h2>
 <table><thead><tr><th>#</th><th>Family</th><th>Property under test</th><th>Result</th><th>What was observed</th></tr></thead>
 <tbody>
 {chr(10).join(probe_rows) if probe_rows else '<tr><td colspan=5 class=note>probe evidence not available for this run</td></tr>'}

@@ -496,7 +496,7 @@ def check_docs_claims(root: Path) -> list[dict]:
     if harness.exists():
         real = len(re.findall(r"^@probe\(", read(harness), re.M))
         claims = []
-        for name in ("README.md", "llms.txt", "CHANGELOG.md"):
+        for name in ("README.md", "llms.txt", "CHANGELOG.md", "review/build_report.py"):
             for mm in re.finditer(r"(\d+)\s+(?:adversarial\s+)?probes\b", read(root / name)):
                 claims.append((name, int(mm.group(1))))
         wrong = [f"{n}={c}" for n, c in claims if c != real]
