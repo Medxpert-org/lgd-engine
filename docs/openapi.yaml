@@ -3,7 +3,7 @@
 #
 # IMPLEMENTATION STATUS — read this before coding against the contract:
 #   BETA / DRAFT. This file freezes the production-facing wire shape.
-#   * DEMO LAYER (already runs today): mvp/demo1/web.py serves a stdlib
+#   * DEMO LAYER (already runs today): demo1/web.py serves a stdlib
 #     http.server UI+JSON endpoint at POST http://127.0.0.1:8765/judge
 #     (note: NO /v1 prefix) and returns the exact GateReport object defined
 #     below ({verdict, per_judge, reasons, evidence, law_enforcements}).
@@ -14,10 +14,10 @@
 #   Do not treat this file as proof that a production REST server exists.
 #
 # Sources of truth for shapes:
-#   - mvp/lgd_engine/gate/engine.py   (GateReport.to_dict())
-#   - mvp/lgd_engine/judges/base.py   (JudgeVerdict: reasons/evidence schema)
-#   - mvp/demo1/web.py                (real ctx fields, real /judge behavior)
-#   - mvp/demo2/db.py                 (DecisionRecord shape)
+#   - lgd_engine/gate/engine.py   (GateReport.to_dict())
+#   - lgd_engine/judges/base.py   (JudgeVerdict: reasons/evidence schema)
+#   - demo1/web.py                (real ctx fields, real /judge behavior)
+#   - demo2/db.py                 (DecisionRecord shape)
 # =============================================================================
 openapi: 3.1.0
 
@@ -121,23 +121,24 @@ paths:
                   value:
                     verdict: hold
                     per_judge:
-                      med-device-510k-change:
+                      "510k-change-classification":
                         verdict: hold
                         reasons:
-                          - rule: MATERIAL-NONCONFORMING.EVIDENCE
+                          - rule: R-MAJ-03-evidence-incomplete
                             level: major
-                            detail: "Material change with needs_supplement evidence"
+                            detail: "Evidence package incomplete or absent — must supplement verification data (e.g. freeze-thaw study, V&V report) before go."
                         evidence:
                           - kind: fda_510k
                             ref: "K190204"
                     reasons:
-                      - rule: MATERIAL-NONCONFORMING.EVIDENCE
+                      - rule: R-MAJ-03-evidence-incomplete
                         level: major
-                        detail: "Material change with needs_supplement evidence"
+                        detail: "Evidence package incomplete or absent — must supplement verification data (e.g. freeze-thaw study, V&V report) before go."
                     evidence:
                       - kind: fda_510k
                         ref: "K190204"
                     law_enforcements: []
+                    errors: []
         "400":
           description: Malformed JSON body or missing required change_type.
         "401":
@@ -153,7 +154,7 @@ paths:
         records are never rewritten (Part-11-style traceability).
 
         **Beta note:** today the equivalent data lives in
-        mvp/demo2/decisions_demo.db (SQLite, table `decisions`); no HTTP
+        demo2/decisions_demo.db (SQLite, table `decisions`); no HTTP
         listing is served yet.
       operationId: listDecisions
       security:
@@ -226,6 +227,25 @@ components:
             - material_nonconforming
             - design_defect
             - maintenance_execution
+            - supplier_substitution
+          description: >
+            Change class. Must match KNOWN_CHANGE_TYPES in
+            lgd_engine/judges/judge_510k.py — a value outside this enum is
+            unclassifiable and the gate holds. Kept in lockstep by
+            docs/validate_openapi.py (check: enum covers every known type).
+        jurisdiction:
+          type: string
+          enum: [FDA, NMPA]
+          default: FDA
+          description: >
+            Routing jurisdiction. Unknown values are held (R-JUR-UNKNOWN), never
+            defaulted silently.
+        equivalence_declared:
+          type: boolean
+          description: >
+            Supplier/material equivalence declaration filed (NMPA 登记事项 route).
+            Only the boolean true counts as filed; R-MAJ-05 holds a supplier
+            substitution without it.
         safety_impact:
           type: string
           enum: [none, limited_reversible, severe_life_threatening]
@@ -243,14 +263,25 @@ components:
           type: string
         source_refs:
           type: array
+          description: >
+            External evidence references. A ref with no body is not evidence —
+            the judges drop blank refs before counting, so an empty package
+            triggers L2-EVIDENCED (hold) rather than a silent go.
           items:
-            type: string
-          description: External evidence references (e.g. 510(k) numbers).
+            type: object
+            required: [ref]
+            properties:
+              kind:
+                type: string
+                example: fda_510k
+              ref:
+                type: string
+                example: "K190204"
       additionalProperties: true
 
     JudgeVerdict:
       type: object
-      description: Per-domain judge output (fixed schema, mvp/lgd_engine/judges/base.py).
+      description: Per-domain judge output (fixed schema, lgd_engine/judges/base.py).
       required: [verdict, reasons, evidence]
       properties:
         verdict:
@@ -317,6 +348,15 @@ components:
           items:
             type: string
           description: Which LGD laws fired (L1-RECORDED / L2-EVIDENCED / L3-GATED).
+        errors:
+          type: array
+          items:
+            type: string
+          description: >
+            Judge-side exceptions caught by the engine. Non-empty means a judge
+            could not run: the verdict is a fail-safe reject and the CLI exits
+            3 (tool error), never 2 (reject). Callers must not read a non-empty
+            `errors` as a business verdict.
 
     DecisionRecord:
       type: object

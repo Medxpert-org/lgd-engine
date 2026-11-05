@@ -24,3 +24,30 @@ jobs:
 
       - name: MCP server smoke (tools list + judge + RBAC deny)
         run: python lgd_engine/mcp_smoke.py
+
+      # The docs said these were "enforced in CI"; they were not (S7 red team).
+      - name: OpenAPI contract validation (structural)
+        run: |
+          python -m pip install --quiet pyyaml
+          python docs/validate_openapi.py
+
+      # The review's central claim — "the gate fails closed" — is a property, so
+      # CI runs it as one: 20 probes, and --selfcheck requires every probe to
+      # fail against its own mutant (a probe that cannot fail is a hard error).
+      # Runs after PyYAML is installed: two contract probes need it and would
+      # otherwise report BLOCKED instead of checking anything.
+      - name: Adversarial probes + self-check (each probe must be able to fail)
+        run: |
+          python -m pip install --quiet pyyaml
+          python review/redteam_probe.py --selfcheck
+
+      - name: Security self-tests (injection defence + tree scan)
+        run: |
+          python security/prompt_injection_defense.py
+          python security/security_scan.py
+
+      - name: SSE smoke (generate both event paths, then assert 6/6)
+        run: |
+          python -m demo2.session --case demo2/case_gate_report.json --auto
+          python -m demo2.session --case demo2/case_gate_report_critical.json --auto
+          python -m demo2.sse_server --port 8770 --smoke

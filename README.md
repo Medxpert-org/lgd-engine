@@ -13,6 +13,16 @@ offline-testable judgment chain grounded in the LGD theory (three laws,
 有籍有证有门禁 / registered-evidenced-gated, 触点即门 / every touchpoint
 is a gate). Zero runtime dependencies — the core gate runs with no LLM.
 
+## Prerequisites
+
+- Python 3.9+ (`python --version`). Nothing else: the gate, the judges and the
+  CLI are stdlib-only.
+- `git`, if you are cloning rather than downloading a zip.
+- Optional: PyYAML only for the 17-check OpenAPI validation
+  (`pip install -e ".[yaml]"` from a checkout). Without it the validator says so
+  and runs 5 text checks instead of pretending it ran 17.
+- Node 18+ only for the TypeScript SDK smoke; Docker only for the compose demo.
+
 ## Quickstart
 
 Shortest path — clone, run the gold tests, get your first verdict, then
@@ -25,6 +35,13 @@ python -m demo1.change_gate --case demo1/cases/case01_red_pma_process.json
 # exit code: 0 = go, 1 = hold, 2 = reject
 ```
 
+> **Exit codes are verdicts.** In single-case mode the process exit code *is*
+> the verdict: `0` = go, `1` = hold, `2` = reject. A correct reject therefore
+> exits `2` — CI wrappers must map the code to the verdict instead of treating
+> any non-zero exit as a failed run. `--all` instead exits `0` only when every
+> case matches its expected verdict, and `1` on any mismatch. The CLI prints
+> the same mapping on its last line.
+
 Verify the whole gate before trusting it (stock Python 3.9+, stdlib only):
 
 ```bash
@@ -35,7 +52,8 @@ Verify the whole gate before trusting it (stock Python 3.9+, stdlib only):
 # Any OS
 python demo1/test_demo1.py       # change-gate gold tests
 python demo2/test_demo2.py       # five-seat review tests
-python framework/gate_bot.py     # CI gate (four checks)
+python demo1/test_ecosystem.py   # 13-domain / 11-stage alignment tests
+python framework/gate_bot.py     # CI gate (six checks)
 ```
 
 One decision from a case JSON:
@@ -90,16 +108,25 @@ until the public 0.1 release wires production endpoints (TLS, auth).
 | Interface | Transport / entry | Run it | Verify it |
 |---|---|---|---|
 | REST (demo) | stdlib HTTP, `127.0.0.1:8765`, `POST /judge` | `python -m demo1.web` | `curl -X POST http://127.0.0.1:8765/judge -H 'Content-Type: application/json' -d @demo1/cases/case01_red_pma_process.json` |
-| REST contract | OpenAPI 3.1, `docs/openapi.yaml` (`/v1/judge`, `/v1/decisions`) | — | `python docs/validate_openapi.py` (17/17 checks, stdlib) |
-| SSE event stream | tails append-only `demo2/events.jsonl`, 6 event types | `python -m demo2.sse_server --port 8770 --smoke` | exits 0 after asserting all 6 types |
+| REST contract | OpenAPI 3.1, `docs/openapi.yaml` (`/v1/judge`, `/v1/decisions`) | — | `python docs/validate_openapi.py` — 5 text checks on a stdlib install, 17/17 structural once the `yaml` extra is installed from a checkout
+(`pip install -e ".[yaml]"`; the package is not on PyPI yet); the script prints an explicit warning when it had to skip the 12 structural checks |
+| SSE event stream | tails append-only `demo2/events.jsonl`, 6 event types | `python -m demo2.sse_server --port 8770 --smoke` | exits 0 only after all 6 types appear (precondition: see the SSE note below) |
 | MCP server (stdio) | `lgd_engine/mcp_server.py` | `python lgd_engine/mcp_smoke.py` | smoke exercises initialize / tools list / judge / RBAC-deny (denied → -32003) |
 | TypeScript SDK | `lgd-engine-ts/` (zero-dep types mirroring OpenAPI) | `cd lgd-engine-ts && npm run smoke` | Node 18+; smoke exits 0 |
-| Container | `Dockerfile` + `docker-compose.yml` | `docker compose up` | REST demo on `127.0.0.1:18090` (verified Docker Desktop 4.89.0) |
+| Container | `Dockerfile` + `docker-compose.yml` | `docker compose up` | REST demo on `127.0.0.1:18090` — NOT VERIFIED in the 2026-11-04 review (no Docker on the reviewing host, no container step in CI) |
 
 > Contract status note: `docs/openapi.yaml` freezes the production wire
 > shape (`/v1/*`, TLS, bearer auth). No `/v1` service exists in the tree
 > yet — `demo1/web.py` (`/judge`, no `/v1` prefix) is the behavioral
 > reference for request/response semantics.
+
+> **SSE smoke precondition.** The smoke asserts all six event types, so the
+> append-only log must already contain both a pass path and a hold path:
+> `python -m demo2.session --case demo2/case_gate_report.json --auto` and
+> `python -m demo2.session --case demo2/case_gate_report_critical.json --auto`
+> (or `.\demo2\run_demo2.ps1` plus `.\demo2\run_demo2.ps1 critical`). On a
+> fresh clone the log is empty, the smoke exits `1`, and it now names the
+> missing types and the exact command to generate them.
 
 ### MCP client config (copy-paste, local-trust)
 
@@ -150,6 +177,12 @@ Platform notes:
 
 ## The LGD Foundation
 
+**Theory home vs. engine home.** This repository is the engine
+implementation. The theory itself — the doctrine, the domain papers and the
+standards participation (ITU FG-TIDA, W3C) — is maintained in
+[lgd-theory](https://github.com/zhaoxinghua09-cell/lgd-theory) under the
+theory line; this repository neither restates nor owns it.
+
 LGD Engine is not a hollow scaffold: it is the executable expression of a
 complete theory-and-evidence stack, all distilled into runnable rules.
 
@@ -182,12 +215,78 @@ The rest of the stack:
   `framework/eco-regulatory-matrix.md`, 11 stages × 8 jurisdictions). Two
   domain judges are implemented in this release (510(k) change
   classification, post-market); the remaining domains are roadmap adapters.
-- **International alignment** — the roadmap tracks the ITU FG-TIDA and W3C
-  AI-agent memory/interop threads, so the rules follow where global
-  standards are heading.
+- **International alignment** — standards tracking lives in the theory line:
+  the ITU FG-TIDA and W3C AI-agent memory/interop threads are followed in
+  [lgd-theory](https://github.com/zhaoxinghua09-cell/lgd-theory), and this
+  repository implements the rules those threads settle rather than tracking
+  them itself.
 
 Every judge carries an explicit evidence source, making the chain
 theory → code → verifiable test (enforced in CI).
+
+### Where the rest of the stack lives
+
+This repository is the engine. The theory, the evidence catalog and the
+challenge core are maintained in their own repositories, so this README
+links out instead of duplicating them:
+
+- Theory flagship (doctrine, three laws, domain papers):
+  https://github.com/zhaoxinghua09-cell/lgd-theory
+- Doctrine DOI — concept record: https://doi.org/10.5281/zenodo.22456647
+  (current version v1.7.0: https://doi.org/10.5281/zenodo.23446125)
+- Portal (all public surfaces in one place):
+  https://zhaoxinghua09-cell.github.io/lgd-hub/
+- Silent-failure catalog (failure modes this gate is built to catch):
+  https://github.com/zhaoxinghua09-cell/silent-failure-catalog
+- uibc-core — verifiable evidence packages for autonomous agents
+  (software DOI https://doi.org/10.5281/zenodo.22821834):
+  https://github.com/zhaoxinghua09-cell/uibc-core
+
+### Three counts, three scopes
+
+`11 stages` and `13 domains` appear throughout this repository and they
+measure different things — neither is a count of the other:
+
+- **11 stages** — the engine's implemented lifecycle model, i.e. the
+  adapter family enumerated in `framework/ecosystem-map.md` (11 stages ×
+  8 jurisdictions). This is an engineering projection: it covers the
+  stages the gate can judge today or has a named adapter for.
+- **13 domains** — the judgment-domain taxonomy (clinical evaluation,
+  postmarket, UDI, SaMD, …) mapped onto those stages in
+  `framework/13domains-mapping.md`. Several domains are cross-stage
+  (compliance grading, risk management), which is why 13 ≠ 11.
+- **14 links (14 环)** — a wider industry-chain caliber that circulates in
+  the theory line's ecosystem publications. It is **not defined in this
+  repository** and this README does not re-list it: `framework/ecosystem-map.md`
+  is the binding list here and it has 11 links. Treat 14 as an external
+  caliber — cite its defining document when you use it, and do not infer it
+  from this repo.
+
+So: 11 环节 = the list this repo binds (`framework/ecosystem-map.md`),
+13 域 = judgment domains, and 14 环 = an external ecosystem caliber that
+this engine projects onto those 11 stages rather than re-defines.
+
+Both in-repo counts are asserted by CI: `framework/gate_bot.py` re-counts
+the rows in `framework/ecosystem-map.md` (11) and
+`framework/13domains-mapping.md` (13) and fails if either drifts from the
+numbers above.
+
+## Adversarial probes — the fail-closed claim, executable
+
+```bash
+python review/redteam_probe.py              # 22 probes over the real judges, MCP and CLI
+python review/redteam_probe.py --selfcheck  # proves every probe can fail
+```
+
+The probes test properties, not examples: verdict monotonicity along every risk
+axis, "unknown is never a go" for every enumerated field, law 2 reachability,
+MCP role resolution, the documented `{ctx: {...}}` wrapper, exit-code semantics
+and contract/code lockstep.
+
+`--selfcheck` is the part that matters. Each probe declares a mutant — a
+deliberately broken stand-in for the component under test — and the run fails
+if that probe still passes against its mutant. A check that cannot fail is
+decoration, so a vacuous probe is a hard failure here, not a green tick.
 
 ## Gate bot (CI) & security baseline
 
@@ -198,21 +297,43 @@ powershell -File framework/gate.ps1  # Windows wrapper
 
 Checks: offline gold tests, LICENSE/NOTICE present, no plaintext keys,
 manifest syntax (including adversarial re-checks: path-traversal manifest
-entries and known secret shapes are rejected).
+entries and known secret shapes are rejected), and README count drift (the
+`11 stages` / `13 domains` claims above are re-counted against their tables
+on every run).
 
 `security/security_baseline.md` maps OWASP Top 10 (2021) and OWASP Top 10
 for LLM Applications (2025) to concrete defenses in this tree;
 `python security/security_scan.py` re-checks the tree before every release.
 
-## Verified test evidence (2026-11-03)
+## Verified test evidence (2026-11-04)
 
 - demo1 change-gate gold tests: **5/5 PASS**; demo2 five-seat review: **26/26 PASS**
-- `framework/gate_bot.py`: **4/4 checks PASS**; `security/security_scan.py`: **clean, 0 findings**
+- Adversarial probes: **22/22 PASS**, and `--selfcheck` confirms every probe
+  fails against its own mutant. The same harness found 10 defects on the
+  pre-fix tree — evidence is kept in `review/evidence/redteam_before.json`
+  (9/19 passing) next to the post-fix run
+- `framework/gate_bot.py`: **6/6 checks PASS** (incl. doc-count drift and the demo2 suite); `security/security_scan.py`: **clean, 0 findings**
 - MCP smoke (tools list + judge + RBAC deny): **PASS**; SSE smoke: **6/6 event types**
+- TypeScript SDK: `cd lgd-engine-ts && npm run smoke` → `SMOKE OK` (exit 0) on
+  Node 24.14.0, 2026-11-04. The container surface is **NOT VERIFIED** — no Docker
+  on the reviewing host and no container step in CI.
 - GitHub Actions: `gate` CI and `CodeQL` **green on main**; Dependabot enabled;
   branch protection active (PR required + gate status check)
-- Independent red-team / eval: 7-dimension security review closed with no open
-  high-severity findings (LGD-EVAL-2026-009)
+- Negative controls (each one must be able to fail, and does): stdlib OpenAPI
+  scan → `5/17 (text-scan only)`; injection self-test with a broken guard →
+  `5/6`, exit 1; SSE smoke on an empty log → explicit empty-log error;
+  README claiming 12 stages → gate check 5 FAIL
+- Pre-release review: `release-prep/PRE_RELEASE_REVIEW.md` carries the red-team,
+  outsider and external-AI results, including findings that are **still
+  open**. Earlier revisions of this file claimed a closed 7-dimension
+  review (LGD-EVAL-2026-009) with no artifact behind it; that claim was
+  removed rather than restated.
+- Standards participation: `release-prep/STANDARDS_PARTICIPATION_DOCKET.md` states
+  which channels an individual may use, which require a legal entity we do not
+  claim, and the red lines we hold ourselves to; the first contribution draft is
+  `contributions/itu-fg-tida/TD-executable-assurance-gates.md` — four clauses, each
+  paired with a command and the exit status it produces. **No submission has been
+  made**, and the docket says so rather than implying progress.
 
 ## Repository map
 
@@ -233,7 +354,8 @@ PRs welcome. Before opening one:
 1. Run `python framework/gate_bot.py` — it must exit 0.
 2. Every new judge or rule must ship with a gold test and an explicit
    evidence source (precedent id / case entry / regulation citation);
-   a `go` verdict with zero evidence refs is rejected by the gate.
+   a `go` verdict with zero evidence refs is downgraded to `hold` (law 2 — it is
+   never silently released, and never turned into a `reject` either).
 3. Keep the core offline and stdlib-only at MVP — optional extras go in
    `[project.optional-dependencies]`.
 

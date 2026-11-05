@@ -73,6 +73,10 @@ python demo1/test_demo1.py
 python demo2/test_demo2.py
 python framework/gate_bot.py     # CI gate: gold test / LICENSE / no keys / manifest
 
+# Adversarial probes against the judgment core (22 probes; --selfcheck proves
+# every probe can fail, so a check that measures nothing fails the run)
+python review/redteam_probe.py --selfcheck
+
 # One decision from a case JSON
 python -m demo1.change_gate --case demo1/cases/case01_red_pma_process.json
 python -m demo1.change_gate --case demo1/cases_jurisdiction/supplier_swap.json --jurisdiction NMPA
@@ -85,23 +89,32 @@ reproducible in CI.
 ## Interface layer (Beta)
 
 - **REST / OpenAPI 3.1** — `docs/openapi.yaml` (`/v1/judge`, `/v1/decisions`);
-  validate: `python docs/validate_openapi.py` (17/17).
+  validate: `python docs/validate_openapi.py` (20/20).
 - **SSE event stream** — `demo2/sse_server.py` tails `demo2/events.jsonl`;
-  `python -m demo2.sse_server --smoke` self-hosts, asserts all 6 event types, exits.
+  `python -m demo2.sse_server --smoke` self-hosts and asserts all 6 event types.
+  Precondition: the log must already hold a pass **and** a hold path —
+  `python -m demo2.session --case demo2/case_gate_report.json --auto` then
+  `... case_gate_report_critical.json --auto`. On an empty log the smoke fails
+  and prints exactly these two commands.
 - **MCP server (stdio)** — `lgd_engine/mcp_server.py`; `python lgd_engine/mcp_smoke.py`
   exercises initialize / tools / judge / RBAC-deny. Local-trust adapter: it trusts
   the caller's role claim; treat it as local, not a network auth boundary.
 - **TypeScript SDK skeleton** — `lgd-engine-ts/` (zero-dependency, mirrors the
   OpenAPI contract); `cd lgd-engine-ts && npm run smoke`.
-- **Container** — `Dockerfile` + `docker-compose.yml` (Docker Desktop 4.89.0
-  verified; REST demo binds `127.0.0.1:18090`).
+- **Container** — `Dockerfile` + `docker-compose.yml` (REST demo binds
+  `127.0.0.1:18090`). NOT RE-VERIFIED in the 2026-11-04 review: there is no Docker
+  on the reviewing host and no container step in CI, so this surface is
+  documented but unproven — treat it as such until a run is recorded.
 
-## Verified test evidence (2026-11-03)
+## Verified test evidence (2026-11-04)
 
 - demo1 change-gate gold tests: **5/5 PASS**
 - demo1 ecosystem map self-test: **PASS**
 - demo2 five-seat review tests: **26/26 PASS**
-- `framework/gate_bot.py` (CI gate): **4/4 checks PASS** — including adversarial
+- `review/redteam_probe.py`: **22/22 probes PASS**, `--selfcheck` confirms every
+  probe fails against its own mutant. The same harness found 10 defects on the
+  pre-fix tree; the pre-fix run is kept in `review/evidence/redteam_before.json`
+- `framework/gate_bot.py` (CI gate): **6/6 checks PASS** — including adversarial
   re-checks: 150-byte / MIT-text LICENSE rejected, manifest entry path-traversal
   rejected, `github_pat_` / PEM secret shapes detected
 - `security/security_scan.py`: **clean, 0 findings**
@@ -111,8 +124,12 @@ reproducible in CI.
 - SSE smoke: **6/6 event types received**
 - GitHub Actions: `gate` CI **success on main**; CodeQL **success**; Dependabot
   enabled; branch protection active (PR required + gate status check).
-- Red-team / LGD-Eval review: 7-dimension security review and independent eval
-  closed with no open high-severity findings (LGD-EVAL-2026-009).
+- Pre-release review: `release-prep/PRE_RELEASE_REVIEW.md` — red-team, outsider and
+  external-AI results, open findings included. No claim of a closed review is made.
+- Standards participation: `release-prep/STANDARDS_PARTICIPATION_DOCKET.md` (usable
+  channels, in-flight window, twelve red lines) and
+  `contributions/itu-fg-tida/TD-executable-assurance-gates.md` (contribution draft).
+  Nothing has been submitted; the docket is the progress source of truth.
 
 ## Key files & links
 

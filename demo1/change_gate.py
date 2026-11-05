@@ -5,6 +5,10 @@ Usage (from mvp/ directory):
     python -m demo1.change_gate --all
     python -m demo1.change_gate --case demo1/cases_postmarket/pm01_class1_software.json --domain postmarket
     python -m demo1.change_gate --case demo1/cases_jurisdiction/supplier_swap.json --jurisdiction NMPA
+
+Exit status is the verdict (single-case mode): 0 = go, 1 = hold, 2 = reject.
+A correct REJECT therefore exits 2 — CI wrappers must map the code to the
+verdict instead of treating any non-zero exit as a failed run.
 """
 from __future__ import annotations
 
@@ -85,8 +89,56 @@ def run_case(case_path: Path, domain: str = "510k",
     return report
 
 
+# Exit codes carry two different meanings and must not collide:
+#   0/1/2 = the verdict (go/hold/reject) — a correct REJECT is 2, not a failure
+#   64    = usage error (bad arguments)
+#   3     = the engine failed (unreadable case, judge exception)
+# Red team S7 2026-11-04: a judge that raised used to print REJECT and exit 2,
+# so a broken tool was indistinguishable from a real veto.
+RC_USAGE, RC_TOOL_ERROR = 64, 3
+
+
+class _Parser(argparse.ArgumentParser):
+    def error(self, message: str) -> None:  # argparse exits 2 by default
+        self.print_usage(sys.stderr)
+        print(f"{self.prog}: error: {message}", file=sys.stderr)
+        print(f"(usage errors exit {RC_USAGE}, not 2 — 2 means REJECT)", file=sys.stderr)
+        raise SystemExit(RC_USAGE)
+
+
+def _guard_db_path(raw: str) -> str:
+    """Validate --db before SQLite touches it.
+
+    `--db` used to be handed straight to sqlite: the CLI would create parent
+    directories at any path and, when the target was an existing non-database
+    file, die with a sqlite traceback instead of a usage error (R18). It still
+    writes wherever it is told — that is what the flag is for — but it now says
+    where, refuses an empty value, and refuses to open a file that is not a
+    SQLite database rather than failing obscurely.
+    """
+    p = (raw or "").strip()
+    if not p:
+        print("error: --db needs a path (empty value given)", file=sys.stderr)
+        raise SystemExit(RC_USAGE)
+    path = Path(p).expanduser()
+    if not path.is_absolute():
+        path = (Path.cwd() / path).resolve()
+    if path.exists() and path.is_file():
+        try:
+            with open(path, "rb") as f:
+                magic = f.read(16)
+        except OSError as exc:
+            print(f"error: --db {path} is not readable ({exc.strerror})", file=sys.stderr)
+            raise SystemExit(RC_USAGE)
+        if magic and not magic.startswith(b"SQLite format 3\x00"):
+            print(f"error: --db {path} exists and is not a SQLite database — "
+                  f"refusing to open it", file=sys.stderr)
+            raise SystemExit(RC_USAGE)
+    return str(path)
+
+
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description="lgd-engine Demo1 CLI")
+    p = _Parser(description="lgd-engine Demo1 CLI")
     p.add_argument("--case", type=str, help="path to a case JSON")
     p.add_argument("--all", action="store_true", help="run every case under cases/")
     p.add_argument("--domain", choices=list(_DOMAINS), default="510k")
@@ -96,15 +148,24 @@ def main(argv: list[str] | None = None) -> int:
                    default=str(_HERE / "demo1_memory.sqlite"))
     args = p.parse_args(argv)
 
-    mem = LocalMemory(args.db)
+    db_path = _guard_db_path(args.db)
+    print(f"[memory] decisions recorded in {db_path}")
+    mem = LocalMemory(db_path)
 
     if args.all:
         root = _HERE / ("cases_postmarket" if args.domain == "postmarket" else "cases")
         cases = sorted(root.glob("*.json"))
         n_pass = 0
         for c in cases:
-            rep = run_case(c, domain=args.domain,
-                           jurisdiction=args.jurisdiction, mem=mem)
+            try:
+                rep = run_case(c, domain=args.domain,
+                               jurisdiction=args.jurisdiction, mem=mem)
+            except Exception as exc:
+                print(f"\n[ENGINE ERROR] {c.name}: {type(exc).__name__}: {exc}")
+                print(f"             exit {RC_TOOL_ERROR} = the tool failed; this is "
+                      f"not a verdict.")
+                mem.close()
+                return RC_TOOL_ERROR
             ctx = json.loads(c.read_text(encoding="utf-8"))
             exp = ctx.get("expected_verdict")
             if exp and rep.verdict == exp:
@@ -120,10 +181,30 @@ def main(argv: list[str] | None = None) -> int:
     cp = Path(args.case)
     if not cp.is_absolute():
         cp = (Path.cwd() / cp).resolve()
-    rep = run_case(cp, domain=args.domain,
-                   jurisdiction=args.jurisdiction, mem=mem)
+    try:
+        rep = run_case(cp, domain=args.domain,
+                       jurisdiction=args.jurisdiction, mem=mem)
+    except Exception as exc:
+        print(f"\n[ENGINE ERROR] {type(exc).__name__}: {exc}")
+        print(f"             exit {RC_TOOL_ERROR} = the tool failed; this is not a "
+              f"verdict (0=go, 1=hold, 2=reject).")
+        mem.close()
+        return RC_TOOL_ERROR
     mem.close()
-    return {"go": 0, "hold": 1, "reject": 2}[rep.verdict]
+    if getattr(rep, "errors", None):
+        print("\n[ENGINE ERROR] a judge raised — the verdict below is fail-safe, "
+              "not a judgment:")
+        for e in rep.errors:
+            print(f"  - {e}")
+        print(f"             exit {RC_TOOL_ERROR} = the tool failed; this is not a "
+              f"verdict (0=go, 1=hold, 2=reject).")
+        return RC_TOOL_ERROR
+    rc = {"go": 0, "hold": 1, "reject": 2}[rep.verdict]
+    print(f"\n[exit code] {rc} = {rep.verdict} — the exit code IS the verdict "
+          f"(0=go, 1=hold, 2=reject).")
+    print("             A correct REJECT therefore exits 2: CI wrappers must map "
+          "the code to the verdict, not treat non-zero as a failed run.")
+    return rc
 
 
 if __name__ == "__main__":

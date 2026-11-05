@@ -65,6 +65,29 @@ LGD-semantic commits are expected to name what changed in the judgment chain,
 e.g. `fix(judge-510k): downgrade unsupported labeling change from go to hold`.
 Reference issue numbers when they exist.
 
+## Contribution licensing (inbound = outbound)
+
+By submitting a pull request, patch, issue text or any other contribution you
+license it to this project under the **Apache License 2.0** — the same terms the
+project ships under. You keep your copyright; you are not asked to assign it, and
+a contribution does not make you a co-author of the underlying LGD theory
+(see `NOTICE`).
+
+Two things this repository does **not** have, stated plainly so nobody infers
+otherwise:
+
+- there is **no separate CLA** and **no CLA bot** here. A W3C Community Group
+  requires its own CLA, and ITU-T work falls under the ITU-T/ITU-R/ISO/IEC
+  Common Patent Policy — those obligations attach at the venue and are tracked in
+  `release-prep/STANDARDS_CONTRIBUTION_READINESS.md`;
+- a `Signed-off-by` trailer (DCO) is **welcomed but not enforced** by CI. Do not
+  read the absence of a check as permission to skip attribution.
+
+Without the paragraph above, a third-party pull request would carry no inbound
+licence at all, and the "redistributable without restriction" property that a
+standards contribution depends on would break exactly at the first outside
+contribution.
+
 ## Honesty requirements (please read carefully)
 
 **Code license vs. theory attribution are two different things.** The code in

@@ -94,9 +94,24 @@ _MAJOR_RULES = [
     },
     {
         "rule": "R-MAJ-03-evidence-incomplete",
-        "detail": "Evidence package incomplete — must supplement verification "
-                  "data (e.g. freeze-thaw study, V&V report) before go.",
-        "when": lambda c: c.get("evidence_sufficiency") == "needs_supplement",
+        # `none` is *worse* than `needs_supplement`, so it cannot be the value
+        # that slips through. Before this set included "none", the axis was
+        # inverted: needs_supplement held while none returned go (probe A1,
+        # 2026-11-04).
+        "detail": "Evidence package incomplete or absent — must supplement "
+                  "verification data (e.g. freeze-thaw study, V&V report) "
+                  "before go.",
+        "when": lambda c: c.get("evidence_sufficiency") in {"needs_supplement", "none"},
+    },
+    {
+        "rule": "R-MAJ-07-class2-recall-field-correction",
+        # A Class 2 / 二级 recall means a field correction is already owed.
+        # R-MAJ-02 only covers the maintenance-execution route, so any other
+        # change type riding a Class 2 recall used to return go (probe E2).
+        "detail": "Class 2 / NMPA 二级 recall on record — field correction is "
+                  "owed regardless of change type; hold pending CAPA and "
+                  "enhanced monitoring.",
+        "when": lambda c: c.get("recall_class") == "class2",
     },
     {
         "rule": "R-MAJ-04-config-change-same-platform",
@@ -106,6 +121,17 @@ _MAJOR_RULES = [
             c.get("change_type") == "function_config_change"
             and c.get("predicate_unchanged", True)
         ),
+    },
+    {
+        "rule": "R-MAJ-08-predicate-changed",
+        # The comparison basis moved, so equivalence is unproven — this is the
+        # *more* dangerous direction and used to score better than an unchanged
+        # predicate, because only `predicate_unchanged=true` matched a rule
+        # (predicate inversion, probe A1 axis 5).
+        "detail": "Predicate device changed (predicate_unchanged=false) — the "
+                  "equivalence basis is gone; hold pending a new 510(k) / PMA "
+                  "supplement.",
+        "when": lambda c: c.get("predicate_unchanged") is False,
     },
 ]
 
@@ -124,6 +150,34 @@ _MINOR_RULES = [
 ]
 
 
+# Every change_type this judge can actually classify. Anything outside this set
+# is unknown to the rule table, and unknown must not ride out as a silent go
+# (red team S7 2026-11-04, F-2: 87.5% of unknown change types returned GO with
+# zero reasons and empty evidence).
+KNOWN_CHANGE_TYPES = {
+    "label_correction", "label_clarification", "label_expansion",
+    "function_config_change", "process_change_control",
+    "material_nonconforming", "design_defect", "maintenance_execution",
+    "supplier_substitution",
+}
+
+# The same "unknown is not a safe default" argument applies to every enumerated
+# axis, not just change_type: a value outside the table silently matched no rule
+# and rode out as go. Class-level fix; the postmarket judge got the identical
+# treatment the same day (probe C4).
+KNOWN_SAFETY_IMPACT = {"none", "limited_reversible", "severe_life_threatening"}
+KNOWN_EVIDENCE_SUFFICIENCY = {"sufficient", "needs_supplement", "none"}
+KNOWN_RECALL_CLASS = {"none", "class1", "class2", "class3"}
+KNOWN_REGULATORY_PATH = {"510k", "pma", "pma_supplement", "de_novo", "nmpa_import"}
+
+_ENUM_AXES = (
+    ("safety_impact", KNOWN_SAFETY_IMPACT),
+    ("evidence_sufficiency", KNOWN_EVIDENCE_SUFFICIENCY),
+    ("recall_class", KNOWN_RECALL_CLASS),
+    ("regulatory_path", KNOWN_REGULATORY_PATH),
+)
+
+
 class Judge510kChange:
     """DomainJudge adapter for 510(k) change-classification.
 
@@ -137,10 +191,15 @@ class Judge510kChange:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
 
-        # External evidence refs passed in.
+        # External evidence refs passed in. A blank ref is not evidence: before
+        # this filter, {"kind": "", "ref": ""} satisfied the L2 count and let a
+        # GO through with an empty evidence package (red team S7 2026-11-04).
         for e in ctx.get("source_refs", []) or []:
-            evidence.append(Evidence(kind=e.get("kind", "unspecified"),
-                                     ref=e.get("ref", "")))
+            ref = (e.get("ref") or "").strip()
+            if not ref:
+                continue
+            evidence.append(Evidence(kind=(e.get("kind") or "unspecified").strip() or "unspecified",
+                                     ref=ref))
 
         # 1) critical vetoes
         crit_fired = []
@@ -199,6 +258,40 @@ class Judge510kChange:
             ))
             verdict = "hold"
 
+        # Unknown is not safe by default. A change type the rule table does not
+        # cover cannot be classified, so it must not stay a go with no reasons.
+        ct = ctx.get("change_type")
+        if ct is None:
+            reasons.append(Reason(
+                rule="R-MAJ-06-missing-change-type", level="major",
+                detail="No change_type supplied — law 1 (有籍 registered) requires a "
+                       "classified change before a verdict; hold pending classification.",
+            ))
+            if verdict == "go":
+                verdict = "hold"
+        elif ct not in KNOWN_CHANGE_TYPES:
+            reasons.append(Reason(
+                rule="R-MAJ-06-unknown-change-type", level="major",
+                detail=f"change_type {ct!r} matches no rule in this judge — unknown is "
+                       f"not a safe default; hold pending classification.",
+            ))
+            if verdict == "go":
+                verdict = "hold"
+
+        # Same argument for every other enumerated axis: a value the table does
+        # not know matches no rule and would ride out as go.
+        for field, known in _ENUM_AXES:
+            val = ctx.get(field)
+            if val is None or val in known:
+                continue
+            reasons.append(Reason(
+                rule=f"R-MAJ-06-unknown-{field}", level="major",
+                detail=f"{field} {val!r} is not a value this judge can classify — "
+                       f"hold pending classification.",
+            ))
+            if verdict == "go":
+                verdict = "hold"
+
         # R-MAJ-05: supplier substitution without a filed equivalence declaration
         # is never self-declarable — hold pending equivalence evidence (FDA 807.81
         # and NMPA 登记事项 routes both require the declaration). Non-boolean
@@ -214,7 +307,11 @@ class Judge510kChange:
                        "declaration — hold pending equivalence evidence "
                        "(both FDA 807.81 and NMPA 登记事项 routes require it).",
             ))
-            verdict = "hold"
+            # Never soften a veto: this used to overwrite reject with hold, so a
+            # Class 1 recall reported per_judge=HOLD while the aggregate said
+            # REJECT (red team S7 2026-11-04, 11.3% of sampled input space).
+            if verdict == "go":
+                verdict = "hold"
 
         # ---- jurisdiction-specific override (⑭) ----
         jur = (ctx.get("jurisdiction") or "FDA").strip().upper()
@@ -224,7 +321,8 @@ class Judge510kChange:
                 detail=f"Unknown jurisdiction '{ctx.get('jurisdiction')}' — "
                        "conservative hold pending jurisdiction routing.",
             ))
-            verdict = "hold"
+            if verdict == "go":
+                verdict = "hold"
         elif jur == "NMPA" and not any(r.level in ("critical", "major") for r in reasons):
             # NMPA 登记事项变更: equivalent supplier substitution with full
             # validation evidence may be self-declared (no 变更注册 needed),

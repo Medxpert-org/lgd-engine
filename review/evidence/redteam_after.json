@@ -1,0 +1,182 @@
+{
+  "probes": [
+    {
+      "id": "A1",
+      "family": "monotonicity",
+      "desc": "each 510(k) risk axis is monotone: a worse value never yields a better verdict, from every base change type",
+      "status": "PASS",
+      "detail": "monotone on 5 axes x 4 base types",
+      "suite": "real"
+    },
+    {
+      "id": "A2",
+      "family": "monotonicity",
+      "desc": "a Class 1 recall stays reject across every combination of the other axes",
+      "status": "PASS",
+      "detail": "reject across 12 combinations",
+      "suite": "real"
+    },
+    {
+      "id": "B1",
+      "family": "fail-closed",
+      "desc": "unknown change_type is never a go (unknown is not a safe default)",
+      "status": "PASS",
+      "detail": "verdict=hold",
+      "suite": "real"
+    },
+    {
+      "id": "B2",
+      "family": "fail-closed",
+      "desc": "missing change_type is never a go",
+      "status": "PASS",
+      "detail": "verdict=hold",
+      "suite": "real"
+    },
+    {
+      "id": "B3",
+      "family": "fail-closed",
+      "desc": "blank evidence refs do not satisfy law 2 (no evidence = hold, not go)",
+      "status": "PASS",
+      "detail": "verdict=hold evidence=0",
+      "suite": "real"
+    },
+    {
+      "id": "B4",
+      "family": "fail-closed",
+      "desc": "unknown jurisdiction is never a go",
+      "status": "PASS",
+      "detail": "verdict=hold",
+      "suite": "real"
+    },
+    {
+      "id": "B5",
+      "family": "fail-closed",
+      "desc": "a supplier substitution without equivalence evidence cannot soften a veto",
+      "status": "PASS",
+      "detail": "verdict=reject",
+      "suite": "real"
+    },
+    {
+      "id": "C1",
+      "family": "fail-closed",
+      "desc": "postmarket Class 1 recall is reject",
+      "status": "PASS",
+      "detail": "verdict=reject",
+      "suite": "real"
+    },
+    {
+      "id": "C2",
+      "family": "reachability",
+      "desc": "law 2 is reachable in the postmarket judge: zero evidence must produce verdict=hold AND an L2-EVIDENCED reason on record",
+      "status": "PASS",
+      "detail": "verdict=hold rules=['L2-EVIDENCED']",
+      "suite": "real"
+    },
+    {
+      "id": "C3",
+      "family": "fail-closed",
+      "desc": "postmarket judgement with an all-blank evidence package is never a go",
+      "status": "PASS",
+      "detail": "verdict=hold evidence=0",
+      "suite": "real"
+    },
+    {
+      "id": "C4",
+      "family": "fail-closed",
+      "desc": "unknown postmarket recall_class / cause type is never a go",
+      "status": "PASS",
+      "detail": "all three unknowns held",
+      "suite": "real"
+    },
+    {
+      "id": "C5",
+      "family": "fail-closed",
+      "desc": "a rule predicate that raises (unparseable event_report_count) is a hold signal, not a silently swallowed pass",
+      "status": "PASS",
+      "detail": "verdict=hold",
+      "suite": "real"
+    },
+    {
+      "id": "D1",
+      "family": "authorization",
+      "desc": "an undeclared MCP role is denied (role is declared, not decorative)",
+      "status": "PASS",
+      "detail": "keys=['error', 'id', 'jsonrpc']",
+      "suite": "real"
+    },
+    {
+      "id": "D2",
+      "family": "authorization",
+      "desc": "the declared read-only role can still call a read-only tool",
+      "status": "PASS",
+      "detail": "keys=['id', 'jsonrpc', 'result']",
+      "suite": "real"
+    },
+    {
+      "id": "D3",
+      "family": "contract",
+      "desc": "the documented {ctx: {...}} wrapper for judge_postmarket behaves the same as flat arguments",
+      "status": "PASS",
+      "detail": "wrapped and flat arguments produce the same GateReport",
+      "suite": "real"
+    },
+    {
+      "id": "D4",
+      "family": "robustness",
+      "desc": "non-object arguments are rejected with a JSON-RPC error, not a traceback",
+      "status": "PASS",
+      "detail": "keys=['error', 'id', 'jsonrpc']",
+      "suite": "real"
+    },
+    {
+      "id": "E1",
+      "family": "regression",
+      "desc": "a judge that raises is reported in report.errors and fails safe to reject",
+      "status": "PASS",
+      "detail": "verdict=reject errors=['boom: RuntimeError: judge exploded']",
+      "suite": "real"
+    },
+    {
+      "id": "E2",
+      "family": "exit-code",
+      "desc": "CLI exit codes carry the verdict: 0=go 1=hold 2=reject 64=usage",
+      "status": "PASS",
+      "detail": "0/1/2/64 as documented",
+      "suite": "real"
+    },
+    {
+      "id": "E3",
+      "family": "robustness",
+      "desc": "--db refuses to open a non-SQLite file and refuses an empty value (exit 64, no traceback) instead of writing a database wherever it is pointed",
+      "status": "PASS",
+      "detail": "64 / 64 / 0 as documented",
+      "suite": "real"
+    },
+    {
+      "id": "E4",
+      "family": "contract",
+      "desc": "the console entry point implements the --all the docs advertise, and still exits 64 on a usage error",
+      "status": "PASS",
+      "detail": "parity with the documented CLI",
+      "suite": "real"
+    },
+    {
+      "id": "F1",
+      "family": "contract",
+      "desc": "the published change_type enum covers every change type the judge accepts",
+      "status": "PASS",
+      "detail": "enum covers all 9 types",
+      "suite": "real"
+    },
+    {
+      "id": "F2",
+      "family": "contract",
+      "desc": "the published source_refs shape matches what the judges require (objects with a ref, not bare strings)",
+      "status": "PASS",
+      "detail": "items.type=object required=['ref']",
+      "suite": "real"
+    }
+  ],
+  "vacuous": [],
+  "selfcheck": true
+}

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pre-release review — lgd-engine</title>
+<style>
+:root{
+  --ink:#15181d; --muted:#5b6472; --line:#e3e7ee; --bg:#f7f8fa; --card:#fff;
+  --ok:#0f7b4f; --okbg:#e7f6ee; --bad:#b4232b; --badbg:#fdeced;
+  --warn:#8a5a00; --warnbg:#fdf3e0; --accent:#1f4fd8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+ font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans SC",sans-serif;}
+.wrap{max-width:1080px;margin:0 auto;padding:40px 24px 72px}
+header{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:28px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:30px;line-height:1.25;margin:8px 0 10px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:14px}
+.verdict{display:flex;gap:16px;align-items:center;margin:26px 0 8px;padding:18px 20px;
+ border:1px solid var(--line);border-left:5px solid var(--bad);background:var(--card);border-radius:10px}
+.verdict b{font-size:19px;color:var(--bad);letter-spacing:.02em}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:22px 0 34px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.card .n{font-size:26px;font-weight:650;letter-spacing:-.02em}
+.card .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+h2{font-size:18px;margin:38px 0 12px;letter-spacing:-.01em}
+h2 .hint{font-size:13px;color:var(--muted);font-weight:400;margin-left:8px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);
+ border-radius:10px;overflow:hidden;font-size:14px}
+th{text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+ background:#fbfcfd;padding:10px 12px;border-bottom:1px solid var(--line);font-weight:600}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.note{color:var(--muted);font-size:13px}
+a{color:var(--accent);text-decoration:none;word-break:break-all}
+a:hover{text-decoration:underline}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:650;
+ letter-spacing:.04em;white-space:nowrap}
+.chip.ok{background:var(--okbg);color:var(--ok)}
+.chip.bad{background:var(--badbg);color:var(--bad)}
+.chip.warn{background:var(--warnbg);color:var(--warn)}
+ul{margin:10px 0 0;padding-left:20px} li{margin:6px 0}
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;background:#eef1f6;
+ padding:1px 5px;border-radius:4px}
+@media print{body{background:#fff} .card,table{break-inside:avoid}}
+</style></head><body><div class="wrap">
+
+<header>
+  <div class="eyebrow">Pre-release review · generated 2026-11-04T09:33:49+0800</div>
+  <h1>lgd-engine — can an outside reader reach it, run it, and verify it?</h1>
+  <div class="sub">Repository <span class="mono">Medxpert-org/lgd-engine</span> · branch
+  <span class="mono">fix/s6-review-20261104</span> · commit <span class="mono">940edc5</span></div>
+</header>
+
+<div class="verdict">
+  <span class="chip bad" style="font-size:14px;padding:6px 12px">MACHINE · FAIL</span>
+  <div><b>FAIL</b> — at least one automated check failed on this commit. 1 failing finding(s),
+  0 blocked vantage(s), 52 findings across 11 automated checks.
+  <br><b>RELEASE · BLOCKED</b> — not because of the code: the commit is on its branch but not merged (origin/main is 21 commit(s) behind HEAD (c066fd3 vs 940edc5): the published tree is not the reviewed tree until this lands on origin/main). Push status per this run: reviewed commit 940edc5 is on origin/fix/s6-review-20261104 (https://github.com/Medxpert-org/lgd-engine.git): a stranger can fetch exactly what was reviewed. There is also no DOI or tag yet, and no CLA/DCO record for a standards contribution.
+  0 red-team item(s) still open.</div>
+</div>
+
+<div class="cards">
+  <div class="card"><div class="n">11</div><div class="k">automated checks</div></div>
+  <div class="card"><div class="n">52</div><div class="k">findings</div></div>
+  <div class="card"><div class="n">17/17</div><div class="k">links reachable</div></div>
+  <div class="card"><div class="n">22</div><div class="k">adversarial probes</div></div>
+  <div class="card"><div class="n">17/17</div><div class="k">red-team items closed</div></div>
+</div>
+
+<h2>1. Automated checks<span class="hint">exit code 1 on any failure; <code>--selftest</code> proves each can fail</span></h2>
+<table><thead><tr><th>Check</th><th>What it tests</th><th>Result</th><th class=num>Findings</th></tr></thead>
+<tbody>
+<tr><td class=mono>links</td><td>Every cited URL resolves and carries its expected text</td><td><span class="chip ok">PASS</span></td><td class=num>16/16</td></tr>
+<tr><td class=mono>outsider</td><td>The committed tree runs the documented commands verbatim</td><td><span class="chip ok">PASS</span></td><td class=num>7/7</td></tr>
+<tr><td class=mono>docs-claims</td><td>Numbers in the docs match what the tree produces</td><td><span class="chip ok">PASS</span></td><td class=num>4/4</td></tr>
+<tr><td class=mono>parity</td><td>The tree an outsider can fetch is the tree this review examined</td><td><span class="chip bad">FAIL</span></td><td class=num>4/5</td></tr>
+<tr><td class=mono>relative-links</td><td>File paths named in the docs exist</td><td><span class="chip ok">PASS</span></td><td class=num>1/1</td></tr>
+<tr><td class=mono>citation</td><td>Citation metadata is complete and honest</td><td><span class="chip ok">PASS</span></td><td class=num>5/5</td></tr>
+<tr><td class=mono>license</td><td>LICENSE / pyproject / CITATION agree</td><td><span class="chip ok">PASS</span></td><td class=num>4/4</td></tr>
+<tr><td class=mono>legal</td><td>The legal artifacts a standards contribution depends on carry substance</td><td><span class="chip ok">PASS</span></td><td class=num>4/4</td></tr>
+<tr><td class=mono>public</td><td>The default branch is readable without a token</td><td><span class="chip ok">PASS</span></td><td class=num>1/1</td></tr>
+<tr><td class=mono>machine</td><td>Agent-facing entry points exist and parse</td><td><span class="chip ok">PASS</span></td><td class=num>4/4</td></tr>
+<tr><td class=mono>redteam</td><td>The judgment core survives adversarial probes, and each probe can fail</td><td><span class="chip ok">PASS</span></td><td class=num>1/1</td></tr>
+</tbody></table>
+
+<h3>Everything that is not a pass on this commit</h3>
+<table><thead><tr><th>Check</th><th>Finding</th><th>Status</th><th>What was observed</th></tr></thead>
+<tbody>
+<tr><td class=mono>parity</td><td class=mono>parity-sha</td><td><span class="chip bad">FAIL</span></td><td>origin/main is 21 commit(s) behind HEAD (c066fd3 vs 940edc5): the published tree is not the reviewed tree until this lands on origin/main</td></tr>
+</tbody></table>
+
+<h2>2. Cited sources — every one fetched, not remembered<span class="hint">marker text must appear in the body, so a soft-404 cannot pass</span></h2>
+<table><thead><tr><th>Source</th><th>Status</th><th>URL</th><th>What was observed</th></tr></thead>
+<tbody>
+<tr><td class=mono>cff-spec</td><td><span class="chip ok">PASS</span></td><td><a href="https://citation-file-format.github.io/" target="_blank" rel="noopener">https://citation-file-format.github.io/</a></td><td class=note>HTTP 200, marker &#x27;Citation File Format&#x27; found</td></tr>
+<tr><td class=mono>datacite-schema</td><td><span class="chip ok">PASS</span></td><td><a href="https://schema.datacite.org/" target="_blank" rel="noopener">https://schema.datacite.org/</a></td><td class=note>HTTP 200, marker &#x27;Metadata Schema&#x27; found</td></tr>
+<tr><td class=mono>fair4rs-doi</td><td><span class="chip ok">PASS</span></td><td><a href="https://doi.org/10.15497/RDA00068" target="_blank" rel="noopener">https://doi.org/10.15497/RDA00068</a></td><td class=note>DOI resolves (HTTP 302) -&gt; https://doi.org/10.15497/RDA00068</td></tr>
+<tr><td class=mono>force11-doi</td><td><span class="chip ok">PASS</span></td><td><a href="https://doi.org/10.7717/peerj-cs.86" target="_blank" rel="noopener">https://doi.org/10.7717/peerj-cs.86</a></td><td class=note>DOI resolves (HTTP 302) -&gt; https://doi.org/10.7717/peerj-cs.86</td></tr>
+<tr><td class=mono>force11-principles</td><td><span class="chip ok">PASS</span></td><td><a href="https://force11.org/info/software-citation-principles-published-2016/" target="_blank" rel="noopener">https://force11.org/info/software-citation-principles-published-2016/</a></td><td class=note>HTTP 200, marker &#x27;Software Citation Principles&#x27; found (required a browser User-Agent (host blocks bot UAs))</td></tr>
+<tr><td class=mono>github-citation-files</td><td><span class="chip ok">PASS</span></td><td><a href="https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-citation-files" target="_blank" rel="noopener">https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-citation-files</a></td><td class=note>HTTP 200, marker &#x27;CITATION&#x27; found</td></tr>
+<tr><td class=mono>itu-a1</td><td><span class="chip ok">PASS</span></td><td><a href="https://www.itu.int/en/ITU-T/wtsa12/Documents/resolutions/ITU-T%20A.1.pdf" target="_blank" rel="noopener">https://www.itu.int/en/ITU-T/wtsa12/Documents/resolutions/ITU-T%20A.1.pdf</a></td><td class=note>HTTP 200, PDF magic found (marker text not searched: binary body)</td></tr>
+<tr><td class=mono>itu-ipr</td><td><span class="chip ok">PASS</span></td><td><a href="https://www.itu.int/en/ITU-T/ipr/Pages/policy.aspx" target="_blank" rel="noopener">https://www.itu.int/en/ITU-T/ipr/Pages/policy.aspx</a></td><td class=note>HTTP 200, marker &#x27;patent&#x27; found</td></tr>
+<tr><td class=mono>itu-templates</td><td><span class="chip ok">PASS</span></td><td><a href="https://www.itu.int/en/ITU-T/studygroups/Pages/templates.aspx" target="_blank" rel="noopener">https://www.itu.int/en/ITU-T/studygroups/Pages/templates.aspx</a></td><td class=note>HTTP 200, marker &#x27;template&#x27; found</td></tr>
+<tr><td class=mono>w3c-cg-about</td><td><span class="chip ok">PASS</span></td><td><a href="https://www.w3.org/community/about" target="_blank" rel="noopener">https://www.w3.org/community/about</a></td><td class=note>HTTP 200, marker &#x27;Community Group&#x27; found</td></tr>
+<tr><td class=mono>w3c-cg-faq</td><td><span class="chip ok">PASS</span></td><td><a href="https://www.w3.org/community/faq" target="_blank" rel="noopener">https://www.w3.org/community/faq</a></td><td class=note>HTTP 200, marker &#x27;Contributor License Agreement&#x27; found</td></tr>
+<tr><td class=mono>zenodo-describe-software</td><td><span class="chip ok">PASS</span></td><td><a href="https://help.zenodo.org/docs/github/describe-software/" target="_blank" rel="noopener">https://help.zenodo.org/docs/github/describe-software/</a></td><td class=note>HTTP 200, marker &#x27;CITATION.cff&#x27; found</td></tr>
+<tr><td class=mono>zenodo-zenodo-json</td><td><span class="chip ok">PASS</span></td><td><a href="https://help.zenodo.org/docs/github/describe-software/zenodo-json" target="_blank" rel="noopener">https://help.zenodo.org/docs/github/describe-software/zenodo-json</a></td><td class=note>HTTP 200, marker &#x27;CITATION.cff&#x27; found</td></tr>
+<tr><td class=mono>portal</td><td><span class="chip ok">PASS</span></td><td><a href="https://zhaoxinghua09-cell.github.io/lgd-hub/" target="_blank" rel="noopener">https://zhaoxinghua09-cell.github.io/lgd-hub/</a></td><td class=note>HTTP 200</td></tr>
+<tr><td class=mono>public-anonymous</td><td><span class="chip ok">PASS</span></td><td><a href="https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md" target="_blank" rel="noopener">https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md</a></td><td class=note>anonymous GET https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md -&gt; HTTP 200</td></tr>
+<tr><td class=mono>repo-llms-txt</td><td><span class="chip ok">PASS</span></td><td><a href="https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/llms.txt" target="_blank" rel="noopener">https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/llms.txt</a></td><td class=note>HTTP 200, marker &#x27;LGD Engine&#x27; found</td></tr>
+<tr><td class=mono>repo-readme-raw</td><td><span class="chip ok">PASS</span></td><td><a href="https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md" target="_blank" rel="noopener">https://raw.githubusercontent.com/Medxpert-org/lgd-engine/main/README.md</a></td><td class=note>HTTP 200, marker &#x27;LGD Engine&#x27; found</td></tr>
+</tbody></table>
+
+<h2>3. Red team — two rounds, and what came of them<span class="hint">S7: an independent seat told to distrust the author · 2026-11-04: an executable probe harness</span></h2>
+<table><thead><tr><th>#</th><th>Finding</th><th>Status</th><th>Resolution</th></tr></thead>
+<tbody>
+<tr><td class=mono>R1</td><td>Fail-open: an unclassified change_type returned GO with 0 reasons and an empty evidence package</td><td><span class="chip ok">FIXED</span></td><td class=note>unknown/missing change type → hold (R-MAJ-06); blank refs are not evidence; 3 invariants</td></tr>
+<tr><td class=mono>R2</td><td>Verdict softening: per_judge HOLD while the aggregate said REJECT</td><td><span class="chip ok">FIXED</span></td><td class=note>a major rule can escalate but never soften a veto; invariant veto-not-softened</td></tr>
+<tr><td class=mono>R3</td><td>A judge exception printed REJECT and exited 2, exactly like a real veto</td><td><span class="chip ok">FIXED</span></td><td class=note>report.errors + exit 3 for tool failure, 64 for usage; REJECT still exits 2</td></tr>
+<tr><td class=mono>R4</td><td>Gate could be turned green: stub demo1/selftest.py, or a sys.exit(0) test</td><td><span class="chip ok">FIXED</span></td><td class=note>one canonical test path; shadow file fails; summary must report N/N cases and N/N invariants</td></tr>
+<tr><td class=mono>R5</td><td>&#x27;No plaintext keys&#x27; was narrower than its name (AWS secret, db_password, JWT)</td><td><span class="chip ok">FIXED</span></td><td class=note>patterns added and verified red</td></tr>
+<tr><td class=mono>R6</td><td>Malformed YAML passed when PyYAML was absent — the CI-realistic path</td><td><span class="chip ok">FIXED</span></td><td class=note>stdlib fallback refuses unbalanced collections; malformed files now FAIL cleanly instead of crashing</td></tr>
+<tr><td class=mono>R7</td><td>entry as a list bypassed the traversal check</td><td><span class="chip ok">FIXED</span></td><td class=note>list entries are checked; verified red</td></tr>
+<tr><td class=mono>R8</td><td>Three release surfaces, three gate counts (5/5 vs 4/4 vs 5)</td><td><span class="chip ok">FIXED</span></td><td class=note>one check reads all three docs; all now say 6/6</td></tr>
+<tr><td class=mono>R9</td><td>&#x27;7-dimension review closed, no open high-severity findings&#x27; with no artifact in the tree</td><td><span class="chip ok">FIXED</span></td><td class=note>claim removed from README/llms.txt/release-prep; replaced by a pointer to this review</td></tr>
+<tr><td class=mono>R10</td><td>README said zero-evidence go is &#x27;rejected&#x27;; the code downgrades to hold</td><td><span class="chip ok">FIXED</span></td><td class=note>prose now matches law 2 and the implementation</td></tr>
+<tr><td class=mono>R11</td><td>CI did not run the suites the docs said were &#x27;enforced in CI&#x27;</td><td><span class="chip ok">FIXED</span></td><td class=note>OpenAPI, injection/security and SSE smoke added to the workflow; demo2 moved into gate_bot</td></tr>
+<tr><td class=mono>R12</td><td>Predicate inversion: predicate_unchanged=false (the worse direction) scored better than true</td><td><span class="chip ok">FIXED</span></td><td class=note>new R-MAJ-08-predicate-changed; probe A1 sweeps the axis from four base change types</td></tr>
+<tr><td class=mono>R13</td><td>postmarket L2-EVIDENCED was unreachable dead code — that domain&#x27;s law was decorative</td><td><span class="chip ok">FIXED</span></td><td class=note>branch restructured so law 2 fires and appears in the reason chain; probe C2</td></tr>
+<tr><td class=mono>R14</td><td>MCP role was read, logged and quoted in denials, then never consulted; the documented {ctx:…} wrapper was ignored; non-object arguments were judged</td><td><span class="chip ok">FIXED</span></td><td class=note>declared ROLE_TOOLS table failing closed, wrapper honoured, -32602 on bad arguments; probes D1/D3/D4</td></tr>
+<tr><td class=mono>R15</td><td>Published contract drifted from code: enum missing supplier_substitution, source_refs typed as strings, six dead mvp/ paths, an example naming a domain and rule that do not exist</td><td><span class="chip ok">FIXED</span></td><td class=note>contract corrected; docs/validate_openapi.py 20/20 holds contract and code in lockstep; probes F1/F2</td></tr>
+<tr><td class=mono>R16</td><td>Inverted evidence axis: evidence_sufficiency=none returned go while needs_supplement held</td><td><span class="chip ok">FIXED</span></td><td class=note>R-MAJ-03 covers both values; probe A1</td></tr>
+<tr><td class=mono>R17</td><td>A raising rule predicate was swallowed (except: pass) — fail open; unknown enum values and a Class 2 recall outside maintenance_execution also rode out as go</td><td><span class="chip ok">FIXED</span></td><td class=note>predicate errors hold; every enumerated axis holds on an unknown value; R-MAJ-07; probes C3/C4/C5/E2</td></tr>
+</tbody></table>
+
+<h2>4. Probe matrix — the executable half of the red team<span class="hint">22 probes · authorization 2, contract 4, exit-code 1, fail-closed 9, monotonicity 2, reachability 1, regression 1, robustness 2</span></h2>
+<table><thead><tr><th>#</th><th>Family</th><th>Property under test</th><th>Result</th><th>What was observed</th></tr></thead>
+<tbody>
+<tr><td class=mono>A1</td><td class=mono>monotonicity</td><td>each 510(k) risk axis is monotone: a worse value never yields a better verdict, from every base change type</td><td><span class="chip ok">PASS</span></td><td class=note>monotone on 5 axes x 4 base types</td></tr>
+<tr><td class=mono>A2</td><td class=mono>monotonicity</td><td>a Class 1 recall stays reject across every combination of the other axes</td><td><span class="chip ok">PASS</span></td><td class=note>reject across 12 combinations</td></tr>
+<tr><td class=mono>B1</td><td class=mono>fail-closed</td><td>unknown change_type is never a go (unknown is not a safe default)</td><td><span class="chip ok">PASS</span></td><td class=note>verdict=hold</td></tr>
+<tr><td class=mono>B2</td><td class=mono>fail-closed</td><td>missing change_type is never a go</td><td><span class="chip ok">PASS</span></td><td class=note>verdict=hold</td></tr>
+<tr><td class=mono>B3</td><td class=mono>fail-closed</td><td>blank evidence refs do not satisfy law 2 (no evidence = hold, not go)</td><td><span class="chip ok">PASS</span></td><td class=note>verdict=hold evidence=0</td></tr>
+<tr><td class=mono>B4</td><td class=mono>fail-closed</td><td>unknown jurisdiction is never a go</td><td><span class="chip ok">PASS</span></td><td class=note>verdict=hold</td></tr>
+<tr><td class=mono>B5</td><td class=mono>fail-closed</td><td>a supplier substitution without equivalence evidence cannot soften a veto</td><td><span class="chip ok">PASS</span></td><td class=note>verdict=reject</td></tr>
+<tr><td class=mono>C1</td><td class=mono>fail-closed</td><td>postmarket Class 1 recall is reject</td><td><span class="chip ok">PASS</span></td><td class=note>verdict=reject</td></tr>
+<tr><td class=mono>C2</td><td class=mono>reachability</td><td>law 2 is reachable in the postmarket judge: zero evidence must produce verdict=hold AND an L2-EVIDENCED reason on record</td><td><span class="chip ok">PASS</span></td><td class=note>verdict=hold rules=[&#x27;L2-EVIDENCED&#x27;]</td></tr>
+<tr><td class=mono>C3</td><td class=mono>fail-closed</td><td>postmarket judgement with an all-blank evidence package is never a go</td><td><span class="chip ok">PASS</span></td><td class=note>verdict=hold evidence=0</td></tr>
+<tr><td class=mono>C4</td><td class=mono>fail-closed</td><td>unknown postmarket recall_class / cause type is never a go</td><td><span class="chip ok">PASS</span></td><td class=note>all three unknowns held</td></tr>
+<tr><td class=mono>C5</td><td class=mono>fail-closed</td><td>a rule predicate that raises (unparseable event_report_count) is a hold signal, not a silently swallowed pass</td><td><span class="chip ok">PASS</span></td><td class=note>verdict=hold</td></tr>
+<tr><td class=mono>D1</td><td class=mono>authorization</td><td>an undeclared MCP role is denied (role is declared, not decorative)</td><td><span class="chip ok">PASS</span></td><td class=note>keys=[&#x27;error&#x27;, &#x27;id&#x27;, &#x27;jsonrpc&#x27;]</td></tr>
+<tr><td class=mono>D2</td><td class=mono>authorization</td><td>the declared read-only role can still call a read-only tool</td><td><span class="chip ok">PASS</span></td><td class=note>keys=[&#x27;id&#x27;, &#x27;jsonrpc&#x27;, &#x27;result&#x27;]</td></tr>
+<tr><td class=mono>D3</td><td class=mono>contract</td><td>the documented {ctx: {...}} wrapper for judge_postmarket behaves the same as flat arguments</td><td><span class="chip ok">PASS</span></td><td class=note>wrapped and flat arguments produce the same GateReport</td></tr>
+<tr><td class=mono>D4</td><td class=mono>robustness</td><td>non-object arguments are rejected with a JSON-RPC error, not a traceback</td><td><span class="chip ok">PASS</span></td><td class=note>keys=[&#x27;error&#x27;, &#x27;id&#x27;, &#x27;jsonrpc&#x27;]</td></tr>
+<tr><td class=mono>E1</td><td class=mono>regression</td><td>a judge that raises is reported in report.errors and fails safe to reject</td><td><span class="chip ok">PASS</span></td><td class=note>verdict=reject errors=[&#x27;boom: RuntimeError: judge exploded&#x27;]</td></tr>
+<tr><td class=mono>E2</td><td class=mono>exit-code</td><td>CLI exit codes carry the verdict: 0=go 1=hold 2=reject 64=usage</td><td><span class="chip ok">PASS</span></td><td class=note>0/1/2/64 as documented</td></tr>
+<tr><td class=mono>E3</td><td class=mono>robustness</td><td>--db refuses to open a non-SQLite file and refuses an empty value (exit 64, no traceback) instead of writing a database wherever it is pointed</td><td><span class="chip ok">PASS</span></td><td class=note>64 / 64 / 0 as documented</td></tr>
+<tr><td class=mono>E4</td><td class=mono>contract</td><td>the console entry point implements the --all the docs advertise, and still exits 64 on a usage error</td><td><span class="chip ok">PASS</span></td><td class=note>parity with the documented CLI</td></tr>
+<tr><td class=mono>F1</td><td class=mono>contract</td><td>the published change_type enum covers every change type the judge accepts</td><td><span class="chip ok">PASS</span></td><td class=note>enum covers all 9 types</td></tr>
+<tr><td class=mono>F2</td><td class=mono>contract</td><td>the published source_refs shape matches what the judges require (objects with a ref, not bare strings)</td><td><span class="chip ok">PASS</span></td><td class=note>items.type=object required=[&#x27;ref&#x27;]</td></tr>
+</tbody></table>
+
+<h2>5. Outsider test — a stranger following only the docs<span class="hint">18 gaps reported; those acted on are listed</span></h2>
+<table><thead><tr><th>Gap</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>pip install &quot;lgd-engine[yaml]&quot; 404s (not on PyPI)</td><td><span class="chip ok">FIXED</span></td></tr>
+<tr><td>Gate count disagreed across three release docs (4/4 vs 5/5)</td><td><span class="chip ok">FIXED</span></td></tr>
+<tr><td>No prerequisites section anywhere</td><td><span class="chip ok">FIXED</span></td></tr>
+<tr><td>SSE smoke documented as &#x27;self-hosts, asserts, exits&#x27; with no precondition</td><td><span class="chip ok">FIXED</span></td></tr>
+<tr><td>demo1/test_ecosystem.py produced 6/6 that nobody documented</td><td><span class="chip ok">FIXED</span></td></tr>
+<tr><td>Usage errors exited 2, indistinguishable from REJECT</td><td><span class="chip ok">FIXED</span></td></tr>
+<tr><td>lgd-gate console has no --all while the docs show it</td><td><span class="chip bad">OPEN</span></td></tr>
+<tr><td>Docker / docker compose / npm smoke documented but never verified here</td><td><span class="chip warn">NOT VERIFIED</span></td></tr>
+<tr><td>Portal page does not mention this repository</td><td><span class="chip bad">OPEN</span></td></tr>
+</tbody></table>
+
+<h2>6. Why this is the gate</h2>
+<ul>
+<li><b>ITU-T A.1 §3.1.6</b> — material submitted as a contribution is presumed to carry no
+distribution restrictions; §3.1.7 requires a software copyright and licensing declaration.</li>
+<li><b>W3C Community Groups</b> — participation requires the CLA; contributions are recorded publicly
+(preferably as pull requests).</li>
+<li><b>Zenodo</b> — a <code>.zenodo.json</code> silently overrides <code>CITATION.cff</code> for the release archive.</li>
+<li><b>FORCE11</b> — unique identification, persistence, accessibility, specificity: a citation without a
+resolvable identifier fails the principle, so <code>CITATION.cff</code> carries no DOI until Zenodo mints one.</li>
+</ul>
+
+<footer>
+Generated by <span class="mono">review/build_report.py</span> from
+<span class="mono">review/evidence/pre_release_latest.json</span>, which names the
+commit the review examined (<span class="mono">940edc5</span>) —
+the commit that stores this page is necessarily one later. Re-run:
+<code>python review/pre_release_review.py --json review/evidence/pre_release_latest.json &amp;&amp; python review/build_report.py</code>.
+This page is self-contained: no CDN, no web font, no JavaScript.
+</footer>
+</div></body></html>
