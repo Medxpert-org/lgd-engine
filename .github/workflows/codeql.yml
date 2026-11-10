@@ -21,6 +21,6 @@ jobs:
         with:
           languages: python
 
-      - uses: github/codeql-action/autobuild@093c0af4c358e174c90d33c5672595fb14c89183
+      - uses: github/codeql-action/autobuild@fbfa9f37476c0024508d051f3c34fcca3366b0e2
 
       - uses: github/codeql-action/analyze@093c0af4c358e174c90d33c5672595fb14c89183
