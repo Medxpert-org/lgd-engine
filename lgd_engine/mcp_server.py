@@ -24,6 +24,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lgd_engine.gate.engine import GateEngine                # noqa: E402
+from lgd_engine import __version__ as _PKG_VERSION            # noqa: E402
 from lgd_engine.judges.judge_510k import Judge510kChange      # noqa: E402
 from lgd_engine.judges.judge_postmarket import JudgePostmarket  # noqa: E402
 from lgd_engine.memory.localmem_min import LocalMemory        # noqa: E402
@@ -80,7 +81,7 @@ def handle(recv: dict, audit: LocalMemory) -> dict:
     if method == "initialize":
         return {"jsonrpc": "2.0", "id": mid, "result": {
             "protocolVersion": "2024-11-05",
-            "serverInfo": {"name": "lgd-engine-mcp", "version": "0.1.0"},
+            "serverInfo": {"name": "lgd-engine-mcp", "version": _PKG_VERSION},
             "capabilities": {"tools": {}},
         }}
 
@@ -179,12 +180,20 @@ def main() -> int:
         line = line.strip()
         if not line:
             continue
+        recv = None
         try:
             recv = json.loads(line)
             resp = handle(recv, audit)
         except json.JSONDecodeError as exc:
             resp = {"jsonrpc": "2.0", "id": None,
                     "error": {"code": -32700, "message": f"parse error: {exc}"}}
+        # JSON-RPC notifications (a parsed message with no "id", e.g.
+        # notifications/initialized) must not be answered at all. Before this
+        # guard the server replied -32601 "method not found" to the handshake
+        # notification, which strict clients read as a protocol violation. A
+        # parse error keeps recv=None and still gets its -32700 reply.
+        if isinstance(recv, dict) and "id" not in recv:
+            continue
         sys.stdout.write(json.dumps(resp, ensure_ascii=False) + "\n")
         sys.stdout.flush()
     audit.close()
