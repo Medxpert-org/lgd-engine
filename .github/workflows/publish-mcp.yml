@@ -13,8 +13,9 @@ jobs:
       contents: read
 
     steps:
+      # Pinned to the v5 commit: this org requires SHA pinning for actions.
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Install mcp-publisher
         run: |
