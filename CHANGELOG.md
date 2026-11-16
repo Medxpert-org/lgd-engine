@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-11-16
+
+### Fixed
+
+- `lgd_engine.__init__.__version__` was a literal (`0.1.0`) sitting next to a
+  separate version in `pyproject.toml`, so an installed 0.1.1 would still report
+  `0.1.0` at runtime. It now reads the installed distribution metadata with a
+  `0.0.0` fallback for source-tree runs — the same defect class and the same
+  remedy as the other seven MCP packages in this family.
+
+### Added
+
+- `tools/version_gate.py` + `.github/workflows/version-gate.yml`: `pyproject`,
+  `server.json` (`version` and `packages[].version`) and the installed
+  `importlib.metadata` version must agree, and every `uses:` must be pinned to a
+  40-character commit SHA. The pin rule reports its own coverage
+  (`PIN CHECK: N workflows, M uses, K floating`) so a green run cannot be
+  confused with a rule that never ran.
+- `.github/workflows/publish-pypi.yml`: build, publish via Trusted Publishing
+  with an API-token fallback, then **read PyPI back**. Neither publish attempt
+  decides the job; the readback does, so a publish step that reports success
+  while shipping nothing cannot go green.
+
+### Changed
+
+- `publish-mcp.yml`: the duplicate-version pre-check now asks the version
+  endpoint (`/v0/servers/<encoded name>/versions/<ver>`). `?search=` was measured
+  returning the oldest version only, so the check reported "not registered" for
+  versions that were already there.
+- `server.json`: icon pinned to `@v0.1.1` instead of `@main`.
+
 ## [Unreleased]
 
 The package `lgd-engine` is **not yet published**. Everything below is merged

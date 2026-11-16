@@ -1,6 +1,6 @@
 """lgd-engine: LGD (有籍有证有门禁) minimal kernel.
 
-Version: 0.1.0
+Version: 0.1.1
 Domain-agnostic gate + memory + judge skeleton, with the 510(k) change
 classification judge as the first concrete domain adapter.
 """
