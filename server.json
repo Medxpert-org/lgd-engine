@@ -3,7 +3,7 @@
   "name": "io.github.Medxpert-org/lgd-engine",
   "title": "LGD Engine",
   "description": "Judgment core for medical-device AI change control: 510(k) change and postmarket gates.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "websiteUrl": "https://github.com/Medxpert-org/lgd-engine",
   "repository": {
     "url": "https://github.com/Medxpert-org/lgd-engine",
@@ -12,7 +12,7 @@
   },
   "icons": [
     {
-      "src": "https://cdn.jsdelivr.net/gh/Medxpert-org/lgd-engine@main/assets/lgd-engine-logo.svg",
+      "src": "https://cdn.jsdelivr.net/gh/Medxpert-org/lgd-engine@v0.1.1/assets/lgd-engine-logo.svg",
       "mimeType": "image/svg+xml",
       "sizes": ["any"],
       "theme": "light"
@@ -22,7 +22,7 @@
     {
       "registryType": "pypi",
       "identifier": "lgd-engine",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
@@ -36,7 +36,7 @@
       "runtime_egress": "none",
       "tool_count": 3,
       "tools": "list_judges, judge_change, judge_postmarket",
-      "verify_command": "uvx --from lgd-engine@0.1.0 lgd-engine",
+      "verify_command": "uvx --from lgd-engine@0.1.1 lgd-engine",
       "scope_note": "Verdicts are decision support artifacts for change control, not regulatory approval."
     }
   }
