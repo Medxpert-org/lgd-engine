@@ -85,6 +85,36 @@ def pin_problems() -> list[str]:
     print(f"  PIN CHECK: {len(wf_files)} 个 workflow、{checked} 处 uses 已核，浮动 {len(bad)} 处")
     return bad
 
+def image_problems(expected: str) -> list[str]:
+    """The container tag is another place the version is repeated.
+
+    A `docker-compose.yml` that still names `lgd-engine:0.1.0` after the package
+    moved to 0.1.1 hands whoever runs it the previous build, and says so in a file
+    no release step reads. Same defect class as the `__version__` literal.
+    """
+    comp = ROOT / "docker-compose.yml"
+    if not comp.exists():
+        print("  IMAGE SKIP: 未找到 docker-compose.yml，镜像标签规则未生效")
+        return []
+    name = dist_name()
+    if not name:
+        print("  IMAGE SKIP: pyproject.toml 里找不到 name，无从比对镜像名")
+        return []
+    pat = re.compile(r"image:\s*([^\s#]+):([^\s#]+)")
+    bad: list[str] = []
+    checked = 0
+    for lineno, line in enumerate(comp.read_text(encoding="utf-8").splitlines(), 1):
+        m = pat.search(line)
+        if not m or name not in m.group(1):
+            continue
+        checked += 1
+        tag = m.group(2)
+        if not expected or tag != expected:
+            bad.append(f"docker-compose.yml:{lineno}: {m.group(1)}:{tag} != {expected}")
+    print(f"  IMAGE CHECK: {checked} 处镜像标签已核，不符 {len(bad)} 处")
+    return bad
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--static-only", action="store_true")
@@ -134,6 +164,10 @@ def main() -> int:
         problems.append(f"runtime: 取不到版本 {runtime}")
 
     problems += pin_problems()
+
+    # 镜像标签比对的基准：字面量取 pyproject，attr 单一源取运行时
+    expected = ref_value if kind == "literal" else (runtime or "")
+    problems += image_problems(expected)
 
     if problems:
         print("\nGATE FAIL:")

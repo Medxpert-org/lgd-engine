@@ -12,7 +12,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: lgd-engine:0.1.0
+    image: lgd-engine:0.1.1
     ports:
       - "127.0.0.1:18090:8080"      # REST demo (示意)
       - "127.0.0.1:18766:8765"      # streamable-HTTP MCP (示意, reserved)
