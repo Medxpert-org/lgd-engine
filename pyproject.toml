@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lgd-engine"
-version = "0.1.0"
+version = "0.1.1"
 description = "Theory-bound judgment core for medical-device AI change control (LGD 三律 / 有籍有证有门禁 / 触点即门)."
 readme = "release-prep/README.md"
 requires-python = ">=3.9"
