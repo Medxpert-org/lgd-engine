@@ -63,6 +63,10 @@ jobs:
           # Resolve the version first, then ask PyPI over curl. Python is used for
           # parsing only: no TLS from Python, so the step behaves the same on a
           # runner and on a laptop with a strict TLS stack.
+          # `0.0.0` is the documented source-tree fallback in `lgd_engine/__init__.py`,
+          # not a released version. Treating it as one made the readback verify a
+          # version that does not exist and fail on a publish that had in fact
+          # succeeded — a red X for the wrong reason. Skip it and keep looking.
           WANT=$(printf '%s' "$TAG" | sed 's/^v//')
           if [ -z "$WANT" ]; then
             for F in "$INIT" "$MANIFEST"; do
@@ -71,7 +75,8 @@ jobs:
           import re, sys
           txt = open(sys.argv[1], encoding="utf-8").read()
           m = re.search(r'__version__\s*=\s*"([^"]+)"', txt) or re.search(r'^version\s*=\s*"([^"]+)"', txt, re.M)
-          print(m.group(1) if m else "")
+          v = m.group(1) if m else ""
+          print("" if v in ("", "0.0.0") else v)
           PY
           )
               if [ -n "$WANT" ]; then
