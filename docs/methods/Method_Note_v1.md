@@ -20,7 +20,7 @@
 > shipped rule carries a basis in `lgd_engine/judges/basis.py`, labelled **LAW** (a
 > provision whose text we read) or **DOCTRINE** (a house rule declared as such — the L2
 > evidence bar, or the fact that a judge speaks for one jurisdiction only). Current
-> split: **62 rules · 53 LAW · 9 DOCTRINE · 0 unbased**, enforced in both directions by
+> split: **64 rules · 54 LAW · 10 DOCTRINE · 0 unbased**, enforced in both directions by
 > `TestClauseBasis` (a rule with no basis fails; a basis entry naming no rule also
 > fails, because dead authority is how citation tables rot while still looking
 > complete). Readable form: `docs/methods/Clause_Matrix.md`. The doctrinal share is
@@ -111,8 +111,8 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **62 assertions**,
-**34 case files** (30 corpus + 4 red-team), **5 tables**, **12 adversarial probes**.
+The assertion count grows as tables are added. As of this version: **63 assertions**,
+**35 case files** (30 corpus + 5 red-team), **5 tables**, **12 adversarial probes**.
 
 ### 1.5 One defect this method found in itself
 
@@ -130,6 +130,33 @@ expectations, so the gap cannot silently reopen.
 
 This is the intended shape of the evidence: **a rule table that has never convicted
 itself has not been tested**, only reviewed.
+
+### 1.6 Two more, and the class they belong to
+
+Red-teaming was then pushed into the remaining domains, looking for one specific
+shape: **a single self-declared flag that switches off a whole block of rules.**
+
+**MDR — the accepted-corrective-action flag.** `corrective_action_accepted_by_authority:
+true` skipped *every* major rule, so an expansion of indication, a change affecting
+safety or performance, and a change of risk class all returned **go**. The exemption
+in CAMD FAQ 17 is for *the change that implements* the accepted corrective action; the
+code read "an accepted action exists" as "this change is accepted". `M-MAJ-13` now
+requires both markers, and the lawful case keeps its route by declaring the
+implementation.
+
+**510(k) — a value the vocabulary knew and the table never placed.** `label_expansion`
+was in `KNOWN_CHANGE_TYPES`, matched no rule, and returned go with an **empty reason
+chain** — a labelling change that adds a patient population riding the label-correction
+path, against 21 CFR 807.81(a)(3)(i). `R-MAJ-09` places it on the new-510(k) side.
+
+The second one generalised: the guard against unknown values only fires for values the
+table does *not* know. A test that walks the vocabulary found **four more** types
+claimed only conditionally (`design_defect`, `material_nonconforming`,
+`process_change_control`, `maintenance_execution`) — each returning an empty-chain go
+when handed neutral facts. Rather than four more predicate rules, `R-MAJ-10` closes the
+class: **a verdict that cannot name its rule is not a verdict**, so it holds. A test now
+requires every known change type to be claimed by at least one rule, which is what
+turned one defect into an inventory.
 
 ---
 
@@ -245,7 +272,7 @@ shortcut is not merely discouraged; the route is marked unavailable.
 
 ### 4.1 Corpus
 
-34 case files across 6 directories (`demo1/cases*`), each with a declared expected
+35 case files across 6 directories (`demo1/cases*`), each with a declared expected
 verdict (or a per-jurisdiction pair). Cases are desensitised constructs, not
 customer data; `_desensitized_from` records what real-world pattern each one models.
 Every case is evaluated by the same code path used in production; there is no
@@ -409,4 +436,4 @@ Full rule ids, conditions and rationales are in each judge module and in
 
 本方法说明描述一种把"监管变更判定"从自然语言问答改写成可执行规则表的方法：输入是评审人实际持有的结构化字段，输出是三值判决（go / hold / reject）加上被触发的规则编号；判定纯粹、可离线重跑、失败时表现为"拒绝回答"而非"猜测"。已实现五张判定表（美国 510(k) 变更分类、上市后处置、FDA PCCP 范围、EU MDR 重大变更、中国 NMPA 变更注册），随包发布 34 个带预期判决的案件与 12 条对抗探针；同一批输入下，确定性判定器 12/12 命中预期，关键词捷径仅 5/12。
 
-本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：62 条契约断言、5 张判定表、34 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
+本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：63 条契约断言、5 张判定表、35 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。

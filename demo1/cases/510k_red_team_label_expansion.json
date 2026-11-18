@@ -1,0 +1,15 @@
+{
+  "case_id": "FDA-510K-RED-01",
+  "_desensitized_from": "红队自造：标签扩写新增适应证，按标签更正通道放行",
+  "device_description": "已获 510(k) 的 II 类设备；拟修订标签，在原有适应人群外新增一个此前未覆盖的患者群体，并主张属标签更正。",
+  "change_type": "label_expansion",
+  "recall_class": "none",
+  "safety_impact": "none",
+  "evidence_sufficiency": "sufficient",
+  "regulatory_path": "510k",
+  "predicate_unchanged": true,
+  "requires_submission": false,
+  "jurisdiction": "FDA",
+  "source_refs": [{"kind": "statute", "ref": "21 CFR 807.81(a)(3)(i)"}],
+  "expected_verdict": "hold"
+}

@@ -301,6 +301,37 @@ class TestNmpaJudge(unittest.TestCase):
         self.assertIn("N-MAJ-14", " ".join(r["rule"] for r in v["reasons"]))
 
 
+class TestEnumCoverage(unittest.TestCase):
+    """A vocabulary that is wider than the rule table is a silent-go generator.
+
+    The unknown-value guards only fire for values the table does NOT know. A value
+    the table DOES know but never places fell through with an empty reason chain and
+    returned go — that is how `label_expansion` shipped a new indication down the
+    label-correction path. This asserts every known change type is claimed by at
+    least one rule, so a new vocabulary entry cannot arrive unplaced."""
+
+    def setUp(self):
+        from lgd_engine.judges.judge_510k import Judge510kChange, KNOWN_CHANGE_TYPES
+        self.judge = Judge510kChange()
+        self.types = KNOWN_CHANGE_TYPES
+        self.ok = {
+            "recall_class": "none", "safety_impact": "none",
+            "evidence_sufficiency": "sufficient", "regulatory_path": "510k",
+            "predicate_unchanged": True, "requires_submission": False,
+            "jurisdiction": "FDA", "source_refs": [{"kind": "doc", "ref": "r"}],
+        }
+
+    def test_every_known_change_type_is_claimed_by_a_rule(self):
+        unplaced = []
+        for ct in sorted(self.types):
+            ctx = dict(self.ok)
+            ctx["change_type"] = ct
+            v = self.judge.evaluate(ctx)
+            if not v.get("reasons"):
+                unplaced.append(ct)
+        self.assertEqual(unplaced, [], f"known but unplaced change types: {unplaced}")
+
+
 class TestDemoPage(unittest.TestCase):
     """The browser dossier must be a view of the engine, not a second source of
     truth. Both assertions below fail if someone edits the page by hand."""
@@ -326,22 +357,12 @@ class TestClauseBasis(unittest.TestCase):
     citation tables rot while still looking complete)."""
 
     def setUp(self):
-        import ast
-        from lgd_engine.judges.basis import CLAUSE_BASIS
+        # Same scan the clause matrix runs, imported rather than re-implemented:
+        # a second copy of this AST walk drifted once and reported a shipped
+        # guard rule as "dead authority".
+        from lgd_engine.judges.basis import CLAUSE_BASIS, shipped_rules
         self.CLAUSE_BASIS = CLAUSE_BASIS
-        self.rules = {}
-        for path in sorted((ROOT / "lgd_engine" / "judges").glob("judge_*.py")):
-            tree = ast.parse(path.read_text(encoding="utf-8"))
-            for node in ast.walk(tree):
-                if not isinstance(node, ast.Dict):
-                    continue
-                keys = {k.value for k in node.keys if isinstance(k, ast.Constant)}
-                if "rule" not in keys or "when" not in keys:
-                    continue
-                for k, v in zip(node.keys, node.values):
-                    if (isinstance(k, ast.Constant) and k.value == "rule"
-                            and isinstance(v, ast.Constant)):
-                        self.rules[v.value] = path.stem
+        self.rules = shipped_rules()
 
     def test_every_shipped_rule_names_a_basis(self):
         missing = sorted(r for r in self.rules if not self.CLAUSE_BASIS.get(r))
@@ -363,7 +384,7 @@ class TestClauseBasis(unittest.TestCase):
         doctrine = [r for r in self.rules if not is_law(self.CLAUSE_BASIS[r])]
         self.assertLessEqual(len(doctrine), 12,
                              f"doctrine share grew: {len(doctrine)} of {len(self.rules)}")
-        self.assertEqual(len(self.rules), 62, "rule count moved — update the matrix doc")
+        self.assertEqual(len(self.rules), 64, "rule count moved — update the matrix doc")
 
 
 class TestCoverageGaps(unittest.TestCase):

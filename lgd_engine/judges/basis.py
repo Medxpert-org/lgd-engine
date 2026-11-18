@@ -43,6 +43,12 @@ CLAUSE_BASIS: dict[str, str] = {
     "R-MAJ-04-config-change-same-platform":
         "LAW 21 CFR 820.70(b) — production and process changes require validation "
         "before implementation",
+    "R-MAJ-10-no-rule-claims-this-change":
+        "DOCTRINE 有据才放行 — 词表内但无规则归位的变更类型，不得以空理由链放行；"
+        "本项为家法（比法规更严），不声称法律要求如此",
+    "R-MAJ-09-label-expansion-new-claim":
+        "LAW 21 CFR 807.81(a)(3)(i) — 改变预期用途（新增/扩大适应证、扩大适用人群）"
+        "须提交新的 510(k)；标签扩写不属标签更正通道",
     "R-MAJ-08-predicate-changed":
         "LAW 21 CFR 807.81(a)(3) — changed predicate basis means the SE comparison "
         "no longer stands",
@@ -228,7 +234,10 @@ def shipped_rules() -> dict[str, str]:
             if not isinstance(node, ast.Dict):
                 continue
             keys = {k.value for k in node.keys if isinstance(k, ast.Constant)}
-            if "rule" not in keys or "when" not in keys:
+            # A rule either has a predicate ("when") or is declared as a structural
+            # guard ("guard": True) that the judge invokes outside the predicate
+            # loops. Both are shipped rules and both need a basis.
+            if "rule" not in keys or not ({"when", "guard"} & keys):
                 continue
             for k, v in zip(node.keys, node.values):
                 if (isinstance(k, ast.Constant) and k.value == "rule"

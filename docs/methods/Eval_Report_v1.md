@@ -5,9 +5,9 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=redteam/mdr-acceptance-scope-20261119 head=7e86394 checks=19 passed=19 -->`
+`<!-- eval-report branch=redteam/510k-unplaced-20261119 head=55ec7ae checks=19 passed=19 -->`
 
-Run at 2026-11-18 23:46 UTC against `redteam/mdr-acceptance-scope-20261119` at `7e86394`, from a fresh clone.
+Run at 2026-11-18 23:55 UTC against `redteam/510k-unplaced-20261119` at `55ec7ae`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
@@ -25,11 +25,11 @@ Run at 2026-11-18 23:46 UTC against `redteam/mdr-acceptance-scope-20261119` at `
 | C11 | verdict deterministic + cheap (no model) | PASS |
 | C13 | competitor claims carry provenance labels | PASS |
 | X1 | tampered page makes --check fail | PASS |
-| X2 | suite runs and reports 62 tests | PASS |
+| X2 | suite runs and reports 63 tests | PASS |
 | X3 | dependencies = [] and no third-party imports | PASS |
-| X4 | note claims 34 cases, disk has 34 | PASS |
+| X4 | note claims 35 cases, disk has 35 | PASS |
 | X5 | tree still clean after the whole run | PASS |
-| X6 | docs quote 62 assertions and 34 cases everywhere, and every cited audit command exists | PASS |
+| X6 | docs quote 63 assertions and 35 cases everywhere, and every cited audit command exists | PASS |
 
 **19/19 checks passed** (plus C12, which validates this file).
 
