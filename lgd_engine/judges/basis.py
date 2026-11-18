@@ -204,4 +204,32 @@ def is_law(basis: str) -> bool:
     return basis.startswith("LAW ")
 
 
-__all__ = ["CLAUSE_BASIS", "basis_for", "is_law"]
+def shipped_rules() -> dict[str, str]:
+    """rule id -> judge module, read from source so the list cannot drift.
+
+    Parsed rather than imported on purpose: importing every judge would couple
+    this audit to import side effects, and a rule list that comes from the
+    judges' own source is the thing we actually want to audit.
+    """
+    import ast
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    found: dict[str, str] = {}
+    for path in sorted((root / "lgd_engine" / "judges").glob("judge_*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Dict):
+                continue
+            keys = {k.value for k in node.keys if isinstance(k, ast.Constant)}
+            if "rule" not in keys or "when" not in keys:
+                continue
+            for k, v in zip(node.keys, node.values):
+                if (isinstance(k, ast.Constant) and k.value == "rule"
+                        and isinstance(v, ast.Constant)):
+                    found[v.value] = path.stem
+    return found
+
+
+__all__ = ["CLAUSE_BASIS", "basis_for", "is_law", "shipped_rules"]
+

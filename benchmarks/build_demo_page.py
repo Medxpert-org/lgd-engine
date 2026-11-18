@@ -22,6 +22,7 @@ from lgd_engine.judges.judge_postmarket import JudgePostmarket  # noqa: E402
 from lgd_engine.judges.judge_pccp import JudgePccpScope      # noqa: E402
 from lgd_engine.judges.judge_mdr import JudgeMdrSignificance  # noqa: E402
 from lgd_engine.judges.judge_nmpa import JudgeNmpaChangeRegistration  # noqa: E402
+from lgd_engine.judges.basis import CLAUSE_BASIS, is_law, shipped_rules  # noqa: E402
 
 OUT = ROOT / "demo" / "judge-dossier.html"
 
@@ -93,6 +94,30 @@ def _baseline() -> dict:
         return {"ok": p.returncode == 0, "lines": picked}
     except Exception as exc:  # pragma: no cover
         return {"ok": False, "lines": [f"baseline unavailable: {exc}"]}
+
+
+def _clause_rows() -> list:
+    """Every shipped rule with the provision behind it — the page's audit table."""
+    rules = shipped_rules()
+    rows = []
+    for rid, judge in sorted(rules.items(), key=lambda kv: (kv[1], kv[0])):
+        basis = CLAUSE_BASIS.get(rid, "")
+        rows.append({"rule": rid, "judge": judge, "basis": basis,
+                     "kind": "LAW" if is_law(basis) else "DOCTRINE"})
+    return rows
+
+
+def _assertion_count() -> int:
+    """Read the real assertion count from the suite, so the page cannot lag it."""
+    try:
+        p = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests"],
+                           capture_output=True, text=True, timeout=180, cwd=ROOT)
+        for ln in (p.stdout or "").splitlines():
+            if ln.startswith("Ran ") and " test" in ln:
+                return int(ln.split()[1])
+    except Exception:  # pragma: no cover
+        pass
+    return 0
 
 
 TEMPLATE = r"""<!DOCTYPE html>
@@ -183,7 +208,7 @@ a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink-2)}
 <div class="wrap">
 <header class="top">
   <div class="eyebrow">LGD Engine · 判决档案 · 由引擎自身生成</div>
-  <h1>五个判定器，<br>19 个案件，逐条可查。</h1>
+  <h1>五个判定器，<br>__CASES__ 个案件，<br>__RULES__ 条规则逐条对条款。</h1>
   <p class="lede">这一页不是宣传材料。<b>每张卡上的判决，都是本仓库里的案件文件送进 <code style="font-family:var(--mono)">GateEngine</code> 跑出来的原始结果</b>——含命中的规则编号、等级、理由原文。你可以在本地用一条命令重跑，得到与页面逐字相同的结果。</p>
   <div class="stamp">
     生成时间（UTC）：__GENERATED__<br>
@@ -196,7 +221,8 @@ a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink-2)}
   <div class="kpi"><div class="n">5</div><div class="l">judges shipped</div><div class="s">覆盖 FDA / EU / 中国三辖区</div></div>
   <div class="kpi"><div class="n" id="kpi-cases">—</div><div class="l">case files</div><div class="s">全部随包发布，可直接跑</div></div>
   <div class="kpi"><div class="n" id="kpi-match">—</div><div class="l">verdicts match</div><div class="s">判决 = 案件预期，逐条一致</div></div>
-  <div class="kpi"><div class="n">36</div><div class="l">contract assertions</div><div class="s">每次推送由 CI 执行</div></div>
+  <div class="kpi"><div class="n">__ASSERTIONS__</div><div class="l">contract assertions</div><div class="s">每次推送由 CI 执行</div></div>
+  <div class="kpi"><div class="n">__LAWN__</div><div class="l">rules with a clause</div><div class="s">__RULES__ 条规则全部点名依据</div></div>
 </div>
 
 <section class="sect">
@@ -214,6 +240,20 @@ a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink-2)}
   </table>
   <div class="law" id="cmp-verdict"></div>
   <p class="note">朴素法错在两个相反方向：<b>该拦的放行</b>（空证据、未知变更类型、字符串 <code>"yes"</code> 被当成等价声明）、<b>该放的拦住</b>（PCCP 绿色案件因为 JSON 里出现了键名 <code>affects_intended_use</code>（值为 false）而被误判 hold）。这正是"键名匹配"与"语义判定"的差别。</p>
+</section>
+
+<section class="sect">
+  <div class="sect-h"><h2>条款矩阵</h2><span class="cnt">__RULES__ 条规则 · 每条点名它编码的条款</span></div>
+  <p class="note">判定器给结论不点条款，就和"模型的意见"无法区分。下表把每条规则落到依据上，并分列两种来源：<b>LAW</b> 是我们读过原文的法条／法规／MDCG·CAMD 通知／FDA 指南；<b>DOCTRINE</b> 是本家规则（L2 证据门、单辖区声明），明示为家法，不许冒充法条。家法占比由测试硬性封顶，防止它悄悄长成多数。</p>
+  <div class="chips" id="basis-chips"></div>
+  <input id="basis-q" type="search" placeholder="搜规则号或条款（如 §515C、第七十九条、MDCG）" aria-label="搜索条款矩阵"
+    style="width:100%;font-family:var(--mono);font-size:13px;padding:10px 12px;border:1px solid var(--rule);background:var(--paper-2);margin-bottom:14px;color:var(--ink)">
+  <table class="cmp">
+    <thead><tr><th style="width:150px">判定器</th><th style="width:300px">规则</th><th>条款依据</th><th style="width:96px">类型</th></tr></thead>
+    <tbody id="basis-body"></tbody>
+  </table>
+  <div class="law" id="basis-foot"></div>
+  <p class="note">复核方式：<code>python benchmarks/clause_matrix.py</code> 双向检查——有规则无依据会失败，有依据但对应规则不存在也会失败（死引用正是引用表烂掉的方式）。可读版见 <code>docs/methods/Clause_Matrix.md</code>。</p>
 </section>
 
 <footer>
@@ -316,6 +356,41 @@ a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink-2)}
   document.getElementById('cmp-verdict').textContent = (base.lines.filter(function(l){return l.indexOf('delta')===0;})[0] || '—')
     + (base.ok ? '' : '（基线脚本未成功执行）');
 
+  // clause matrix
+  var RULES = DATA.rules || [];
+  var bstate = {kind:'all'};
+  var bchips = document.getElementById('basis-chips');
+  function bChip(key, text){
+    var b = document.createElement('button');
+    b.className='chip'; b.type='button'; b.textContent=text;
+    b.setAttribute('aria-pressed', bstate.kind===key?'true':'false');
+    b.addEventListener('click', function(){ bstate.kind=key; renderBasis(); });
+    return b;
+  }
+  function renderBasis(){
+    var q = (document.getElementById('basis-q').value || '').toLowerCase();
+    var body = document.getElementById('basis-body');
+    body.innerHTML='';
+    var list = RULES.filter(function(r){
+      if(bstate.kind!=='all' && r.kind!==bstate.kind) return false;
+      if(!q) return true;
+      return (r.rule+' '+r.basis+' '+r.judge).toLowerCase().indexOf(q) >= 0;
+    });
+    list.forEach(function(r){
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td class="mono">'+esc(r.judge.replace('judge_',''))+'</td><td class="mono">'+esc(r.rule)+'</td><td>'+esc(r.basis)+'</td><td class="mono">'+esc(r.kind)+'</td>';
+      body.appendChild(tr);
+    });
+    bchips.innerHTML='';
+    bchips.appendChild(bChip('all','全部 '+RULES.length));
+    bchips.appendChild(bChip('LAW','LAW '+RULES.filter(function(r){return r.kind==='LAW';}).length));
+    bchips.appendChild(bChip('DOCTRINE','DOCTRINE '+RULES.filter(function(r){return r.kind==='DOCTRINE';}).length));
+    document.getElementById('basis-foot').textContent =
+      '显示 '+list.length+' / '+RULES.length+' 条 · ' + (DATA.rules_meta || '');
+  }
+  document.getElementById('basis-q').addEventListener('input', renderBasis);
+  renderBasis();
+
   render();
 })();
 </script>
@@ -326,30 +401,38 @@ a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink-2)}
 
 def build() -> str:
     cases = _load_cases()
+    rules = _clause_rows()
+    law_n = sum(1 for r in rules if r["kind"] == "LAW")
     payload = {
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
         "cases": cases,
         "baseline": _baseline(),
+        "rules": rules,
+        "rules_meta": f"{len(rules)} 规则 · LAW {law_n} · DOCTRINE {len(rules)-law_n} · 0 无依据",
     }
     data_json = json.dumps(payload, ensure_ascii=False, indent=None, sort_keys=False)
     data_json = data_json.replace("</", "<\\/")
     html = TEMPLATE.replace("__GENERATED__", payload["generated_utc"]).replace("__DATA__", data_json)
+    html = (html.replace("__CASES__", str(len(cases)))
+                .replace("__RULES__", str(len(rules)))
+                .replace("__LAWN__", str(law_n))
+                .replace("__ASSERTIONS__", str(_assertion_count())))
     return html
 
 
 def main() -> int:
     html = build()
-    building_now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
     if "--check" in sys.argv:
         if not OUT.exists():
             print(f"FAIL: {OUT.relative_to(ROOT)} is missing — run build_demo_page.py")
             return 1
         committed = OUT.read_text(encoding="utf-8")
-        # Timestamp is the only intended difference between two builds; compare
-        # everything else byte-for-byte.
-        norm = lambda s, ts: s.replace(ts, "<TS>")
-        if norm(committed, _ts_of(committed)) != norm(html, building_now):
+        # The build timestamp is the only intended difference between two builds.
+        # Normalise each side against the timestamp *found in that side*: passing
+        # an external clock in made the check fail whenever a build and a check
+        # straddled a minute boundary, which is a false alarm, not drift.
+        if _normalise(committed) != _normalise(html):
             print("FAIL: demo page is out of date with the engine. Run "
                   "`python benchmarks/build_demo_page.py` and commit the result.")
             return 1
@@ -371,6 +454,11 @@ def _ts_of(html: str) -> str:
     if i < 0:
         return ""
     return html[i + len(marker):i + len(marker) + 16].strip()
+
+
+def _normalise(html: str) -> str:
+    ts = _ts_of(html)
+    return html.replace(ts, "<TS>") if ts else html
 
 
 if __name__ == "__main__":

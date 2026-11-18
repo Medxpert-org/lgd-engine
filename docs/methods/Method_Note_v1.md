@@ -5,6 +5,15 @@
 **Licence:** see repository `LICENSE` / `NOTICE`
 **Status:** method note (not a benchmark paper, not a product claim)
 
+> **Revision note (v1.6).** The clause matrix now travels with the dossier page, so
+> an outsider can read rule→provision without cloning anything, and the page's case
+> and assertion counts are computed from the repository at build time instead of
+> hard-coded (they had drifted to "19 cases / 36 assertions" while the repo shipped
+> 30 / 49). Two guard fixes: `--check` now normalises each side against the timestamp
+> found *in that side* — passing an external clock made it fail whenever a build and
+> a check straddled a minute boundary, a false alarm that would have taught us to
+> ignore the guard.
+
 > **Revision note (v1.5).** Clause-level verification of all five tables exposed one
 > remaining structural weakness: a rule could state a conclusion without naming the
 > provision behind it, which makes it indistinguishable from an opinion. Now every

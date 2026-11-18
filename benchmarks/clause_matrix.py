@@ -21,28 +21,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from lgd_engine.judges.basis import CLAUSE_BASIS, is_law  # noqa: E402
+from lgd_engine.judges.basis import CLAUSE_BASIS, is_law, shipped_rules  # noqa: E402
 
 OUT = ROOT / "docs" / "methods" / "Clause_Matrix.md"
-JUDGE_GLOB = "judge_*.py"
-
-
-def shipped_rules() -> dict[str, str]:
-    """rule id -> judge module, read from source so the list cannot drift."""
-    found: dict[str, str] = {}
-    for path in sorted((ROOT / "lgd_engine" / "judges").glob(JUDGE_GLOB)):
-        tree = ast.parse(path.read_text(encoding="utf-8"))
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Dict):
-                continue
-            keys = {k.value for k in node.keys if isinstance(k, ast.Constant)}
-            if "rule" not in keys or "when" not in keys:
-                continue
-            for k, v in zip(node.keys, node.values):
-                if (isinstance(k, ast.Constant) and k.value == "rule"
-                        and isinstance(v, ast.Constant)):
-                    found[v.value] = path.stem
-    return found
 
 
 def main(argv: list[str]) -> int:
