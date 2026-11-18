@@ -272,7 +272,7 @@ shortcut is not merely discouraged; the route is marked unavailable.
 
 ### 4.1 Corpus
 
-34 case files across 6 directories (`demo1/cases*`), each with a declared expected
+35 case files across 6 directories (`demo1/cases*`), each with a declared expected
 verdict (or a per-jurisdiction pair). Cases are desensitised constructs, not
 customer data; `_desensitized_from` records what real-world pattern each one models.
 Every case is evaluated by the same code path used in production; there is no
@@ -436,4 +436,4 @@ Full rule ids, conditions and rationales are in each judge module and in
 
 本方法说明描述一种把"监管变更判定"从自然语言问答改写成可执行规则表的方法：输入是评审人实际持有的结构化字段，输出是三值判决（go / hold / reject）加上被触发的规则编号；判定纯粹、可离线重跑、失败时表现为"拒绝回答"而非"猜测"。已实现五张判定表（美国 510(k) 变更分类、上市后处置、FDA PCCP 范围、EU MDR 重大变更、中国 NMPA 变更注册），随包发布 34 个带预期判决的案件与 12 条对抗探针；同一批输入下，确定性判定器 12/12 命中预期，关键词捷径仅 5/12。
 
-本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：62 条契约断言、5 张判定表、34 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
+本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：63 条契约断言、5 张判定表、35 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
