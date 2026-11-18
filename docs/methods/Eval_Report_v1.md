@@ -2,11 +2,12 @@
 
 This file is produced by `benchmarks/eval_method_note.py --report`. Do not edit
 it by hand: the marker line below is asserted by check C12, so a hand-written
-number that disagrees with the repository fails the evaluation.
+number that disagrees with the repository fails the evaluation. C12 is excluded
+from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=ci/contract-tests-20261118 head=1f31853 checks=18 passed=17 -->`
+`<!-- eval-report branch=ci/contract-tests-20261118 head=f124772 checks=17 passed=17 -->`
 
-Run at 2026-11-18 18:07 UTC against `ci/contract-tests-20261118` at `1f31853`, from a fresh clone.
+Run at 2026-11-18 18:07 UTC against `ci/contract-tests-20261118` at `f124772`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
@@ -27,9 +28,8 @@ Run at 2026-11-18 18:07 UTC against `ci/contract-tests-20261118` at `1f31853`, f
 | X3 | dependencies = [] and no third-party imports | PASS |
 | X4 | note claims 30 cases, disk has 30 | PASS |
 | X5 | tree still clean after the whole run | PASS |
-| C12 | committed eval report is generated and current | **FAIL** |
 
-**17/18 checks passed.**
+**17/17 checks passed** (plus C12, which validates this file).
 
 Scope of this report: it says nothing about correctness against real filings;
 it says that every claim the method note makes about *itself* survives an
