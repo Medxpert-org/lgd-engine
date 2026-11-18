@@ -264,6 +264,16 @@ class TestNmpaJudge(unittest.TestCase):
         self.assertEqual(v["verdict"], "hold")
         self.assertIn("N-MAJ-13", " ".join(r["rule"] for r in v["reasons"]))
 
+    def test_class1_cannot_be_sent_down_a_registration_route(self):
+        """Red-team finding: the class guard was keyed on the changed FIELDS, so an
+        administrative change sent as 变更注册 / 首次注册 came back go — the exact
+        shape in which a route that does not exist for Class I survives review."""
+        for path in ("licence_change", "new_registration"):
+            v = self._v(device_class="I", change_fields=["registrant_name"],
+                        requested_path=path)
+            self.assertEqual(v["verdict"], "hold", path)
+            self.assertIn("N-MAJ-15", " ".join(r["rule"] for r in v["reasons"]))
+
     def test_domestic_site_change_names_its_prerequisite(self):
         """47 号令 requires the 生产许可 change before the 备案 — filing alone skips
         a statutory precondition, so it must not read as a clean go."""
@@ -335,7 +345,7 @@ class TestClauseBasis(unittest.TestCase):
         doctrine = [r for r in self.rules if not is_law(self.CLAUSE_BASIS[r])]
         self.assertLessEqual(len(doctrine), 12,
                              f"doctrine share grew: {len(doctrine)} of {len(self.rules)}")
-        self.assertEqual(len(self.rules), 60, "rule count moved — update the matrix doc")
+        self.assertEqual(len(self.rules), 61, "rule count moved — update the matrix doc")
 
 
 class TestCoverageGaps(unittest.TestCase):
@@ -487,7 +497,7 @@ class TestCliContract(unittest.TestCase):
     def test_nmpa_domain_matches_expected(self):
         p = self._run("--all", str(ROOT / "demo1" / "cases_nmpa"), "--domain", "nmpa")
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        self.assertIn("7/7", p.stdout)
+        self.assertIn("9/9", p.stdout)
 
     def test_single_case_is_deterministic(self):
         case = sorted(CASES.glob("*.json"))[0]

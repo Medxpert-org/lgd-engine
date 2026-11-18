@@ -121,6 +121,21 @@ _MAJOR_RULES = [
         "when": lambda c: bool(set(c.get("change_fields") or []) & DOMESTIC_SITE_FIELDS),
     },
     {
+        "rule": "N-MAJ-15-class1-no-registration-route",
+        "detail": "Class I devices are 备案管理 — 47 号令 has no 变更注册 and no 首次注册 "
+                  "for them. The requested route does not exist for this class, so the "
+                  "answer cannot be go however clean the change looks; the instrument "
+                  "has to be 备案 (变更备案 / 首次备案).",
+        # Keyed on the ROUTE, not on the fields: the field-based rule above misses the
+        # case where an administrative change is sent down a registration route, which
+        # is exactly how a route that does not exist survives review.
+        "when": lambda c: (
+            str(c.get("device_class") or "").strip().upper() in {"I", "1", "一类"}
+            and str(c.get("requested_path") or "").strip()
+            in {"licence_change", "new_registration"}
+        ),
+    },
+    {
         "rule": "N-MAJ-02-registration-item-change",
         "detail": "The change is a 登记事项 change — 备案 must be completed (filing "
                   "is not optional just because it is not reviewed).",

@@ -148,9 +148,13 @@ def main() -> int:
             if line.strip().startswith("def test_"):
                 assertions += 1
 
-    # C1 — five tables run offline
+    # C1 — the NMPA table runs offline, and every shipped case matches its declared
+    # verdict. The expected count is the number of case files, not a literal, so a
+    # new case cannot fail this check for the wrong reason (or pass a stale one).
+    n_nmpa = len(list((clone / "demo1" / "cases_nmpa").glob("*.json")))
     c, o = run(clone, [py, "-m", "lgd_engine.cli", "--all", "demo1/cases_nmpa", "--domain", "nmpa"])
-    res.check("C1", "NMPA table 7/7 offline", o, ["7/7 cases match expected verdict"])
+    res.check("C1", f"NMPA table {n_nmpa}/{n_nmpa} offline", o,
+              [f"{n_nmpa}/{n_nmpa} cases match expected verdict"])
 
     # C2 — byte-identical reruns
     cmd = [py, "-m", "lgd_engine.cli", "--case", "demo1/cases_mdr/mdr04_red_open_fsca.json",
@@ -199,11 +203,19 @@ def main() -> int:
     c, o = run(clone, [py, "benchmarks/build_demo_page.py", "--check"])
     res.check("C9", "dossier page in sync with engine", o, ["OK"])
 
-    # C10 — every rule names the provision it encodes, and no entry is dead air
+    # C10 — every rule names the provision it encodes, and no entry is dead air.
+    # Derived, not a literal: the shipped-rule count comes from the same run as the
+    # based count, so adding a rule cannot pass by leaving the assertion behind.
     c, o = run(clone, [py, "benchmarks/clause_matrix.py"])
-    res.rows.append(("C10", "every rule names a LAW / DOCTRINE basis",
-                     c == 0 and "with a basis : 60" in o,
-                     [l for l in o.splitlines() if l.startswith("with a basis")]))
+    shipped = re.search(r"rules shipped:\s*(\d+)", o)
+    based = re.search(r"with a basis\s*:\s*(\d+)", o)
+    basis_ok = bool(
+        c == 0 and shipped and based
+        and int(based.group(1)) == int(shipped.group(1))  # equal counts => nothing unbased
+    )
+    res.rows.append(("C10", "every rule names a LAW / DOCTRINE basis", basis_ok,
+                     [l for l in o.splitlines()
+                      if l.startswith(("rules shipped", "with a basis", "unbased"))]))
 
     # C11 — a verdict is deterministic and costs microseconds, not a model call
     c, o = run(clone, [py, "benchmarks/verdict_cost.py"])
@@ -250,10 +262,15 @@ def main() -> int:
     res.rows.append(("X3", "dependencies = [] and no third-party imports",
                      "dependencies = []" in manifest and not bad, [str(bad)]))
 
-    # X4 — corpus size claimed in the note
+    # X4 — corpus size claimed in the note, compared against the disk rather than
+    # against a literal: the note states it, the tree proves it.
     cases = [p for d in (clone / "demo1").glob("cases*") if d.is_dir()
              for p in d.glob("*.json")]
-    res.rows.append(("X4", f"note claims 30 cases, disk has {len(cases)}", len(cases) == 30, [str(len(cases))]))
+    note = (clone / "docs" / "methods" / "Method_Note_v1.md").read_text(encoding="utf-8")
+    claimed = re.search(r"\*\*(\d+) case files\*\*", note)
+    claimed_n = int(claimed.group(1)) if claimed else -1
+    res.rows.append(("X4", f"note claims {claimed_n} cases, disk has {len(cases)}",
+                     claimed_n == len(cases), [str(len(cases))]))
 
     # X5 — evaluation left nothing behind
     after = [ln for ln in run(clone, [GIT, "status", "--porcelain"])[1].splitlines() if ln.strip()]
