@@ -15,6 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "benchmarks"))
 
 from lgd_engine.gate import GateEngine                      # noqa: E402
 from lgd_engine.judges.judge_510k import Judge510kChange     # noqa: E402
@@ -226,6 +227,7 @@ a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink-2)}
   <div class="kpi"><div class="n" id="kpi-match">—</div><div class="l">verdicts match</div><div class="s">判决 = 案件预期，逐条一致</div></div>
   <div class="kpi"><div class="n">__ASSERTIONS__</div><div class="l">contract assertions</div><div class="s">每次推送由 CI 执行</div></div>
   <div class="kpi"><div class="n">__LAWN__</div><div class="l">rules with a clause</div><div class="s">__RULES__ 条规则全部点名依据</div></div>
+  <div class="kpi"><div class="n">0</div><div class="l">network / model calls</div><div class="s">确定性 __DET__ · 单次判决预算 ≤500 µs</div></div>
 </div>
 
 <section class="sect">
@@ -406,6 +408,8 @@ def build() -> str:
     cases = _load_cases()
     rules = _clause_rows()
     law_n = sum(1 for r in rules if r["kind"] == "LAW")
+    from verdict_cost import measure as _measure_cost
+    cost = _measure_cost()
     payload = {
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
         "cases": cases,
@@ -413,6 +417,19 @@ def build() -> str:
         "rules": rules,
         "rules_meta": f"{len(rules)} 规则 · LAW {law_n} · DOCTRINE {len(rules)-law_n} · 0 无依据",
     }
+    data_json = json.dumps(payload, ensure_ascii=False, indent=None, sort_keys=False)
+    data_json = data_json.replace("</", "<\\/")
+    html = TEMPLATE.replace("__GENERATED__", payload["generated_utc"]).replace("__DATA__", data_json)
+    # Only the *stable* facts go into the page: a measured microsecond figure
+    # varies run to run, so publishing it here would make --check flap. The
+    # number lives in `benchmarks/verdict_cost.py`; the page publishes the claim
+    # that a test enforces (a ≤500 µs budget, determinism, no model call).
+    html = (html.replace("__CASES__", str(len(cases)))
+                .replace("__RULES__", str(len(rules)))
+                .replace("__LAWN__", str(law_n))
+                .replace("__ASSERTIONS__", str(_assertion_count()))
+                .replace("__DET__", "YES" if cost["deterministic"] else "NO"))
+    return html
     data_json = json.dumps(payload, ensure_ascii=False, indent=None, sort_keys=False)
     data_json = data_json.replace("</", "<\\/")
     html = TEMPLATE.replace("__GENERATED__", payload["generated_utc"]).replace("__DATA__", data_json)

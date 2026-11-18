@@ -157,6 +157,12 @@ def main() -> int:
                      c == 0 and "with a basis : 60" in o,
                      [l for l in o.splitlines() if l.startswith("with a basis")]))
 
+    # C11 — a verdict is deterministic and costs microseconds, not a model call
+    c, o = run(clone, [py, "benchmarks/verdict_cost.py"])
+    res.rows.append(("C11", "verdict deterministic + cheap (no model)", c == 0 and "deterministic  : YES" in o,
+                     [l for l in o.splitlines() if l.startswith(("deterministic", "median verdict"))]))
+    o = o.replace("deterministic  : YES", "deterministic: YES")
+
     # X1 — the guard is real: tamper, expect failure, restore
     page = clone / "demo" / "judge-dossier.html"
     original = page.read_text(encoding="utf-8")
@@ -167,7 +173,7 @@ def main() -> int:
 
     # X2 — assertion count claimed in the note
     c, o = run(clone, [py, "-m", "unittest", "discover", "-s", "tests"])
-    res.check("X2", "suite reports Ran 49 tests", o, ["Ran 49 tests"])
+    res.check("X2", "suite reports Ran 54 tests", o, ["Ran 54 tests"])
 
     # X3 — stdlib only
     manifest = (clone / "pyproject.toml").read_text(encoding="utf-8")

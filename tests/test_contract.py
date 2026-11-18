@@ -338,6 +338,70 @@ class TestClauseBasis(unittest.TestCase):
         self.assertEqual(len(self.rules), 60, "rule count moved — update the matrix doc")
 
 
+class TestCoverageGaps(unittest.TestCase):
+    """The boundary of the claim is a published artifact, not a footnote.
+
+    A reviewer should be able to read what we do *not* encode, with a reason, and
+    see the list fail the build when it is malformed — an undisclosed gap is
+    indistinguishable from an oversight."""
+
+    def setUp(self):
+        import json
+        self.doc = json.loads((ROOT / "docs" / "methods" / "coverage_gaps.json")
+                              .read_text(encoding="utf-8"))
+        self.gaps = self.doc["gaps"]
+
+    def test_every_gap_is_complete_and_typed(self):
+        allowed = {"out_of_scope", "deferred", "optional_by_law"}
+        for g in self.gaps:
+            for field in ("id", "jurisdiction", "provision", "status", "reason"):
+                self.assertIn(field, g, f"{g.get('id')} missing {field}")
+            self.assertIn(g["status"], allowed, f"{g['id']} has unknown status")
+            self.assertGreater(len(g["reason"]), 40, f"{g['id']} reason is too thin")
+
+    def test_gap_ids_are_unique(self):
+        ids = [g["id"] for g in self.gaps]
+        self.assertEqual(len(ids), len(set(ids)))
+
+    def test_three_jurisdictions_are_all_represented(self):
+        self.assertEqual({g["jurisdiction"] for g in self.gaps}, {"NMPA", "EU", "FDA"})
+
+
+class TestVerdictCost(unittest.TestCase):
+    """A verdict must be cheap and identical every time — that is the product."""
+
+    def test_verdict_is_deterministic(self):
+        import json as _json
+        from lgd_engine.gate import GateEngine
+        from lgd_engine.judges.judge_mdr import JudgeMdrSignificance
+        ctx = _json.loads((ROOT / "demo1" / "cases_mdr"
+                           / "mdr02_yellow_software_performance.json").read_text(encoding="utf-8"))
+        outs = {_json.dumps(GateEngine([JudgeMdrSignificance()]).evaluate(ctx).to_dict(),
+                            sort_keys=True) for _ in range(20)}
+        self.assertEqual(len(outs), 1, "same context produced different reports")
+
+    def test_verdict_latency_is_microseconds(self):
+        import statistics, time
+        from lgd_engine.gate import GateEngine
+        from lgd_engine.judges.judge_pccp import JudgePccpScope
+        ctx = {"pccp_authorized": True, "change_within_pccp_scope": True,
+               "affects_intended_use": False, "change_class_described": True,
+               "acceptance_criteria_met": True, "validation_documented": True,
+               "labeling_version_history": True, "udi_updated": True,
+               "remains_se_to_predicate": True,
+               "change_type": "retrain_same_distribution",
+               "evidence_sufficiency": "sufficient", "jurisdiction": "FDA",
+               "source_refs": [{"kind": "fda_pccp", "ref": "authorized PCCP"}]}
+        engine = GateEngine([JudgePccpScope()])
+        samples = []
+        for _ in range(300):
+            t0 = time.perf_counter_ns()
+            engine.evaluate(ctx)
+            samples.append((time.perf_counter_ns() - t0) / 1000.0)
+        median = statistics.median(samples)
+        self.assertLess(median, 500, f"median verdict {median:.1f} µs — budget is 500 µs")
+
+
 class TestCliContract(unittest.TestCase):
     def _run(self, *args):
         return subprocess.run([sys.executable, "-m", "lgd_engine.cli", *args],
