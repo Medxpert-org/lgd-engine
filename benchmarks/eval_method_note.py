@@ -148,9 +148,13 @@ def main() -> int:
             if line.strip().startswith("def test_"):
                 assertions += 1
 
-    # C1 — five tables run offline
+    # C1 — the NMPA table runs offline, and every shipped case matches its declared
+    # verdict. The expected count is the number of case files, not a literal, so a
+    # new case cannot fail this check for the wrong reason (or pass a stale one).
+    n_nmpa = len(list((clone / "demo1" / "cases_nmpa").glob("*.json")))
     c, o = run(clone, [py, "-m", "lgd_engine.cli", "--all", "demo1/cases_nmpa", "--domain", "nmpa"])
-    res.check("C1", "NMPA table 7/7 offline", o, ["7/7 cases match expected verdict"])
+    res.check("C1", f"NMPA table {n_nmpa}/{n_nmpa} offline", o,
+              [f"{n_nmpa}/{n_nmpa} cases match expected verdict"])
 
     # C2 — byte-identical reruns
     cmd = [py, "-m", "lgd_engine.cli", "--case", "demo1/cases_mdr/mdr04_red_open_fsca.json",
