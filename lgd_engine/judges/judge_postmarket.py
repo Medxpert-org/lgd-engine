@@ -70,6 +70,18 @@ _CRITICAL = [
     },
 ]
 
+# Structural guard for the green side. Declared as a rule (with "guard": True,
+# no predicate) rather than inlined at the call site: an undeclared rule is an
+# unauditable one, and the clause matrix caught exactly that when this was first
+# written inline.
+_GUARD_MINOR = {
+    "rule": "PM-MIN-02-no-recall-recorded",
+    "guard": True,
+    "detail": "No recall class recorded and no escalation rule fired — logged as "
+              "record-and-continue: harm severity below the reportable threshold "
+              "and report volume below the watch threshold.",
+}
+
 _MAJOR = [
     {
         "rule": "PM-MAJ-01-class2-recall",
@@ -84,6 +96,22 @@ _MAJOR = [
                   "configuration (user tampering). Re-seat to validated config "
                   "and audit access controls.",
         "when": lambda c: c.get("fda_cause_type") == "user_config_tampering",
+    },
+    {
+        "rule": "PM-MAJ-04-reportable-event-without-recall",
+        "detail": "A record carries a death or a serious injury but no recall class "
+                  "has been assigned yet — that is an MDR-reportable event before it "
+                  "is a recall. 21 CFR 803.50 requires the manufacturer to report a "
+                  "device-related death or serious injury within 30 days; hold "
+                  "pending the report and the causality assessment.",
+        # Red-team finding: harm_severity=death with recall_class=none returned go
+        # with an EMPTY reason chain. The table only asked "is there a recall?",
+        # and the answer was no — but a death is reportable whether or not a recall
+        # has been opened.
+        "when": lambda c: (
+            c.get("harm_severity") in {"death", "serious_injury"}
+            and c.get("recall_class") == "none"
+        ),
     },
     {
         "rule": "PM-MAJ-03-high-report-volume",
@@ -197,6 +225,15 @@ class JudgePostmarket:
                        "to hold pending documented evidence.",
             ))
             verdict = "hold"
+
+        # A go must still name its rule — not to escalate, but so a reader can see
+        # what was considered. Silence was indistinguishable from "no rule applies"
+        # and from "the table has nothing for this field".
+        if verdict == "go" and not reasons:
+            reasons.append(Reason(
+                rule=_GUARD_MINOR["rule"], level="minor",
+                detail=_GUARD_MINOR["detail"],
+            ))
 
         return {
             "verdict": verdict,

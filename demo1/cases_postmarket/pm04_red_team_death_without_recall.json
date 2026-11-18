@@ -1,0 +1,13 @@
+{
+  "case_id": "FDA-PM-RED-01",
+  "_desensitized_from": "红队自造：已记录器械相关死亡，但召回等级尚未判定",
+  "device_description": "已上市 II 类设备；不良事件记录中出现一例与器械相关的死亡，召回等级字段仍为 none。",
+  "recall_class": "none",
+  "harm_severity": "death",
+  "fda_cause_type": "under_investigation",
+  "distribution_scope": "us_national",
+  "event_report_count": 1,
+  "jurisdiction": "FDA",
+  "source_refs": [{"kind": "statute", "ref": "21 CFR 803.50"}],
+  "expected_verdict": "hold"
+}
