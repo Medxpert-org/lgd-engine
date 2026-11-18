@@ -4,6 +4,7 @@
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue)]()
 [![python](https://img.shields.io/badge/python-3.9%2B-green)]()
 [![gate CI](https://img.shields.io/github/actions/workflow/status/Medxpert-org/lgd-engine/gate.yml?branch=main&label=gate%20CI)](https://github.com/Medxpert-org/lgd-engine/actions/workflows/gate.yml)
+[![contract tests](https://img.shields.io/badge/contract%20tests-13%20assertions-success)](tests/test_contract.py)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/Medxpert-org/lgd-engine/codeql.yml?branch=main&label=CodeQL)](https://github.com/Medxpert-org/lgd-engine/actions/workflows/codeql.yml)
 
 **LGD Engine is the judgment core for medical-device AI change control.**
@@ -55,6 +56,33 @@ python demo2/test_demo2.py       # five-seat review tests
 python demo1/test_ecosystem.py   # 13-domain / 11-stage alignment tests
 python framework/gate_bot.py     # CI gate (six checks)
 ```
+
+### Verify it yourself in 60 seconds
+
+No install, no network, no LLM. Three commands, each ending in a line you can compare:
+
+```bash
+python -m unittest discover -s tests -v      # -> Ran 13 tests ... OK
+python lgd_engine/mcp_smoke.py               # -> SMOKE: PASS
+python -m lgd_engine.cli --all demo1/cases   # -> [summary] 5/5 cases match expected verdict (domain=510k)
+```
+
+These 13 assertions pin behaviour that a "did it exit 0" check cannot see:
+
+- **L3** — one critical reason vetoes the whole run, and the veto is recorded.
+- **L2** — a `go` with zero evidence is downgraded to `hold`, not accepted.
+- **A crashing judge is not a verdict.** It forces `reject` *and* leaves a
+  non-empty `errors` list, so a broken install cannot read as a legitimate veto.
+- **`64` is not `2`.** A usage error exits `64`; `2` means REJECT. Conflating them
+  makes a typo look like a judgment.
+- **Byte-identical reruns** — the same case twice produces the same output.
+- **The RBAC gap is pinned, not hidden** — `reviewer` currently reaches exactly
+  what `read-only` reaches. The test asserts that, so adding a real privileged
+  role has to be a deliberate change, not silent drift.
+
+Every push runs these in CI (see the `gate` workflow badge above). If a line you
+get differs from the line shown here, that is a finding — open an issue with the
+output rather than assuming this README is right.
 
 One decision from a case JSON:
 
