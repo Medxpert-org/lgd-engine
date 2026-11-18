@@ -216,6 +216,23 @@ class TestNmpaJudge(unittest.TestCase):
                          "reject")
 
 
+class TestDemoPage(unittest.TestCase):
+    """The browser dossier must be a view of the engine, not a second source of
+    truth. Both assertions below fail if someone edits the page by hand."""
+
+    def test_page_is_in_sync_with_the_engine(self):
+        p = subprocess.run([sys.executable, str(ROOT / "benchmarks" / "build_demo_page.py"),
+                            "--check"], capture_output=True, text=True, timeout=180, cwd=ROOT)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("OK", p.stdout)
+
+    def test_page_publishes_every_shipped_judge(self):
+        html = (ROOT / "demo" / "judge-dossier.html").read_text(encoding="utf-8")
+        for domain in ("510k", "postmarket", "pccp", "mdr", "nmpa"):
+            self.assertIn(f'"domain": "{domain}"', html, f"demo page is missing {domain} cases")
+        self.assertNotIn("__DATA__", html)
+
+
 class TestCliContract(unittest.TestCase):
     def _run(self, *args):
         return subprocess.run([sys.executable, "-m", "lgd_engine.cli", *args],
