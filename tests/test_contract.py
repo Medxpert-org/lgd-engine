@@ -184,12 +184,41 @@ class TestRbac(unittest.TestCase):
         body = json.loads(r["result"]["content"][0]["text"])
         self.assertIn(body["report"]["verdict"], ("go", "hold", "reject"))
 
-    def test_role_table_gap_is_pinned(self):
-        """KNOWN LIMITATION, pinned on purpose: 'reviewer' reaches exactly the same
-        tools as 'read-only', so the table provides no privilege separation yet.
-        If this assertion starts failing, someone added a real privileged role -
-        update the architecture doc instead of reverting the code."""
-        self.assertEqual(mcp_server.ROLE_TOOLS["reviewer"], mcp_server.ROLE_TOOLS["read-only"])
+    def test_role_table_provides_real_separation(self):
+        """'reviewer' must reach strictly more than 'read-only', and the difference
+        must be a real capability (the append-only decision write), not a label.
+        Until 2026-11-18 the two sets were identical — this test replaces the
+        assertion that used to pin that gap."""
+        ro, rv = mcp_server.ROLE_TOOLS["read-only"], mcp_server.ROLE_TOOLS["reviewer"]
+        self.assertTrue(ro < rv, "reviewer must be a strict superset of read-only")
+        self.assertEqual(rv - ro, {"record_decision"})
+
+    def test_readonly_cannot_record_decision(self):
+        r = self._call("record_decision", role="read-only",
+                       args={"case_id": "C-1", "verdict": "go", "rationale": "looks fine"})
+        self.assertEqual(r["error"]["code"], -32003)
+
+    def test_reviewer_can_record_decision(self):
+        r = self._call("record_decision", role="reviewer",
+                       args={"case_id": "C-1", "verdict": "hold", "rationale": "V&V missing"})
+        body = json.loads(r["result"]["content"][0]["text"])
+        self.assertEqual(body["recorded"]["verdict"], "hold")
+
+    def test_recording_without_a_verdict_is_rejected(self):
+        """An unsigned decision must not enter the audit trail."""
+        r = self._call("record_decision", role="reviewer",
+                       args={"case_id": "C-2", "verdict": "maybe", "rationale": "unsure"})
+        self.assertEqual(r["error"]["code"], -32602)
+
+    def test_pccp_judge_is_reachable_over_mcp(self):
+        r = self._call("judge_pccp", role="read-only",
+                       args={"pccp_authorized": True, "change_within_pccp_scope": True,
+                             "affects_intended_use": False, "acceptance_criteria_met": True,
+                             "change_type": "retrain_same_distribution",
+                             "evidence_sufficiency": "sufficient", "jurisdiction": "FDA",
+                             "source_refs": [{"kind": "fda_pccp", "ref": "plan class 2"}]})
+        body = json.loads(r["result"]["content"][0]["text"])
+        self.assertEqual(body["report"]["verdict"], "go")
 
 
 if __name__ == "__main__":
