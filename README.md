@@ -62,7 +62,7 @@ python framework/gate_bot.py     # CI gate (six checks)
 No install, no network, no LLM. Three commands, each ending in a line you can compare:
 
 ```bash
-python -m unittest discover -s tests -v      # -> Ran 62 tests ... OK
+python -m unittest discover -s tests -v      # -> Ran 63 tests ... OK
 python lgd_engine/mcp_smoke.py               # -> SMOKE: PASS
 python -m lgd_engine.cli --all demo1/cases   # -> [summary] 5/5 cases match expected verdict (domain=510k)
 python -m lgd_engine.cli --all demo1/cases_pccp --domain pccp
@@ -75,7 +75,7 @@ python benchmarks/adversarial_baseline.py
 # -> gate: 12/12 match expected / naive: 5/12 match expected
 ```
 
-These 62 assertions pin behaviour that a "did it exit 0" check cannot see:
+These 63 assertions pin behaviour that a "did it exit 0" check cannot see:
 
 - **L3** — one critical reason vetoes the whole run, and the veto is recorded.
 - **L2** — a `go` with zero evidence is downgraded to `hold`, not accepted.
@@ -95,8 +95,8 @@ output rather than assuming this README is right.
 ### Read it without installing anything
 
 [`demo/judge-dossier.html`](demo/judge-dossier.html) is a single self-contained page:
-34 case files, every verdict, the rule ids that fired, the input JSON each judge
-saw, and a clause matrix mapping all 62 rules to a legal basis. No Python, no clone — open the file.
+35 case files, every verdict, the rule ids that fired, the input JSON each judge
+saw, and a clause matrix mapping all 64 rules to a legal basis. No Python, no clone — open the file.
 
 Public mirror, no login required: <https://4mhpq75av81v1.doubao.link/app/app_17ja5t8hbn8>
 (same file, published as-is).
