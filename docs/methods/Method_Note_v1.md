@@ -112,7 +112,7 @@ to be explained away.
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
 The assertion count grows as tables are added. As of this version: **60 assertions**,
-**24 case files**, **5 tables**, **12 adversarial probes**.
+**30 case files**, **5 tables**, **12 adversarial probes**.
 
 ---
 
@@ -228,7 +228,7 @@ shortcut is not merely discouraged; the route is marked unavailable.
 
 ### 4.1 Corpus
 
-24 case files across 5 directories (`demo1/cases*`), each with a declared expected
+30 case files across 6 directories (`demo1/cases*`), each with a declared expected
 verdict (or a per-jurisdiction pair). Cases are desensitised constructs, not
 customer data; `_desensitized_from` records what real-world pattern each one models.
 Every case is evaluated by the same code path used in production; there is no
@@ -336,7 +336,7 @@ Public repositories in the adjacent space, observed via the GitHub API on
 | `microsoft/agent-governance-toolkit` | ~6.6k | deterministic pre-execution checks, identity, sandbox |
 | `protectai/llm-guard` | ~3.2k | input/output scanning |
 | `openguardrails/openguardrails` | ~0.4k | open guardrail protocol |
-| **`MedXpert-org/lgd-engine`** | **0** | 5 regulatory judgment tables, 24 pinned cases, public CI |
+| **`MedXpert-org/lgd-engine`** | **0** | 5 regulatory judgment tables, 30 pinned cases, public CI |
 
 On breadth, identity, sandboxing and ecosystem size, the established projects are
 far ahead, and any claim of general superiority would be false. The gap this work
@@ -390,6 +390,6 @@ Full rule ids, conditions and rationales are in each judge module and in
 
 ## 中文摘要
 
-本方法说明描述一种把"监管变更判定"从自然语言问答改写成可执行规则表的方法：输入是评审人实际持有的结构化字段，输出是三值判决（go / hold / reject）加上被触发的规则编号；判定纯粹、可离线重跑、失败时表现为"拒绝回答"而非"猜测"。已实现五张判定表（美国 510(k) 变更分类、上市后处置、FDA PCCP 范围、EU MDR 重大变更、中国 NMPA 变更注册），随包发布 24 个带预期判决的案件与 12 条对抗探针；同一批输入下，确定性判定器 12/12 命中预期，关键词捷径仅 5/12。
+本方法说明描述一种把"监管变更判定"从自然语言问答改写成可执行规则表的方法：输入是评审人实际持有的结构化字段，输出是三值判决（go / hold / reject）加上被触发的规则编号；判定纯粹、可离线重跑、失败时表现为"拒绝回答"而非"猜测"。已实现五张判定表（美国 510(k) 变更分类、上市后处置、FDA PCCP 范围、EU MDR 重大变更、中国 NMPA 变更注册），随包发布 30 个带预期判决的案件与 12 条对抗探针；同一批输入下，确定性判定器 12/12 命中预期，关键词捷径仅 5/12。
 
 本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：49 条契约断言、5 张判定表、30 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。

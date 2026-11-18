@@ -263,6 +263,8 @@ def main() -> int:
     # X6 — the docs quote the same numbers this run derived from source, and every
     # command the README's audit table cites actually exists. The drift gate: adding
     # a test without updating the prose fails loudly and prints the number it should say.
+    # It scans *every* markdown file, because fixing one stale figure per turn is how
+    # this repository spent several rounds: the same number hides in five documents.
     readme = (clone / "README.md").read_text(encoding="utf-8")
     note = (clone / "docs" / "methods" / "Method_Note_v1.md").read_text(encoding="utf-8")
     readme_says = f"Ran {assertions} tests" in readme
@@ -275,12 +277,31 @@ def main() -> int:
                      if not (clone / "benchmarks" / c).exists()]
     linked_missing = [p for p in re.findall(r"\]\((docs/methods/[^)]+)\)", readme)
                       if not (clone / p).exists()]
-    res.rows.append(("X6", f"docs quote {assertions} assertions and {len(cases)} cases, "
-                           f"and every cited audit command exists",
+
+    stale = []
+    md_files = [clone / "README.md"] + [
+        p for p in sorted((clone / "docs").rglob("*.md"))
+        if not re.search(r"\d{8}", p.name)]   # dated files are point-in-time snapshots
+    for path in md_files:
+        for lineno, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            if "→" in line or "->" in line:      # revision notes quote old numbers on purpose
+                continue
+            for m in re.finditer(r"(\d+)\s*(?:条)?断言|Ran\s+(\d+)\s+tests", line):
+                n = int(m.group(1) or m.group(2))
+                if n != assertions:
+                    stale.append(f"{path.name}:{lineno} asserts {n}, source has {assertions}")
+            for m in re.finditer(r"(\d+)\s*个?案件|(\d+)\s+case files", line):
+                n = int(m.group(1) or m.group(2))
+                if n != len(cases):
+                    stale.append(f"{path.name}:{lineno} claims {n} cases, disk has {len(cases)}")
+
+    res.rows.append(("X6", f"docs quote {assertions} assertions and {len(cases)} cases "
+                           f"everywhere, and every cited audit command exists",
                      readme_says and note_says and cases_says
-                     and not cited_missing and not linked_missing,
+                     and not cited_missing and not linked_missing and not stale,
                      [f"readme={readme_says} note={note_says} cases={cases_says} "
-                      f"missing_commands={cited_missing} missing_links={linked_missing}"]))
+                      f"missing_commands={cited_missing} missing_links={linked_missing} "
+                      f"stale_numbers={stale[:6]}" + (f" (+{len(stale)-6} more)" if len(stale) > 6 else "")]))
 
     # C12 — the committed report is derived, not hand-written
     rep_path = clone / "docs" / "methods" / "Eval_Report_v1.md"
