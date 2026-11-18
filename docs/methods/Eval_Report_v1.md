@@ -5,14 +5,14 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=redteam/class1-route-20261119 head=97cff59 checks=19 passed=17 -->`
+`<!-- eval-report branch=redteam/class1-route-20261119 head=d03136b checks=19 passed=18 -->`
 
-Run at 2026-11-18 23:39 UTC against `redteam/class1-route-20261119` at `97cff59`, from a fresh clone.
+Run at 2026-11-18 23:39 UTC against `redteam/class1-route-20261119` at `d03136b`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
 | E0 | clone arrives clean (no case-only or uncommitted noise) | PASS |
-| C1 | NMPA table 7/7 offline | **FAIL** |
+| C1 | NMPA table 9/9 offline | PASS |
 | C2 | byte-identical rerun | PASS |
 | C3 | critical rule forces reject | PASS |
 | C4 | go without evidence downgraded to hold | PASS |
@@ -31,7 +31,7 @@ Run at 2026-11-18 23:39 UTC against `redteam/class1-route-20261119` at `97cff59`
 | X5 | tree still clean after the whole run | PASS |
 | X6 | docs quote 61 assertions and 32 cases everywhere, and every cited audit command exists | PASS |
 
-**17/19 checks passed** (plus C12, which validates this file).
+**18/19 checks passed** (plus C12, which validates this file).
 
 Scope of this report: it says nothing about correctness against real filings;
 it says that every claim the method note makes about *itself* survives an

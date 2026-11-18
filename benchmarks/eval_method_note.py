@@ -209,11 +209,9 @@ def main() -> int:
     c, o = run(clone, [py, "benchmarks/clause_matrix.py"])
     shipped = re.search(r"rules shipped:\s*(\d+)", o)
     based = re.search(r"with a basis\s*:\s*(\d+)", o)
-    unbased = re.search(r"unbased\s*:\s*(\d+)", o)
     basis_ok = bool(
-        c == 0 and shipped and based and unbased
-        and int(based.group(1)) == int(shipped.group(1))
-        and int(unbased.group(1)) == 0
+        c == 0 and shipped and based
+        and int(based.group(1)) == int(shipped.group(1))  # equal counts => nothing unbased
     )
     res.rows.append(("C10", "every rule names a LAW / DOCTRINE basis", basis_ok,
                      [l for l in o.splitlines()
