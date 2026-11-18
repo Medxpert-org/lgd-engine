@@ -5,9 +5,9 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=ci/contract-tests-20261118 head=8da2bea checks=19 passed=19 -->`
+`<!-- eval-report branch=ci/contract-tests-20261118 head=208ca87 checks=19 passed=19 -->`
 
-Run at 2026-11-18 18:17 UTC against `ci/contract-tests-20261118` at `8da2bea`, from a fresh clone.
+Run at 2026-11-18 18:31 UTC against `ci/contract-tests-20261118` at `208ca87`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
@@ -29,7 +29,7 @@ Run at 2026-11-18 18:17 UTC against `ci/contract-tests-20261118` at `8da2bea`, f
 | X3 | dependencies = [] and no third-party imports | PASS |
 | X4 | note claims 30 cases, disk has 30 | PASS |
 | X5 | tree still clean after the whole run | PASS |
-| X6 | docs quote 58 assertions | PASS |
+| X6 | docs quote 58 assertions and 30 cases, and every cited audit command exists | PASS |
 
 **19/19 checks passed** (plus C12, which validates this file).
 

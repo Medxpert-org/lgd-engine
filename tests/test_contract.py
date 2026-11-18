@@ -433,6 +433,31 @@ class TestEdgeClaims(unittest.TestCase):
                         "either run a real survey or label them inferred")
 
 
+class TestMetadataConsistency(unittest.TestCase):
+    """The citation file is the first thing a stranger reads; it must not lag.
+
+    A stale version or a reference to a superseded document is the cheapest way to
+    look unserious, and nothing else in the suite looked at these files."""
+
+    def setUp(self):
+        import re as _re
+        self.cff = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
+        pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        self.version = _re.search(r'^version\s*=\s*"([^"]+)"', pyproject, _re.M)
+        self.cff_version = _re.search(r"^version:\s*([0-9.]+)\s*$", self.cff, _re.M)
+
+    def test_citation_version_matches_the_package(self):
+        self.assertIsNotNone(self.version, "pyproject.toml has no version")
+        self.assertIsNotNone(self.cff_version, "CITATION.cff has no version")
+        self.assertEqual(self.cff_version.group(1), self.version.group(1),
+                         "CITATION.cff version disagrees with pyproject.toml")
+
+    def test_citation_title_does_not_name_a_superseded_note(self):
+        self.assertIn("Method Note v1.6", self.cff,
+                      "CITATION.cff references an older method note")
+        self.assertNotIn("Method Note v1.0", self.cff)
+
+
 class TestCliContract(unittest.TestCase):
     def _run(self, *args):
         return subprocess.run([sys.executable, "-m", "lgd_engine.cli", *args],

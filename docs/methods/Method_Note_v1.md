@@ -25,7 +25,7 @@
 > fails, because dead authority is how citation tables rot while still looking
 > complete). Readable form: `docs/methods/Clause_Matrix.md`. The doctrinal share is
 > capped at 12 by test, so it cannot quietly grow into a majority of opinions wearing
-> the clothes of law. Assertions 45 → 58; the out-of-tree evaluator gained C10.
+> the clothes of law. Assertions 45 → 60; the out-of-tree evaluator gained C10.
 
 > **Revision note (v1.4).** The last unchecked table — FDA PCCP — was verified against
 > FD&C §515C and 21 CFR 892.2055. Three gaps closed: (L6) the 510(k) route has **two
@@ -111,7 +111,7 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **58 assertions**,
+The assertion count grows as tables are added. As of this version: **60 assertions**,
 **24 case files**, **5 tables**, **12 adversarial probes**.
 
 ---
@@ -276,7 +276,7 @@ A third party needs no credentials, no network, and no third-party packages
 ```bash
 git clone https://github.com/MedXpert-org/lgd-engine
 cd lgd-engine
-python -m unittest discover -s tests -v          # 58 assertions
+python -m unittest discover -s tests -v          # 60 assertions
 python lgd_engine/mcp_smoke.py                   # 7 tools, RBAC both ways
 python benchmarks/adversarial_baseline.py        # 12/12 vs 5/12
 python benchmarks/build_demo_page.py --check     # dossier in sync with the code

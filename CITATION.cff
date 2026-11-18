@@ -13,8 +13,8 @@ keywords:
   - regulatory compliance
   - software as a medical device (SaMD)
   - AI governance
-repository-code: "https://github.com/Medxpert-org/lgd-engine"
-url: "https://github.com/Medxpert-org/lgd-engine"
+repository-code: "https://github.com/MedXpert-org/lgd-engine"
+url: "https://github.com/MedXpert-org/lgd-engine"
 preferred-citation:
   type: article
   title: "LGD theory and its medical-device change-control application (preprint placeholder)"
@@ -25,7 +25,7 @@ preferred-citation:
   note: "Placeholder — venue, DOI, and citation metadata to be completed upon submission. Do not cite this entry as a published paper."
 references:
   - type: report
-    title: "A Deterministic Regulatory Change Gate: Method Note v1.0"
+    title: "A Deterministic Regulatory Change Gate: Method Note v1.6"
     authors:
       - family-names: "Zhao"
         given-names: "Xinghua"
