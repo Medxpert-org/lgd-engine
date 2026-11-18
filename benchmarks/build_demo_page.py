@@ -108,11 +108,14 @@ def _clause_rows() -> list:
 
 
 def _assertion_count() -> int:
-    """Read the real assertion count from the suite, so the page cannot lag it."""
+    """Read the real assertion count from the suite, so the page cannot lag it.
+
+    `unittest` writes its summary to **stderr**, not stdout — parsing stdout here
+    returned 0 and the page silently advertised "0 contract assertions"."""
     try:
         p = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests"],
                            capture_output=True, text=True, timeout=180, cwd=ROOT)
-        for ln in (p.stdout or "").splitlines():
+        for ln in ((p.stderr or "") + (p.stdout or "")).splitlines():
             if ln.startswith("Ran ") and " test" in ln:
                 return int(ln.split()[1])
     except Exception:  # pragma: no cover
