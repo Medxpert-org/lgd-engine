@@ -1,9 +1,19 @@
 # A Deterministic Regulatory Change Gate: Method Note v1.0
 
 **Project:** LGD Engine (`MedXpert-org/lgd-engine`)
-**Version:** 1.0 · 2026-11-18
+**Version:** 1.1 · 2026-11-18 (v1.0 reviewed by an independent pass; see `Eval_Report_v1.md`)
 **Licence:** see repository `LICENSE` / `NOTICE`
 **Status:** method note (not a benchmark paper, not a product claim)
+
+> **Revision note (v1.1).** An independent evaluation run — a clean clone at a
+> stranger's path, every command in §1 executed verbatim — found five issues, all
+> now closed: (E1) the repository tracked two `.github` PR templates differing only
+> in letter case, so any Windows/macOS clone reported a dirty tree on arrival;
+> (E2) four rows of the §1 table described checks instead of giving runnable commands;
+> (E3) the note did not disclose that expected verdicts were authored alongside the
+> rules (see §6.7); (E4) the document claimed Python 3.10 while `pyproject.toml`
+> declares `>=3.9`; (E5) the adversarial probes had no file pointer. v1.0 remains
+> reproducible in history, but this version is the one to cite.
 
 ---
 
@@ -39,10 +49,10 @@ to be explained away.
 | # | Claim | Check | Expected |
 |---|---|---|---|
 | C1 | Five judgment tables ship and run offline | `python -m lgd_engine.cli --all demo1/cases_nmpa --domain nmpa` | `5/5 cases match expected verdict` |
-| C2 | Verdicts are byte-identical across runs | run any case twice, diff the output | zero diff |
-| C3 | A critical rule forces `reject` regardless of other judges | `python -m unittest tests.test_contract.TestThreeLaws -v` | `OK` |
-| C4 | A `go` with no evidence is downgraded to `hold` | same suite, `L2-EVIDENCED` assertions | `OK` |
-| C5 | A crashing judge is not a legitimate veto | same suite, errors-non-empty assertion | `OK` |
+| C2 | Verdicts are byte-identical across runs | `python -m unittest tests.test_contract.TestCliContract.test_single_case_is_deterministic -v` | `OK` |
+| C3 | A critical rule forces `reject` regardless of other judges | `python -m unittest tests.test_contract.TestThreeLaws.test_l3_critical_forces_reject -v` | `OK` |
+| C4 | A `go` with no evidence is downgraded to `hold` | `python -m unittest tests.test_contract.TestThreeLaws.test_l2_go_without_evidence_is_hold -v` | `OK` |
+| C5 | A crashing judge is not a legitimate veto | `python -m unittest tests.test_contract.TestThreeLaws.test_crashing_judge_is_reject_and_flagged -v` | `OK` |
 | C6 | Exit codes carry meaning distinct from prose | `python -m lgd_engine.cli --case demo1/cases_nmpa/nmpa04_red_licence_as_filing.json --domain nmpa; echo $?` (PowerShell: `$LASTEXITCODE`) | `2` (reject); `0` = go; `64` = usage error |
 | C7 | Read-only role cannot record a decision | `python lgd_engine/mcp_smoke.py` | `SMOKE: PASS` |
 | C8 | A keyword shortcut fails where the tables do not | `python benchmarks/adversarial_baseline.py` | `gate 12/12`, `naive 5/12` |
@@ -178,7 +188,9 @@ A comparison against a stronger system would require access this project does no
 have. What is available — and more informative for the specific failure modes here —
 is a *plausible shortcut*: a classifier that reads the JSON keys and text for
 keywords (`class1`/`severe` → reject; `requires_submission` truthy or "intended_use"
-present → hold; else go). On the 12 fixed probes with expected verdicts:
+present → hold; else go). Both implementations and all 12 probes live in
+`benchmarks/adversarial_baseline.py`, so a reader can inspect, extend or falsify
+the comparison rather than take its verdict. On the fixed probes:
 
 ```
 gate  : 12/12 match expected
@@ -207,7 +219,7 @@ not a leaderboard.
 ## 5. Reproducibility protocol
 
 A third party needs no credentials, no network, and no third-party packages
-(the engine is standard-library only; `dependencies = []`).
+(the engine declares `dependencies = []` and `requires-python = ">=3.9"`).
 
 ```bash
 git clone https://github.com/MedXpert-org/lgd-engine
@@ -250,6 +262,13 @@ Stated plainly, because a gate that oversells itself is a liability.
 6. **Adversarial robustness is bounded.** `security/` and `review/` contain injection
    and fail-closed probes; they establish specific properties on specific inputs,
    not immunity.
+7. **The expected verdicts are not independent of the rules.** The case corpus was
+   authored alongside the tables, by the same author. It therefore *pins behaviour*
+—it catches regressions, and it lets a stranger see what the code does—but it does
+   not independently validate that the rules match regulatory practice. A different
+   author writing the cases from the regulations alone would be a stronger test, and
+   has not been done. Readers should treat corpus agreement as consistency evidence,
+   not as accuracy evidence.
 
 ---
 
