@@ -30,6 +30,7 @@ OUT = ROOT / "docs" / "methods" / "Competitive_Edges.md"
 STATUSES = {"observed", "inferred", "unverified"}
 FIELDS = {"id", "dimension", "our_claim", "our_proof", "competitor_status",
           "competitor_note", "risk"}
+REQUIRED = FIELDS
 
 
 def load() -> list:
@@ -58,6 +59,10 @@ def audit(edges: list) -> list:
             problems.append(f"{e['id']}: risk under 30 chars — name the way this claim could be wrong")
         if e["competitor_status"] == "observed" and not e.get("source"):
             problems.append(f"{e['id']}: 'observed' without a source")
+        if e["competitor_status"] != "observed":
+            sn = e.get("search_note", "")
+            if len(sn) < 40:
+                problems.append(f"{e['id']}: needs a search_note of 40+ chars saying what was (or was not) searched")
     return problems
 
 
@@ -83,6 +88,19 @@ def markdown(edges: list) -> str:
         "",
         f"**Provenance: {len(edges)} claims — observed {obs} / inferred {inf} / "
         f"unverified {unv}.** Only `observed` rows may be quoted as facts about others.",
+        "",
+        "## What was searched",
+        "",
+    ]
+    for e in edges:
+        if e.get("search_note"):
+            lines.append(f"- **{e['id']}** — {e['search_note']}")
+    if any(e.get("source") for e in edges):
+        lines += ["", "## Sources", ""]
+        for e in edges:
+            if e.get("source"):
+                lines.append(f"- **{e['id']}** — {e['source']}")
+    lines += [
         "",
         "## Ways this could be wrong",
         "",

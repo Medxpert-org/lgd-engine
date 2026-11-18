@@ -7,22 +7,37 @@ reading those rows as measurements is the one thing this file exists to prevent.
 
 | ID | Dimension | Our side (checkable) | Their side (how well we know) |
 |---|---|---|---|
-| E-MODEL | does the verdict call a model | Verdicts are pure functions: no network, no model, byte-identical across reruns. (`benchmarks/verdict_cost.py`) | **inferred** — Guardrail products generally classify free text with a model. We did not measure any specific product; the cost claim is therefore about our input shape, not about their throughput. |
-| E-BASIS | does each rule name its legal basis | All 60 rules carry a LAW or DOCTRINE label, with DOCTRINE capped at 12. (`benchmarks/clause_matrix.py`) | **unverified** — We have not audited whether other tools trace rules to clause numbers. Absence of evidence here is not evidence of absence. |
-| E-REPORT | is the evaluation report generated or written | The report is emitted by the evaluator and a check fails when its numbers disagree with the repo. (`benchmarks/eval_method_note.py`) | **inferred** — Hand-maintained benchmark tables are common in this space; we observed our own report drift from 40/26 to 54/30 before we fixed it. |
-| E-GAPS | are coverage gaps published | Nine intentionally unencoded clauses are published with a status and a reason. (`docs/methods/coverage_gaps.json`) | **unverified** — We did not check whether other tools publish their gaps. |
-| E-RERUN | can an outsider re-run the claims | Eighteen checks run from a fresh clone with no credentials. (`benchmarks/eval_method_note.py`) | **unverified** — Some projects do ship reproducible benchmarks; we did not rank them. |
-| E-CI | are the claims enforced in public CI | 54 contract assertions run on every push, including the three laws. (`tests/test_contract.py`) | **unverified** — We did not audit other projects' CI configurations. |
-| E-SCOPE | is the scope limited to enumerated categories | Anything outside the tables returns hold; coverage is the bottleneck, stated as such. (`lgd_engine/judges/base.py`) | **inferred** — General-purpose guardrails aim at open-ended text, so their scope is wider and shallower by design. |
+| E-MODEL | does the verdict call a model | Verdicts are pure functions: no network, no model, byte-identical across reruns. (`benchmarks/verdict_cost.py`) | **inferred** — Guardrail products generally classify free text with a model. We measured none of them; the cost claim is therefore about our input shape, not their throughput. |
+| E-BASIS | does each rule name its legal basis | All 60 rules carry a LAW or DOCTRINE label, with DOCTRINE capped at 12. (`benchmarks/clause_matrix.py`) | **observed** — OpenOnco documents a 'transparent YAML rule engine, not opaque ML' — so rule transparency is NOT unique to us. Its charter makes no claim about per-rule clause citations, but we did not read its rules in full. |
+| E-REPORT | is the evaluation report generated or written | The report is emitted by the evaluator and a check fails when its numbers disagree with the repo. (`benchmarks/eval_method_note.py`) | **unverified** — OpenOnco's charter commits to recording 'actual technical verification and unresolved content limitations', but says nothing about whether that record is generated or hand-written. We could not determine this from outside. |
+| E-GAPS | are coverage gaps published | Nine intentionally unencoded clauses are published with a status and a reason. (`docs/methods/coverage_gaps.json`) | **observed** — OpenOnco publishes scope limits and 'changes requiring a new scope assessment' — publishing boundaries is also not unique. Its list is human-readable prose; ours is machine-checked with a status enum. |
+| E-RERUN | can an outsider re-run the claims | Twenty checks run from a fresh clone with no credentials. (`benchmarks/eval_method_note.py`) | **unverified** — Solo-maintainer peer projects often rely on their own CI. We did not inspect any peer's test setup closely enough to say whether an outsider can reproduce its claims. |
+| E-CI | are the claims enforced in public CI | 58 contract assertions run on every push, including the three laws. (`tests/test_contract.py`) | **unverified** — We did not audit any peer's CI configuration, nor whether its assertions cover behavioural laws rather than exit codes. |
+| E-SCOPE | is the scope limited to enumerated categories | Anything outside the tables returns hold; coverage is the bottleneck, stated as such. (`lgd_engine/judges/base.py`) | **inferred** — General-purpose guardrails aim at open-ended text, so their scope is wider and shallower by design; the peer we read targets clinical decision support and explicitly disclaims device classification. |
 
-**Provenance: 7 claims — observed 0 / inferred 3 / unverified 4.** Only `observed` rows may be quoted as facts about others.
+**Provenance: 7 claims — observed 2 / inferred 2 / unverified 3.** Only `observed` rows may be quoted as facts about others.
+
+## What was searched
+
+- **E-MODEL** — Searched 2026-11-19 for open-source medical-device change-assessment engines; results were FDA 510(k) records plus one peer project whose charter does not describe model usage. No latency measurement of any product was obtained.
+- **E-BASIS** — Read romeo111/OpenOnco CHARTER.md on 2026-11-19: transparent YAML rules, and an explicit statement that technical checks are not clinical validation.
+- **E-REPORT** — Read the peer charter on 2026-11-19; it states a process obligation, not a mechanism. Nothing public showed whether its reports are derived from runs.
+- **E-GAPS** — Read the peer charter on 2026-11-19; it lists five scope constraints and the change types that trigger reassessment.
+- **E-RERUN** — Searched 2026-11-19; the peer's public charter makes no statement about reproducing verification from a clean clone.
+- **E-CI** — Not inspected on 2026-11-19; this row requires opening a peer repository's workflow files, which we did not do.
+- **E-SCOPE** — Compared scopes on 2026-11-19 from the peer charter: it declares an intended use in clinician-facing decision support and disclaims any regulatory classification.
+
+## Sources
+
+- **E-BASIS** — https://raw.githubusercontent.com/romeo111/OpenOnco/master/specs/CHARTER.md
+- **E-GAPS** — https://raw.githubusercontent.com/romeo111/OpenOnco/master/specs/CHARTER.md
 
 ## Ways this could be wrong
 
-- **E-MODEL** — If read as a speed comparison against LLM guardrails, it is a category error: they judge language, we judge a structured context.
-- **E-BASIS** — A competitor may well cite clauses internally without publishing them; publishing is the difference we can verify.
-- **E-REPORT** — Our own drift is the only evidence we hold; we did not survey others' reports.
-- **E-GAPS** — Publishing gaps is not the same as having few; nine gaps may be more than a competitor has.
+- **E-MODEL** — If read as a speed comparison against LLM guardrails it is a category error: they judge language, we judge a structured context.
+- **E-BASIS** — Transparency exists elsewhere. Our narrower, defensible difference is clause-level citation plus a machine check that no rule lacks a basis — not 'we are the only auditable one'.
+- **E-REPORT** — Our own drift (40/26 -> 54/30) is the only drift we can evidence; peers may already do this and we would not know.
+- **E-GAPS** — Nine published gaps may be more than a competitor has; publishing is not the same as having few.
 - **E-RERUN** — Reproducibility is a property of our repo today, not a permanent lead.
 - **E-CI** — A green CI badge proves assertions pass, not that the assertions are the right ones.
 - **E-SCOPE** — Wider scope may be the better product for a user who needs to catch something we never enumerated.
