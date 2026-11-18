@@ -301,6 +301,43 @@ class TestNmpaJudge(unittest.TestCase):
         self.assertIn("N-MAJ-14", " ".join(r["rule"] for r in v["reasons"]))
 
 
+class TestPostmarketJudge(unittest.TestCase):
+    """Postmarket: the table used to ask only 'is there a recall?'."""
+
+    def setUp(self):
+        from lgd_engine.judges.judge_postmarket import JudgePostmarket
+        self.judge = JudgePostmarket()
+        self.ok = {"recall_class": "none", "fda_cause_type": "under_investigation",
+                   "harm_severity": "no_harm", "distribution_scope": "limited_local",
+                   "event_report_count": 1, "jurisdiction": "FDA",
+                   "source_refs": [{"kind": "doc", "ref": "r"}]}
+
+    def _v(self, **kw):
+        ctx = dict(self.ok)
+        ctx.update(kw)
+        return self.judge.evaluate(ctx)
+
+    def test_death_without_a_recall_is_still_reportable(self):
+        """21 CFR 803.50 does not wait for a recall class. A death recorded against
+        the device with recall_class=none used to return go with an empty chain."""
+        for sev in ("death", "serious_injury"):
+            v = self._v(harm_severity=sev)
+            self.assertEqual(v["verdict"], "hold", sev)
+            self.assertIn("PM-MAJ-04", " ".join(r["rule"] for r in v["reasons"]), sev)
+
+    def test_a_recall_class_still_routes_as_before(self):
+        self.assertEqual(self._v(recall_class="class1")["verdict"], "reject")
+        self.assertEqual(self._v(recall_class="class2")["verdict"], "hold")
+        self.assertEqual(self._v(recall_class="class3")["verdict"], "go")
+
+    def test_even_a_go_names_the_rule_that_let_it_through(self):
+        """Silence on the green path is indistinguishable from 'the table has
+        nothing for this field'."""
+        v = self._v()
+        self.assertEqual(v["verdict"], "go")
+        self.assertIn("PM-MIN-02", " ".join(r["rule"] for r in v["reasons"]))
+
+
 class TestEnumCoverage(unittest.TestCase):
     """A vocabulary that is wider than the rule table is a silent-go generator.
 
@@ -384,7 +421,7 @@ class TestClauseBasis(unittest.TestCase):
         doctrine = [r for r in self.rules if not is_law(self.CLAUSE_BASIS[r])]
         self.assertLessEqual(len(doctrine), 12,
                              f"doctrine share grew: {len(doctrine)} of {len(self.rules)}")
-        self.assertEqual(len(self.rules), 64, "rule count moved — update the matrix doc")
+        self.assertEqual(len(self.rules), 66, "rule count moved — update the matrix doc")
 
 
 class TestCoverageGaps(unittest.TestCase):

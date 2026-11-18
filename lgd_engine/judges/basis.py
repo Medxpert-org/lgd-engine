@@ -199,6 +199,12 @@ CLAUSE_BASIS: dict[str, str] = {
     "PM-MAJ-02-user-config-deviation":
         "LAW 21 CFR 820.70(b) — operation outside the validated configuration is an "
         "unvalidated change",
+    "PM-MAJ-04-reportable-event-without-recall":
+        "LAW 21 CFR 803.50 — 器械相关的死亡或严重伤害须在 30 日内报告；"
+        "报告义务先于召回，未定召回等级不构成不报告的理由",
+    "PM-MIN-02-no-recall-recorded":
+        "DOCTRINE 有据才放行（绿侧）— 放行也必须点名依据规则，"
+        "空理由链与“无规则可适用”不可区分；本项为家法记录规则",
     "PM-MAJ-03-high-report-volume":
         "DOCTRINE signal threshold — report volume is a triage trigger of ours; 21 CFR "
         "803 supplies the reporting base",
