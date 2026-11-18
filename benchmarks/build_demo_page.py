@@ -108,6 +108,46 @@ def _clause_rows() -> list:
     return rows
 
 
+def _gap_rows() -> tuple:
+    """The clauses we know about and chose not to encode, rendered as rows."""
+    data = json.loads((ROOT / "docs" / "methods" / "coverage_gaps.json").read_text(encoding="utf-8"))
+    gaps = data["gaps"] if isinstance(data, dict) else data
+    rows = []
+    for g in gaps:
+        reason = g["reason"]
+        if len(reason) > 240:
+            reason = reason[:240].rstrip() + "…"
+        rows.append("<tr>"
+                    f"<td>{g['jurisdiction']}</td>"
+                    f"<td>{_esc(g['provision'])}</td>"
+                    f"<td><code>{g['status']}</code></td>"
+                    f"<td>{_esc(reason)}</td>"
+                    "</tr>")
+    return "\n".join(rows), len(gaps)
+
+
+def _edge_rows() -> tuple:
+    """Every competitive claim with the strength of its evidence."""
+    data = json.loads((ROOT / "docs" / "methods" / "competitive_edges.json").read_text(encoding="utf-8"))
+    edges = data["edges"]
+    rows = []
+    for e in edges:
+        link = f'<a href="{e["source"]}">source</a>' if e.get("source") else "—"
+        rows.append("<tr>"
+                    f"<td>{_esc(e['dimension'])}</td>"
+                    f"<td>{_esc(e['our_claim'])}<br><code>{_esc(e['our_proof'])}</code></td>"
+                    f"<td><code>{e['competitor_status']}</code><br>{link}</td>"
+                    "</tr>")
+    counts = {s: sum(1 for e in edges if e["competitor_status"] == s)
+              for s in ("observed", "inferred", "unverified")}
+    return "\n".join(rows), counts
+
+
+def _esc(text: str) -> str:
+    return (str(text).replace("&", "&amp;").replace("<", "&lt;")
+            .replace(">", "&gt;").replace('"', "&quot;"))
+
+
 def _assertion_count() -> int:
     """Count the contract tests from source, so the page cannot lag the suite.
 
@@ -259,6 +299,26 @@ a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink-2)}
   </table>
   <div class="law" id="basis-foot"></div>
   <p class="note">复核方式：<code>python benchmarks/clause_matrix.py</code> 双向检查——有规则无依据会失败，有依据但对应规则不存在也会失败（死引用正是引用表烂掉的方式）。可读版见 <code>docs/methods/Clause_Matrix.md</code>。</p>
+</section>
+
+<section class="sect">
+  <div class="sect-h"><h2>它故意不覆盖什么</h2><span class="cnt">__GAPS_N__ 条 · 带状态与理由</span></div>
+  <p class="note">没写进规则的条款，如果不列出来，就和"没想到"无法区分。下面每一条都是<b>明知存在、故意没编码</b>的，附类型与理由；数据在 <code>docs/methods/coverage_gaps.json</code>，由测试校验字段、状态枚举、理由长度与三辖区覆盖。</p>
+  <table class="cmp">
+    <thead><tr><th style="width:90px">辖区</th><th style="width:150px">条款</th><th style="width:130px">状态</th><th>理由</th></tr></thead>
+    <tbody id="gap-body">__GAPS__</tbody>
+  </table>
+  <p class="note">复核方式：<code>python -m unittest tests.test_contract.TestCoverageGaps -v</code>。注意本条的限制：<b>没列出的缺口与没被承认的缺口，在页面上无从区分</b>。</p>
+</section>
+
+<section class="sect">
+  <div class="sect-h"><h2>七个"我们不一样"，各自有多少证据</h2><span class="cnt">observed __OBS__ · inferred __INF__ · unverified __UNV__</span></div>
+  <p class="note">对外说"类目都怎样"很容易，说过就算的代价是外人无法验证。下表每行都写清：<b>我们这侧</b>用什么命令settle、<b>对方那侧</b>我们到底查没查。只有 <code>observed</code> 且给出链接的，才能当作对他人的事实陈述；其余是推断或未查。</p>
+  <table class="cmp">
+    <thead><tr><th style="width:130px">维度</th><th>我们的主张（可复核）</th><th style="width:120px">证据强度</th></tr></thead>
+    <tbody id="edge-body">__EDGES__</tbody>
+  </table>
+  <p class="note">复核方式：<code>python benchmarks/edge_claims.py</code>；可读版 <code>docs/methods/Competitive_Edges.md</code>。若 observed 占比过半，测试直接失败——那意味着我们在宣称一场没做过的调研。</p>
 </section>
 
 <footer>
@@ -429,14 +489,14 @@ def build() -> str:
                 .replace("__LAWN__", str(law_n))
                 .replace("__ASSERTIONS__", str(_assertion_count()))
                 .replace("__DET__", "YES" if cost["deterministic"] else "NO"))
-    return html
-    data_json = json.dumps(payload, ensure_ascii=False, indent=None, sort_keys=False)
-    data_json = data_json.replace("</", "<\\/")
-    html = TEMPLATE.replace("__GENERATED__", payload["generated_utc"]).replace("__DATA__", data_json)
-    html = (html.replace("__CASES__", str(len(cases)))
-                .replace("__RULES__", str(len(rules)))
-                .replace("__LAWN__", str(law_n))
-                .replace("__ASSERTIONS__", str(_assertion_count())))
+    gaps_html, gaps_n = _gap_rows()
+    edges_html, edge_counts = _edge_rows()
+    html = (html.replace("__GAPS__", gaps_html)
+                .replace("__GAPS_N__", str(gaps_n))
+                .replace("__EDGES__", edges_html)
+                .replace("__OBS__", str(edge_counts["observed"]))
+                .replace("__INF__", str(edge_counts["inferred"]))
+                .replace("__UNV__", str(edge_counts["unverified"])))
     return html
 
 
