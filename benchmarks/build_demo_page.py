@@ -108,19 +108,19 @@ def _clause_rows() -> list:
 
 
 def _assertion_count() -> int:
-    """Read the real assertion count from the suite, so the page cannot lag it.
+    """Count the contract tests from source, so the page cannot lag the suite.
 
-    `unittest` writes its summary to **stderr**, not stdout — parsing stdout here
-    returned 0 and the page silently advertised "0 contract assertions"."""
-    try:
-        p = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests"],
-                           capture_output=True, text=True, timeout=180, cwd=ROOT)
-        for ln in ((p.stderr or "") + (p.stdout or "")).splitlines():
-            if ln.startswith("Ran ") and " test" in ln:
-                return int(ln.split()[1])
-    except Exception:  # pragma: no cover
-        pass
-    return 0
+    Deliberately *not* `python -m unittest discover` here: at least one test runs
+    this builder, so invoking the suite from inside the builder recursed (stack
+    overflow locally, a dead job in CI). Counting `def test_` lines is cheap,
+    deterministic, and still moves whenever a test is added — which is the drift
+    this number exists to catch."""
+    total = 0
+    for path in sorted((ROOT / "tests").glob("test_*.py")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith("def test_"):
+                total += 1
+    return total
 
 
 TEMPLATE = r"""<!DOCTYPE html>
