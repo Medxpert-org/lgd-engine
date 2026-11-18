@@ -202,9 +202,27 @@ class TestMdrJudge(unittest.TestCase):
         accepted by the competent authority is not significant. The open-FSCA veto and
         the significance criteria must not re-block what the authority accepted."""
         v = self._v(change_category="design_hardware", affects_safety_or_performance=True,
-                    fsca_open=True, corrective_action_accepted_by_authority=True)
+                    fsca_open=True, corrective_action_accepted_by_authority=True,
+                    implements_accepted_corrective_action=True)
         self.assertEqual(v["verdict"], "go")
         self.assertIn("M-MIN-03", " ".join(r["rule"] for r in v["reasons"]))
+
+    def test_acceptance_is_scoped_to_the_change_that_implements_it(self):
+        """Red-team finding: the acceptance flag was a global bypass. An intended-
+        purpose expansion, a safety change and a classification change all came back
+        go just because *some* accepted corrective action existed. CAMD FAQ 17 exempts
+        the implementing change, not the manufacturer's next idea."""
+        for extra, label in (
+            ({"change_category": "intended_purpose", "affects_intended_purpose": True,
+              "intended_purpose_direction": "expansion"}, "expansion"),
+            ({"change_category": "design_hardware",
+              "affects_safety_or_performance": True}, "safety"),
+            ({"change_category": "clinical_performance",
+              "classification_changed": True}, "classification"),
+        ):
+            v = self._v(corrective_action_accepted_by_authority=True, **extra)
+            self.assertEqual(v["verdict"], "hold", label)
+            self.assertIn("M-MAJ-13", " ".join(r["rule"] for r in v["reasons"]), label)
 
 
 class TestNmpaJudge(unittest.TestCase):
@@ -345,7 +363,7 @@ class TestClauseBasis(unittest.TestCase):
         doctrine = [r for r in self.rules if not is_law(self.CLAUSE_BASIS[r])]
         self.assertLessEqual(len(doctrine), 12,
                              f"doctrine share grew: {len(doctrine)} of {len(self.rules)}")
-        self.assertEqual(len(self.rules), 61, "rule count moved — update the matrix doc")
+        self.assertEqual(len(self.rules), 62, "rule count moved — update the matrix doc")
 
 
 class TestCoverageGaps(unittest.TestCase):
@@ -492,7 +510,7 @@ class TestCliContract(unittest.TestCase):
     def test_mdr_domain_matches_expected(self):
         p = self._run("--all", str(ROOT / "demo1" / "cases_mdr"), "--domain", "mdr")
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        self.assertIn("7/7", p.stdout)
+        self.assertIn("9/9", p.stdout)
 
     def test_nmpa_domain_matches_expected(self):
         p = self._run("--all", str(ROOT / "demo1" / "cases_nmpa"), "--domain", "nmpa")

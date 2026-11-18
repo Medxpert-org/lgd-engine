@@ -10,6 +10,7 @@
   "verification_documented": true,
   "fsca_open": true,
   "corrective_action_accepted_by_authority": true,
+  "implements_accepted_corrective_action": true,
   "declared_not_significant": false,
   "evidence_sufficiency": "sufficient",
   "jurisdiction": "EU",
