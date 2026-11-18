@@ -1,0 +1,14 @@
+{
+  "case_id": "NMPA-YELLOW-02",
+  "_desensitized_from": "47号令 许可事项变更（变更注册）",
+  "device_description": "已注册二类设备；新增一个型号规格，结构与性能参数相应变化。",
+  "has_registration_certificate": true,
+  "change_fields": ["model_specification"],
+  "requested_path": "licence_change",
+  "safety_effectiveness_assessed": true,
+  "technical_docs_updated": true,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "NMPA",
+  "source_refs": [{"kind": "internal_verification", "ref": "型号变更技术说明 rev2"}],
+  "expected_verdict": "hold"
+}

@@ -1,0 +1,18 @@
+{
+  "case_id": "NMPA-YELLOW-06",
+  "_desensitized_from": "47号令 第七十九条 + 第八十八条：一类器械实行备案管理",
+  "device_description": "已备案的一类器械；变更产品技术要求中的一条检验方法，不涉及预期用途。",
+  "has_registration_certificate": true,
+  "device_class": "I",
+  "change_fields": ["technical_requirements"],
+  "requested_path": "filing",
+  "safety_effectiveness_assessed": true,
+  "technical_docs_updated": true,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "NMPA",
+  "source_refs": [
+    {"kind": "statute", "ref": "《医疗器械注册与备案管理办法》第七十九条、第八十八条"},
+    {"kind": "internal_verification", "ref": "一类备案变更说明 rev1"}
+  ],
+  "expected_verdict": "hold"
+}

@@ -1,0 +1,21 @@
+{
+  "case_id": "MDR-GREEN-07",
+  "_desensitized_from": "CAMD FAQ 17 — design change implementing an authority-accepted corrective action",
+  "device_description": "Class IIa 设备；监管机构已评估并接受的一项现场纠正措施，需要修改一处硬件设计。纠正措施正在执行中。",
+  "change_category": "design_hardware",
+  "affects_intended_purpose": false,
+  "affects_clinical_benefit": false,
+  "affects_safety_or_performance": true,
+  "new_clinical_data_required": false,
+  "verification_documented": true,
+  "fsca_open": true,
+  "corrective_action_accepted_by_authority": true,
+  "declared_not_significant": false,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "EU",
+  "source_refs": [
+    {"kind": "statute", "ref": "CAMD FAQ 17 (MDR transitional provisions)"},
+    {"kind": "internal_verification", "ref": "主管部门接受函 + CAPA 记录"}
+  ],
+  "expected_verdict": "go"
+}

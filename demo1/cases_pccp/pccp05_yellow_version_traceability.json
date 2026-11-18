@@ -1,0 +1,20 @@
+{
+  "case_id": "PCCP-YELLOW-05",
+  "_desensitized_from": "21 CFR 892.2055 labeling version history + new-UDI-on-version-change",
+  "device_description": "Covered threshold update shipped with unchanged labeling version block and the previous UDI, so the shipped unit cannot be traced to the new algorithm version.",
+  "pccp_authorized": true,
+  "change_within_pccp_scope": true,
+  "affects_intended_use": false,
+  "change_class_described": true,
+  "acceptance_criteria_met": true,
+  "validation_documented": true,
+  "labeling_version_history": false,
+  "udi_updated": false,
+  "change_type": "threshold_change",
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "FDA",
+  "source_refs": [
+    {"kind": "internal_verification", "ref": "V&V report, threshold update"}
+  ],
+  "expected_verdict": "hold"
+}

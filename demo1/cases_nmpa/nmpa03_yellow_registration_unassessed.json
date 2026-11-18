@@ -1,0 +1,14 @@
+{
+  "case_id": "NMPA-YELLOW-03",
+  "_desensitized_from": "47号令 登记事项变更但未做安全有效性影响评估",
+  "device_description": "注册人住所变更；未提供是否影响安全有效性的判断文件。",
+  "has_registration_certificate": true,
+  "change_fields": ["registrant_address"],
+  "requested_path": "filing",
+  "safety_effectiveness_assessed": false,
+  "technical_docs_updated": true,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "NMPA",
+  "source_refs": [{"kind": "internal", "ref": "营业执照变更回执"}],
+  "expected_verdict": "hold"
+}

@@ -1,0 +1,20 @@
+cloning D:\Workbuddy\05-工具\mcp-publish-20261115\lgd-engine @ ci/contract-tests-20261118 -> C:\Users\ADMINI~1\AppData\Local\Temp\lgd-eval-j2j87af7\clean
+HEAD 8765b93 | dirty files on arrival: 0
+
+PASS E0     clone arrives clean (no case-only or uncommitted noise)
+PASS C1     NMPA table 5/5 offline
+PASS C2     byte-identical rerun
+PASS C3     critical rule forces reject
+PASS C4     go without evidence downgraded to hold
+PASS C5     crashing judge is flagged, not a clean veto
+PASS C6     exit codes reject=2 / go=0 / usage=64
+PASS C7     MCP smoke: 7 tools + RBAC both ways
+PASS C8     baseline gate 12/12 vs naive 5/12
+PASS C9     dossier page in sync with engine
+PASS X1     tampered page makes --check fail
+PASS X2     suite reports Ran 38 tests
+PASS X3     dependencies = [] and no third-party imports
+PASS X4     note claims 24 cases, disk has 24
+PASS X5     tree still clean after the whole run
+
+15/15 checks passed

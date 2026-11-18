@@ -1,0 +1,19 @@
+{
+  "case_id": "MDR-YELLOW-02",
+  "_desensitized_from": "MDCG 2020-3 - software change affecting performance",
+  "device_description": "CE-marked Class IIb dose-calculation software; algorithm change alters the computed dose curve inside the cleared indication.",
+  "change_category": "software_algorithm",
+  "affects_intended_purpose": false,
+  "affects_clinical_benefit": true,
+  "affects_safety_or_performance": true,
+  "new_clinical_data_required": false,
+  "verification_documented": true,
+  "fsca_open": false,
+  "declared_not_significant": false,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "EU",
+  "source_refs": [
+    {"kind": "internal_verification", "ref": "algorithm V&V report, rev 4"}
+  ],
+  "expected_verdict": "hold"
+}

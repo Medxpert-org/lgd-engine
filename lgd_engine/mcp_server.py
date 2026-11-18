@@ -5,6 +5,8 @@ Tools exposed:
   - list_judges     : list registered DomainJudge domains
   - judge_change    : 510(k) change-classification verdict (Judge510kChange)
   - judge_postmarket: postmarket-surveillance verdict (JudgePostmarket)
+  - judge_pccp      : PCCP change-scope verdict (JudgePccpScope)
+  - record_decision : append-only audit write of a signed-off verdict (reviewer only)
 
 L2 authorization: the caller declares a role via params["role"] (default
 "read-only"). Roles are resolved against ROLE_TOOLS; a role that is not declared
@@ -27,9 +29,20 @@ from lgd_engine.gate.engine import GateEngine                # noqa: E402
 from lgd_engine import __version__ as _PKG_VERSION            # noqa: E402
 from lgd_engine.judges.judge_510k import Judge510kChange      # noqa: E402
 from lgd_engine.judges.judge_postmarket import JudgePostmarket  # noqa: E402
+from lgd_engine.judges.judge_pccp import JudgePccpScope       # noqa: E402
+from lgd_engine.judges.judge_mdr import JudgeMdrSignificance   # noqa: E402
+from lgd_engine.judges.judge_nmpa import JudgeNmpaChangeRegistration  # noqa: E402
 from lgd_engine.memory.localmem_min import LocalMemory        # noqa: E402
 
-READONLY_TOOLS = {"list_judges", "judge_change", "judge_postmarket"}
+READONLY_TOOLS = {"list_judges", "judge_change", "judge_postmarket", "judge_pccp",
+                  "judge_mdr", "judge_nmpa"}
+
+# The one capability that separates the two roles: recording a signed-off decision
+# is an append-only audit write, not a verdict-producing read. Until 2026-11-18
+# ROLE_TOOLS listed 'reviewer' with exactly the read-only set, so the table
+# promised a separation it did not implement (pinned as a known limitation in
+# tests/test_contract.py, now closed).
+REVIEW_TOOLS = {"record_decision"}
 
 # Role table. Declared roles are the ONLY thing that makes a tool reachable:
 # before this table existed the role was read into a variable, logged in the
@@ -39,7 +52,7 @@ READONLY_TOOLS = {"list_judges", "judge_change", "judge_postmarket"}
 DEFAULT_ROLE = "read-only"
 ROLE_TOOLS = {
     "read-only": frozenset(READONLY_TOOLS),
-    "reviewer": frozenset(READONLY_TOOLS),
+    "reviewer": frozenset(READONLY_TOOLS | REVIEW_TOOLS),
 }
 
 TOOL_SCHEMAS = {
@@ -65,6 +78,73 @@ TOOL_SCHEMAS = {
         "description": "Run the postmarket-surveillance judge over a ctx.",
         "inputSchema": {"type": "object", "properties": {"ctx": {"type": "object"}}},
     },
+    "judge_pccp": {
+        "description": ("Ask whether a change may ride an authorized PCCP "
+                        "(FD&C 515C / 21 CFR 892.2055) or needs its own submission."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "pccp_authorized": {"type": "boolean"},
+                "change_within_pccp_scope": {"type": "boolean"},
+                "affects_intended_use": {"type": "boolean"},
+                "acceptance_criteria_met": {"type": "boolean"},
+                "change_type": {"type": "string"},
+                "evidence_sufficiency": {"type": "string"},
+                "jurisdiction": {"type": "string"},
+                "source_refs": {"type": "array"},
+            },
+        },
+    },
+    "judge_mdr": {
+        "description": ("Ask whether a change to a CE-marked device is significant under "
+                        "MDCG 2020-3 (needs notified-body assessment) or not."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "change_category": {"type": "string"},
+                "affects_intended_purpose": {"type": "boolean"},
+                "affects_clinical_benefit": {"type": "boolean"},
+                "affects_safety_or_performance": {"type": "boolean"},
+                "fsca_open": {"type": "boolean"},
+                "declared_not_significant": {"type": "boolean"},
+                "evidence_sufficiency": {"type": "string"},
+                "jurisdiction": {"type": "string"},
+                "source_refs": {"type": "array"},
+            },
+        },
+    },
+    "judge_nmpa": {
+        "description": ("Ask whether a change to a China-registered device needs 变更注册 "
+                        "(licence item), 备案 (registration item), or re-registration."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "has_registration_certificate": {"type": "boolean"},
+                "change_fields": {"type": "array"},
+                "requested_path": {"type": "string"},
+                "safety_effectiveness_assessed": {"type": "boolean"},
+                "technical_docs_updated": {"type": "boolean"},
+                "evidence_sufficiency": {"type": "string"},
+                "recall_level": {"type": "string"},
+                "jurisdiction": {"type": "string"},
+                "source_refs": {"type": "array"},
+            },
+        },
+    },
+    "record_decision": {
+        "description": ("Record a signed-off decision into the audit log (append-only). "
+                        "Requires role=reviewer."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "case_id": {"type": "string"},
+                "verdict": {"type": "string", "enum": ["go", "hold", "reject"]},
+                "rationale": {"type": "string"},
+                "evidence_refs": {"type": "array"},
+            },
+            "required": ["case_id", "verdict", "rationale"],
+        },
+    },
 }
 
 
@@ -87,7 +167,8 @@ def handle(recv: dict, audit: LocalMemory) -> dict:
 
     if method == "tools/list":
         tools = [{"name": n, **TOOL_SCHEMAS[n]} for n in
-                 ("list_judges", "judge_change", "judge_postmarket")]
+                 ("list_judges", "judge_change", "judge_postmarket", "judge_pccp",
+                  "judge_mdr", "judge_nmpa", "record_decision")]
         return {"jsonrpc": "2.0", "id": mid, "result": {"tools": tools}}
 
     if method == "tools/call":
@@ -151,20 +232,52 @@ def handle(recv: dict, audit: LocalMemory) -> dict:
             result = {"judges": [
                 Judge510kChange().domain,
                 JudgePostmarket().domain,
+                JudgePccpScope().domain,
+                JudgeMdrSignificance().domain,
+                JudgeNmpaChangeRegistration().domain,
             ]}
         elif name == "judge_change":
             report = GateEngine([Judge510kChange()]).evaluate(args)
             result = {"report": report.to_dict()}
-        else:  # judge_postmarket
+        elif name == "judge_postmarket":
             report = GateEngine([JudgePostmarket()]).evaluate(args)
             result = {"report": report.to_dict()}
+        elif name == "judge_pccp":
+            report = GateEngine([JudgePccpScope()]).evaluate(args)
+            result = {"report": report.to_dict()}
+        elif name == "judge_mdr":
+            report = GateEngine([JudgeMdrSignificance()]).evaluate(args)
+            result = {"report": report.to_dict()}
+        elif name == "judge_nmpa":
+            report = GateEngine([JudgeNmpaChangeRegistration()]).evaluate(args)
+            result = {"report": report.to_dict()}
+        else:  # record_decision
+            verdict = args.get("verdict")
+            if verdict not in ("go", "hold", "reject"):
+                return {"jsonrpc": "2.0", "id": mid,
+                        "error": {"code": -32602,
+                                  "message": "invalid params: verdict must be one of "
+                                             "go / hold / reject (a decision without a "
+                                             "verdict is not a decision)"}}
+            if not (args.get("case_id") or "").strip() or not (args.get("rationale") or "").strip():
+                return {"jsonrpc": "2.0", "id": mid,
+                        "error": {"code": -32602,
+                                  "message": "invalid params: case_id and rationale are "
+                                             "required — an unsigned decision cannot be "
+                                             "audited"}}
+            result = {"recorded": {
+                "case_id": args["case_id"],
+                "verdict": verdict,
+                "by_role": role,
+            }}
 
         audit.record({
             "initiator": "mcp-server",
             "subject": f"tool {name} called by role={role}",
-            "decision": result.get("report", {}).get("verdict", "n/a"),
+            "decision": (result.get("report", {}).get("verdict")
+                         or result.get("recorded", {}).get("verdict") or "n/a"),
             "basis": f"tools/call {name}",
-            "status": "executed",
+            "status": "recorded" if name == "record_decision" else "executed",
             "evidence_refs": [],
         })
         return {"jsonrpc": "2.0", "id": mid, "result": {"content": [

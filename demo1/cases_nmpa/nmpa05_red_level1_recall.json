@@ -1,0 +1,15 @@
+{
+  "case_id": "NMPA-RED-05",
+  "_desensitized_from": "条例739 + 一级召回未关闭期间的结构变更",
+  "device_description": "一级召回未关闭（note: 该设备结构组成变更拟同步实施）。",
+  "has_registration_certificate": true,
+  "change_fields": ["structure_composition"],
+  "requested_path": "licence_change",
+  "safety_effectiveness_assessed": true,
+  "technical_docs_updated": true,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "NMPA",
+  "recall_level": "level1",
+  "source_refs": [{"kind": "nmpa_recall", "ref": "一级召回通告 2026-xx"}],
+  "expected_verdict": "reject"
+}
