@@ -52,8 +52,11 @@ _CRITICAL_RULES = [
             and c.get("affects_safety_or_performance") is True
             # CAMD FAQ 17 and MDCG 2020-3: a design change tied to a corrective action
             # that the competent authority has assessed and accepted is not a
-            # significant change — the veto must not swallow that route.
-            and c.get("corrective_action_accepted_by_authority") is not True
+            # significant change — the veto must not swallow that route. Scoped to the
+            # change that implements the action (see M-MAJ-13): an acceptance flag
+            # alone must not disarm the veto for unrelated changes.
+            and not (c.get("corrective_action_accepted_by_authority") is True
+                     and c.get("implements_accepted_corrective_action") is True)
         ),
     },
     {
@@ -141,6 +144,18 @@ _MAJOR_RULES = [
         "when": lambda c: c.get("evidence_sufficiency") in {"needs_supplement", "none"},
     },
     {
+        "rule": "M-MAJ-13-acceptance-not-scoped-to-this-change",
+        "detail": "A corrective action has been accepted by the authority, but this "
+                  "change is not declared as implementing it. CAMD FAQ 17 exempts the "
+                  "change that implements the accepted action, not everything the same "
+                  "manufacturer does afterwards — an acceptance flag that exempts any "
+                  "change would let an intended-purpose expansion ride a sealing fix.",
+        "when": lambda c: (
+            c.get("corrective_action_accepted_by_authority") is True
+            and c.get("implements_accepted_corrective_action") is not True
+        ),
+    },
+    {
         "rule": "M-MAJ-10-not-eu-jurisdiction",
         "detail": "This judge speaks only for MDR (EU). Another jurisdiction has its "
                   "own significance test — hold pending that route.",
@@ -173,7 +188,10 @@ _MINOR_RULES = [
         "rule": "M-MIN-03-corrective-action-accepted",
         "detail": "A design change implementing a corrective action the competent "
                   "authority has assessed and accepted is not significant — CAMD FAQ 17.",
-        "when": lambda c: c.get("corrective_action_accepted_by_authority") is True,
+        "when": lambda c: (
+            c.get("corrective_action_accepted_by_authority") is True
+            and c.get("implements_accepted_corrective_action") is True
+        ),
     },
 ]
 
@@ -223,7 +241,16 @@ class JudgeMdrSignificance:
             # Significance criteria are therefore not applied to it — otherwise every
             # criterion (safety/performance above all) would re-block the very change
             # the authority just accepted.
-            accepted_corrective = ctx.get("corrective_action_accepted_by_authority") is True
+            #
+            # The exemption is deliberately SCOPED to the change that implements the
+            # accepted action. Keyed on the acceptance flag alone it became a global
+            # bypass: red-teaming showed an intended-purpose expansion, a safety
+            # change and even a classification change all returned go by asserting
+            # that some accepted corrective action existed somewhere.
+            accepted_corrective = (
+                ctx.get("corrective_action_accepted_by_authority") is True
+                and ctx.get("implements_accepted_corrective_action") is True
+            )
             for rule in ([] if accepted_corrective else _MAJOR_RULES):
                 try:
                     if rule["when"](ctx):

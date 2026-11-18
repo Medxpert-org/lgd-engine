@@ -85,6 +85,9 @@ CLAUSE_BASIS: dict[str, str] = {
         "file; MDR Art.10(9) supplies the background obligation",
     "M-MAJ-09-evidence-insufficient":
         "DOCTRINE L2 — unproven is not pass",
+    "M-MAJ-13-acceptance-not-scoped-to-this-change":
+        "LAW CAMD FAQ 17 — 免除仅适用于「实施该已获接受纠正措施」的那项变更，"
+        "不适用于同一厂商此后的一切变更；接受标记本身不构成免除依据",
     "M-MAJ-10-not-eu-jurisdiction":
         "DOCTRINE scope — MDCG 2020-3 interprets MDR Art.120(3); it binds EU "
         "manufacturers only",

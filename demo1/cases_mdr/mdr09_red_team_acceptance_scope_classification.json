@@ -1,0 +1,19 @@
+{
+  "case_id": "MDR-RED-02",
+  "_desensitized_from": "红队自造：以「权威已接受纠正措施」为名，变更风险分类",
+  "device_description": "Class IIa 设备；厂商以既有纠正措施已获接受为由，提交一项归类变更并按非重大变更处理。",
+  "change_category": "clinical_performance",
+  "affects_intended_purpose": false,
+  "affects_clinical_benefit": false,
+  "affects_safety_or_performance": true,
+  "new_clinical_data_required": false,
+  "classification_changed": true,
+  "verification_documented": true,
+  "fsca_open": false,
+  "corrective_action_accepted_by_authority": true,
+  "declared_not_significant": false,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "EU",
+  "source_refs": [{"kind": "statute", "ref": "MDR 附件 VIII 分类规则"}],
+  "expected_verdict": "hold"
+}
