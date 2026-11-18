@@ -26,10 +26,16 @@ jobs:
         run: python lgd_engine/mcp_smoke.py
 
       # Unit-level contract: the three laws (L1/L2/L3), CLI exit-code mapping
-      # (2 means REJECT, 64 means usage error), and the RBAC table. The smoke
-      # above proves the wire works; these 13 assertions prove the rules do.
+      # (2 means REJECT, 64 means usage error), and the RBAC separation. The smoke
+      # above proves the wire works; these assertions prove the rules do.
       - name: Unit contract tests (three laws / CLI exit codes / RBAC)
         run: python -m unittest discover -s tests -v
+
+      # The comparison claim, made runnable: 12 probes with fixed expected
+      # verdicts, scored twice — once by the judges, once by the naive keyword
+      # shortcut. Exits non-zero if the gate misses a single probe.
+      - name: Baseline comparison (judges vs naive keyword classifier)
+        run: python benchmarks/adversarial_baseline.py
 
       # The docs said these were "enforced in CI"; they were not (S7 red team).
       - name: OpenAPI contract validation (structural)

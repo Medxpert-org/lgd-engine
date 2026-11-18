@@ -67,6 +67,8 @@ python lgd_engine/mcp_smoke.py               # -> SMOKE: PASS
 python -m lgd_engine.cli --all demo1/cases   # -> [summary] 5/5 cases match expected verdict (domain=510k)
 python -m lgd_engine.cli --all demo1/cases_pccp --domain pccp
 # -> [summary] 5/5 cases match expected verdict (domain=pccp)
+python benchmarks/adversarial_baseline.py
+# -> gate: 12/12 match expected / naive: 5/12 match expected
 ```
 
 These 24 assertions pin behaviour that a "did it exit 0" check cannot see:
