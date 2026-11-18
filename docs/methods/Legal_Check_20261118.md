@@ -104,13 +104,76 @@
 
 ---
 
-## 5. 可复跑
+## 6. EU MDR 部分（同日补做）
+
+**依据：** MDCG 2020-3 rev.1（2023-09 版，由 Regulation (EU) 2023/607 对齐）§4.1–§4.2 与
+CAMD FAQ 17（MDR 过渡期条款）。
+
+### 条文原文要点
+
+> A significant change in the design or intended purpose consists of **two cumulative
+> elements**: there is a change in the design or intended purpose, and the change is
+> significant. Changes that do not concern design or intended purpose are **out of scope**
+> of Article 120(3).（§4.1）
+
+> Changes concerning the manufacturer's organisation (administrative changes) or changes
+> concerning the manufacturing process should generally **not** be considered changes in
+> the design or intended purpose … This includes … relocation or addition of new
+> manufacturing sites … changing the supplier of a material, substance or component,
+> provided the specifications … do not change.（§4.2）
+
+> However, **limitations of the intended purpose** and **design changes related to
+> corrective actions assessed and accepted by the Competent Authority** are **not**
+> considered "significant" in the sense of Art. 120(3) MDR.（CAMD FAQ 17）
+
+### 对照结果
+
+| # | 条文要点 | 核验前编码 | 判定 |
+|---|---|---|---|
+| 10 | 重大变更需**两个要件同时成立**（涉及设计/预期用途 + 重大） | 用布尔字段分别承接，未显式要求两要件 | **符合**（字段层已隐含） |
+| 11 | 行政变更、生产场地迁移、供应商替换（规格不变）不属设计/预期用途变更 | `administrative`/`labeling_clarification` 有专门 minor 规则；`supplier_swap` 靠"无 major 命中"落到 go | **符合但欠显式** |
+| 12 | **限制预期用途**不构成重大变更 | `affects_intended_purpose=True` 直接命中 `M-MAJ-01`；若同时声明非重大则 `M-CRIT-02` 直接 reject | **偏离 → 已修（L4）** |
+| 13 | **主管部门已评估接受的纠正措施**所致设计变更不构成重大变更 | `M-CRIT-01`（FSCA 未关闭）无豁免；`M-MAJ-03` 仍会拦 | **偏离 → 已修（L5）** |
+| 14 | 过渡期终点 2027-12-31（III 类/IIb 植入）与 2028-12-31（其余） | 未建模日期 | **未覆盖**（表不判日期，只判显著性） |
+
+### 两处 finding 与处置
+
+**L4 — 把"限制适用范围"判成重大变更（过拦）**
+
+原文明确：收窄宣称不是重大变更。我们的表只要 `affects_intended_purpose` 为真就要求
+公告机构介入，甚至在同一案件里把"声明非重大"判成 `reject`——等于**惩罚厂商缩小自己的
+适应症**。这与"过拦"型错误同源：朴素判定器把该放的拦住，我们的表也犯了同一类错。
+
+处置：新增字段 `intended_purpose_direction`（`expansion` / `limitation` / 缺省），
+`M-MAJ-01` 与 `M-CRIT-02` 均加方向门；新增 `M-MIN-02-intended-purpose-limitation`。
+缺省方向仍按重大处理（保守方向不放松）。另加一条测试钉住**同一字段、相反方向**的
+非对称性：`limitation` → go，`expansion` → hold。
+
+**L5 — 主管部门已接受的纠正措施被双重拦截**
+
+`M-CRIT-01` 在 FSCA 未关闭时否决一切涉及安全性能的变更；`M-MAJ-03` 又把同一变更判为
+重大。但 FAQ 17 明确这类变更不构成重大变更：监管机构已经评估接受过它。结果是**我们
+拒绝了监管机构刚批准的那条路**。
+
+处置：`M-CRIT-01` 增加 `corrective_action_accepted_by_authority` 豁免；评估层面在豁免
+成立时整体跳过 major 规则（否则每一条显著性标准都会把同一变更重新拦一遍）；新增
+`M-MIN-03-corrective-action-accepted`。
+
+### 仍未覆盖
+
+- MDR 过渡期**日期**（2027/2028）未建模：表判显著性，不判"证书是否还在期内"。
+- **软件变更子图谱（Chart C）**的细节（如操作系统/架构大改、算法影响诊疗输出）未逐项
+  编码，仅由 `software_algorithm` + `affects_safety_or_performance` 粗粒度承接。
+- **FDA PCCP 条文级核验仍未做**（21 CFR 892.2055 / FD&C 515C 原文未取），仍是盲区。
+
+---
+
+## 7. 复跑
 
 ```bash
+python -m lgd_engine.cli --all demo1/cases_mdr --domain mdr     # 7/7
 python -m lgd_engine.cli --all demo1/cases_nmpa --domain nmpa   # 7/7
-python -m unittest discover -s tests                            # 40 assertions
+python -m unittest discover -s tests                            # 43 assertions
+python benchmarks/build_demo_page.py                            # 28 cases · 28/28
 ```
 
-新增两案钉住本次修正：`nmpa06_yellow_class1_filed_not_registered.json`（一类 + 技术要求变更
-→ hold，命中 N-MAJ-13）、`nmpa07_yellow_domestic_site_prerequisite.json`（境内迁址报"仅备案"
-→ hold，命中 N-MAJ-14）。

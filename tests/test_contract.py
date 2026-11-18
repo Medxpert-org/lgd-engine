@@ -166,6 +166,31 @@ class TestMdrJudge(unittest.TestCase):
         self.assertEqual(self._v(jurisdiction="FDA")["verdict"], "hold")
         self.assertEqual(self._v(source_refs=[])["verdict"], "hold")
 
+    def test_intended_purpose_limitation_is_not_significant(self):
+        """CAMD FAQ 17: narrowing the claim (removed patient group, added
+        contraindication) is not a significant change. A table that blocks it would
+        punish the manufacturer for shrinking its own indication."""
+        v = self._v(change_category="intended_purpose", affects_intended_purpose=True,
+                    intended_purpose_direction="limitation", declared_not_significant=True)
+        self.assertEqual(v["verdict"], "go")
+        self.assertIn("M-MIN-02", " ".join(r["rule"] for r in v["reasons"]))
+
+    def test_expansion_of_intended_purpose_stays_significant(self):
+        """The guard must not leak: the same field, opposite direction, is
+        significant — the asymmetry is the point."""
+        self.assertEqual(
+            self._v(change_category="intended_purpose", affects_intended_purpose=True,
+                    intended_purpose_direction="expansion")["verdict"], "hold")
+
+    def test_accepted_corrective_action_keeps_its_route(self):
+        """CAMD FAQ 17: a design change implementing a corrective action assessed and
+        accepted by the competent authority is not significant. The open-FSCA veto and
+        the significance criteria must not re-block what the authority accepted."""
+        v = self._v(change_category="design_hardware", affects_safety_or_performance=True,
+                    fsca_open=True, corrective_action_accepted_by_authority=True)
+        self.assertEqual(v["verdict"], "go")
+        self.assertIn("M-MIN-03", " ".join(r["rule"] for r in v["reasons"]))
+
 
 class TestNmpaJudge(unittest.TestCase):
     """NMPA: the route (变更注册 vs 备案) is decided by the field, not by what the
@@ -274,7 +299,7 @@ class TestCliContract(unittest.TestCase):
     def test_mdr_domain_matches_expected(self):
         p = self._run("--all", str(ROOT / "demo1" / "cases_mdr"), "--domain", "mdr")
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        self.assertIn("5/5", p.stdout)
+        self.assertIn("7/7", p.stdout)
 
     def test_nmpa_domain_matches_expected(self):
         p = self._run("--all", str(ROOT / "demo1" / "cases_nmpa"), "--domain", "nmpa")

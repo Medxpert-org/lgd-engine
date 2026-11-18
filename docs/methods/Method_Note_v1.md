@@ -5,6 +5,16 @@
 **Licence:** see repository `LICENSE` / `NOTICE`
 **Status:** method note (not a benchmark paper, not a product claim)
 
+> **Revision note (v1.3).** The MDR table was checked against MDCG 2020-3 rev.1 §4.1–§4.2
+> and CAMD FAQ 17. Two over-blocks were found, both legal routes our table was refusing:
+> (L4) a *limitation* of intended purpose (removed patient group, added contraindication)
+> was treated as significant, so a manufacturer shrinking its own claim was told to seek
+> notified-body assessment; (L5) a design change implementing a corrective action the
+> competent authority had assessed and accepted was still vetoed by the open-FSCA rule and
+> re-blocked by the significance criteria. Both now route to `go` with their own reason
+> codes; the expansion/limitation asymmetry is pinned by a test. MDR cases 5 → 7,
+> assertions 40 → 43.
+
 > **Revision note (v1.2).** The NMPA table was checked clause by clause against the
 > consolidated statute text (Order 47 §79–§88; Reg. 797 §21/§55/§81/§84/§85) — see
 > `Legal_Check_20261118.md`. Three real deviations were found and fixed: (L1) product
@@ -69,7 +79,7 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **40 assertions**,
+The assertion count grows as tables are added. As of this version: **43 assertions**,
 **24 case files**, **5 tables**, **12 adversarial probes**.
 
 ---
@@ -234,7 +244,7 @@ A third party needs no credentials, no network, and no third-party packages
 ```bash
 git clone https://github.com/MedXpert-org/lgd-engine
 cd lgd-engine
-python -m unittest discover -s tests -v          # 40 assertions
+python -m unittest discover -s tests -v          # 43 assertions
 python lgd_engine/mcp_smoke.py                   # 7 tools, RBAC both ways
 python benchmarks/adversarial_baseline.py        # 12/12 vs 5/12
 python benchmarks/build_demo_page.py --check     # dossier in sync with the code
@@ -267,7 +277,7 @@ Stated plainly, because a gate that oversells itself is a liability.
 4. **No identity or sandbox layer.** This repository does not authenticate callers,
    sandbox execution, or manage secrets; RBAC here means "which MCP tools a role may
    call" and nothing more.
-5. **Corpus size.** 26 cases is enough to pin behaviour, not enough to estimate
+5. **Corpus size.** 28 cases is enough to pin behaviour, not enough to estimate
    accuracy. No precision/recall figure is claimed, because none was measured.
 6. **Adversarial robustness is bounded.** `security/` and `review/` contain injection
    and fail-closed probes; they establish specific properties on specific inputs,
@@ -350,4 +360,4 @@ Full rule ids, conditions and rationales are in each judge module and in
 
 本方法说明描述一种把"监管变更判定"从自然语言问答改写成可执行规则表的方法：输入是评审人实际持有的结构化字段，输出是三值判决（go / hold / reject）加上被触发的规则编号；判定纯粹、可离线重跑、失败时表现为"拒绝回答"而非"猜测"。已实现五张判定表（美国 510(k) 变更分类、上市后处置、FDA PCCP 范围、EU MDR 重大变更、中国 NMPA 变更注册），随包发布 24 个带预期判决的案件与 12 条对抗探针；同一批输入下，确定性判定器 12/12 命中预期，关键词捷径仅 5/12。
 
-本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：40 条契约断言、5 张判定表、26 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
+本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：43 条契约断言、5 张判定表、28 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。

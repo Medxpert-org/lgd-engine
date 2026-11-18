@@ -161,7 +161,7 @@ def main() -> int:
 
     # X2 — assertion count claimed in the note
     c, o = run(clone, [py, "-m", "unittest", "discover", "-s", "tests"])
-    res.check("X2", "suite reports Ran 40 tests", o, ["Ran 40 tests"])
+    res.check("X2", "suite reports Ran 43 tests", o, ["Ran 43 tests"])
 
     # X3 — stdlib only
     manifest = (clone / "pyproject.toml").read_text(encoding="utf-8")
@@ -178,7 +178,7 @@ def main() -> int:
     # X4 — corpus size claimed in the note
     cases = [p for d in (clone / "demo1").glob("cases*") if d.is_dir()
              for p in d.glob("*.json")]
-    res.rows.append(("X4", f"note claims 26 cases, disk has {len(cases)}", len(cases) == 26, [str(len(cases))]))
+    res.rows.append(("X4", f"note claims 28 cases, disk has {len(cases)}", len(cases) == 28, [str(len(cases))]))
 
     # X5 — evaluation left nothing behind
     after = [ln for ln in run(clone, [GIT, "status", "--porcelain"])[1].splitlines() if ln.strip()]

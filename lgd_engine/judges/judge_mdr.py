@@ -11,11 +11,18 @@ Public basis (citable, offline):
     assessment routes — a significant change to a device's design, intended purpose
     or performance invalidates the existing assessment basis.
   - MDCG 2020-3 rev.1, "Guidance on significant changes regarding the transitional
-    provision": lists the changes that are significant (intended purpose, clinical
+    provision" — article text checked 2026-11-18 (see docs/methods/Legal_Check_20261118.md):
+    a significant change needs BOTH elements — a change in design or intended purpose
+    AND significance (rev.1 §4.1). Significant: intended purpose expansion, clinical
     benefit, design/software affecting safety or performance, patient-contacting
-    materials, sterilization, packaging/shelf life affecting sterility, changes
-    requiring new clinical data, classification change) and the ones that are not
-    (administrative changes, labelling clarifications that do not touch claims).
+    materials, sterilization, packaging/shelf life affecting sterility, new clinical
+    data, classification change. NOT significant: administrative changes (§4.2),
+    manufacturing-site relocation or supplier swap with unchanged specifications
+    (§4.2), **limitation/restriction of the intended purpose**, and design changes
+    implementing a corrective action assessed and accepted by the competent authority
+    (CAMD FAQ 17).
+  - Regulation (EU) 2023/607 moved the transition end to 31 Dec 2027 (Class III and
+    IIb implantables) and 31 Dec 2028 (others).
 
 The verdict mapping this judge uses:
   go     = not significant; proceed under the manufacturer's change control
@@ -43,6 +50,10 @@ _CRITICAL_RULES = [
         "when": lambda c: (
             c.get("fsca_open") is True
             and c.get("affects_safety_or_performance") is True
+            # CAMD FAQ 17 and MDCG 2020-3: a design change tied to a corrective action
+            # that the competent authority has assessed and accepted is not a
+            # significant change — the veto must not swallow that route.
+            and c.get("corrective_action_accepted_by_authority") is not True
         ),
     },
     {
@@ -52,9 +63,14 @@ _CRITICAL_RULES = [
                   "assessment being evaded, not avoided. Veto.",
         "when": lambda c: (
             c.get("declared_not_significant") is True
-            and (c.get("affects_intended_purpose") is True
-                 or c.get("affects_clinical_benefit") is True
-                 or c.get("new_clinical_data_required") is True)
+            and (c.get("affects_clinical_benefit") is True
+                 or c.get("new_clinical_data_required") is True
+                 or (c.get("affects_intended_purpose") is True
+                     # A limitation/restriction of intended purpose is expressly NOT
+                     # significant (CAMD FAQ 17), so declaring it non-significant is
+                     # the correct answer, not an evasion.
+                     and str(c.get("intended_purpose_direction") or "").strip().lower()
+                     != "limitation"))
         ),
     },
 ]
@@ -64,7 +80,11 @@ _MAJOR_RULES = [
         "rule": "M-MAJ-01-intended-purpose",
         "detail": "MDCG 2020-3: a change to intended purpose / indications / target "
                   "population is significant — notified-body assessment first.",
-        "when": lambda c: c.get("affects_intended_purpose") is True,
+        "when": lambda c: (
+            c.get("affects_intended_purpose") is True
+            and str(c.get("intended_purpose_direction") or "").strip().lower()
+            != "limitation"
+        ),
     },
     {
         "rule": "M-MAJ-02-clinical-benefit",
@@ -132,9 +152,28 @@ _MINOR_RULES = [
     {
         "rule": "M-MIN-01-administrative",
         "detail": "Administrative change or labelling clarification that touches no "
-                  "claim or performance attribute — not significant per MDCG 2020-3.",
+                  "claim or performance attribute — not significant per MDCG 2020-3 "
+                  "§4.2.",
         "when": lambda c: c.get("change_category") in {
             "administrative", "labeling_clarification"},
+    },
+    {
+        "rule": "M-MIN-02-intended-purpose-limitation",
+        "detail": "A limitation or restriction of the intended purpose (narrower "
+                  "indication, added contraindication, removed patient group) is not a "
+                  "significant change — CAMD FAQ 17 and MDCG 2020-3 rev.1 §4.1. Legacy "
+                  "status survives; the narrower claim is still a claim to document.",
+        "when": lambda c: (
+            c.get("affects_intended_purpose") is True
+            and str(c.get("intended_purpose_direction") or "").strip().lower()
+            == "limitation"
+        ),
+    },
+    {
+        "rule": "M-MIN-03-corrective-action-accepted",
+        "detail": "A design change implementing a corrective action the competent "
+                  "authority has assessed and accepted is not significant — CAMD FAQ 17.",
+        "when": lambda c: c.get("corrective_action_accepted_by_authority") is True,
     },
 ]
 
@@ -179,7 +218,13 @@ class JudgeMdrSignificance:
 
         if not crit:
             maj = False
-            for rule in _MAJOR_RULES:
+            # CAMD FAQ 17: a design change implementing a corrective action the
+            # competent authority assessed and accepted is not a significant change.
+            # Significance criteria are therefore not applied to it — otherwise every
+            # criterion (safety/performance above all) would re-block the very change
+            # the authority just accepted.
+            accepted_corrective = ctx.get("corrective_action_accepted_by_authority") is True
+            for rule in ([] if accepted_corrective else _MAJOR_RULES):
                 try:
                     if rule["when"](ctx):
                         maj = True
