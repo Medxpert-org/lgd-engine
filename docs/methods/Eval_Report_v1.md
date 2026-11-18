@@ -5,9 +5,9 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=ci/contract-tests-20261118 head=f124772 checks=17 passed=17 -->`
+`<!-- eval-report branch=ci/contract-tests-20261118 head=a61859d checks=18 passed=18 -->`
 
-Run at 2026-11-18 18:07 UTC against `ci/contract-tests-20261118` at `f124772`, from a fresh clone.
+Run at 2026-11-18 18:15 UTC against `ci/contract-tests-20261118` at `a61859d`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
@@ -23,13 +23,14 @@ Run at 2026-11-18 18:07 UTC against `ci/contract-tests-20261118` at `f124772`, f
 | C9 | dossier page in sync with engine | PASS |
 | C10 | every rule names a LAW / DOCTRINE basis | PASS |
 | C11 | verdict deterministic + cheap (no model) | PASS |
+| C13 | competitor claims carry provenance labels | PASS |
 | X1 | tampered page makes --check fail | PASS |
-| X2 | suite reports Ran 54 tests | PASS |
+| X2 | suite reports Ran 58 tests | PASS |
 | X3 | dependencies = [] and no third-party imports | PASS |
 | X4 | note claims 30 cases, disk has 30 | PASS |
 | X5 | tree still clean after the whole run | PASS |
 
-**17/17 checks passed** (plus C12, which validates this file).
+**18/18 checks passed** (plus C12, which validates this file).
 
 Scope of this report: it says nothing about correctness against real filings;
 it says that every claim the method note makes about *itself* survives an
