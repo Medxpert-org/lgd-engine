@@ -5,18 +5,26 @@ Domain: pccp-change-scope
 Question this judge answers: *may this change be implemented under an FDA-authorized
 Predetermined Change Control Plan, or does it need its own marketing submission?*
 
-Public basis (all citable, all offline):
-  - FD&C Act §515C (added by FDORA, 29 Dec 2022): a change that is **consistent with**
-    an authorized PCCP does not need a new 510(k) / PMA supplement.
-  - 21 CFR 892.2055 (final order published 17 Jun 2026, the first device type whose
-    regulation requires a PCCP): special controls require documented planned
+Public basis (all citable, all offline) — text checked 2026-11-19 against the statute
+and the CFR (see docs/methods/Legal_Check_20261118.md):
+  - FD&C Act §515C, added by §3308 of FDORA (Pub. L. 117-328, 29 Dec 2022), codified at
+    21 U.S.C. 360e-4:
+      (a) PMA: no supplement needed for a change consistent with an approved PCCP;
+      (b) 510(k): no new notification needed for a change consistent with a cleared
+          PCCP, **provided (A) the device remains safe and effective without the change
+          and (B) it would remain substantially equivalent to the predicate**;
+      (c) predicate devices: **a version implemented under a PCCP may not be used as a
+          predicate** — only the version cleared/approved before those changes;
+      (a)(3)/(b)(3) scope: FDA may require labeling, a notification requirement when the
+          device does not function as intended, and performance requirements.
+  - 21 CFR 892.2055 (radiological ML-based quantitative imaging software with a PCCP;
+    in force as of 2026-11-19): special controls require documented planned
     modifications and methodology, risk analysis, labeling **including a version
-    history**, and evidence that quantitative acceptance criteria were met.
-  - FDA final guidance, "Marketing Submission Recommendations for a PCCP for
-    AI-Enabled Device Software Functions" (Aug 2025): changes that alter intended
-    use or fundamental claims are **excluded** from PCCP coverage and still require
-    a submission; continuous-learning / automatic updates are recommended for a
-    Q-Sub discussion.
+    history**, and objective performance evidence on an independent test set.
+  - FDA final guidance,"Marketing Submission Recommendations for a PCCP for AI-Enabled
+    Device Software Functions" (issued 4 Dec 2024): a PCCP describes the Description of
+    Modifications, the Modification Protocol and the Impact Assessment; changes that
+    alter intended use remain outside PCCP coverage.
 
 This is a deterministic classifier over the facts supplied in `ctx`. It is not legal
 advice and it does not read guidance PDFs at runtime. Every rule below cites the
@@ -32,6 +40,8 @@ Input ctx (all fields optional; missing facts are treated as unproven, never as 
   "acceptance_criteria_met":  true | false,   # quantitative criteria satisfied
   "validation_documented":    true | false,   # V&V for this update on file
   "labeling_version_history": true | false,   # version history in labeling (892.2055)
+  "remains_se_to_predicate":  true | false,   # §515C(b)(2)(B): still SE to its predicate
+  "pccp_modified_version_used_as_predicate": true | false,  # §515C(c) prohibition
   "udi_updated":              true | false,   # new UDI issued for the new version
   "change_type":              <enum, see KNOWN_CHANGE_TYPES>,
   "evidence_sufficiency":     "sufficient" | "needs_supplement" | "none",
@@ -72,6 +82,24 @@ _CRITICAL_RULES = [
                   "controls make those criteria binding, so a non-conforming update "
                   "cannot ride the plan. Veto.",
         "when": lambda c: c.get("acceptance_criteria_met") is False,
+    },
+    {
+        "rule": "P-CRIT-04-se-to-predicate-broken",
+        "detail": "§515C(b)(2) has two cumulative conditions for the 510(k) route: the "
+                  "device remains safe and effective, AND it would remain substantially "
+                  "equivalent to its predicate. A change that breaks substantial "
+                  "equivalence cannot be cleared under a PCCP however well the plan is "
+                  "written. Veto.",
+        "when": lambda c: c.get("remains_se_to_predicate") is False,
+    },
+    {
+        "rule": "P-CRIT-05-modified-version-used-as-predicate",
+        "detail": "§515C(c) forbids comparing a device to a PCCP-modified version when "
+                  "deciding substantial equivalence — only the version cleared or "
+                  "approved before those changes may serve as a predicate. Using the "
+                  "modified version as a predicate is not a documented shortcut, it is "
+                  "a prohibited comparison. Veto.",
+        "when": lambda c: c.get("pccp_modified_version_used_as_predicate") is True,
     },
 ]
 

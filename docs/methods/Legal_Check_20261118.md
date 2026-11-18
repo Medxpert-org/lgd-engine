@@ -168,6 +168,67 @@ CAMD FAQ 17（MDR 过渡期条款）。
 
 ---
 
+## 6.5 FDA PCCP 部分（同日补做，最后一张表）
+
+**依据：** FD&C Act §515C（21 U.S.C. 360e-4，由 FDORA §3308 于 2022-12-29 加入）；21 CFR 892.2055
+（放射类机器学习定量影像软件 + PCCP，2026-11-19 现行有效）；FDA 终版指南（2024-12-04 发布）。
+
+### 条文原文要点
+
+> (b) CLEARED DEVICES. … a premarket notification shall not be required for a change to a
+> device cleared under section 510(k), if such change is consistent with an established
+> predetermined change control plan granted pursuant to paragraph (2) — **provided (A) the
+> device remains safe and effective without any such change; and (B) the device would
+> remain substantially equivalent to the predicate.**
+
+> (c) PREDICATE DEVICES. … the Secretary **shall not compare** a device to changed
+> versions of a device implemented in accordance with an established PCCP as a predicate
+> device. **Only the version of the device cleared or approved, prior to changes** made
+> under the PCCP, may be used by a sponsor as a predicate device.
+
+> (a)(3)/(b)(3) SCOPE. — The Secretary may require that a change control plan include
+> labeling …, notification requirements if the device does not function as intended
+> pursuant to such plan, and performance requirements for changes made under the plan.
+
+### 对照结果
+
+| # | 条文要点 | 核验前编码 | 判定 |
+|---|---|---|---|
+| 15 | 510(k) 路径需**两个条件同时成立**：保持安全有效（A）+ 保持与 predicate 实质等同（B） | 只承接"A/B 类"的 `acceptance_criteria_met` / `affects_intended_use`，无 SE 字段 | **缺失 → 已修（L6）** |
+| 16 | **PCCP 修改后的版本不得作 predicate**，只可用清关/批准时的原始版本 | 完全未建模 | **缺失 → 已修（L7）** |
+| 17 | 指南日期 | 写作 "Aug 2025" | **错误 → 已修（L8）**：终版指南 2024-12-04 发布 |
+| 18 | 892.2055 要求标注含版本历史、独立测试集上的客观性能证据 | `labeling_version_history` / `acceptance_criteria_met` | **符合** |
+| 19 | FDA 可要求"设备未按计划运行时须通知" | 未建模 | **未覆盖**（属可选项，非义务） |
+
+### 三处 finding 与处置
+
+**L6 — 只承接了一半的法定条件（缺能力）**
+
+§515C(b)(2) 是**两个并列条件**。我们只判"安全有效"一侧（`acceptance_criteria_met`、
+`affects_intended_use`），从不判"是否仍与 predicate 实质等同"。于是一个在计划范围内、但已
+偏离 predicate 基础的更新会被判 `go`——而法条明确它拿不到 510(k) 路径。新增
+`remains_se_to_predicate` 与 `P-CRIT-04`。
+
+**L7 — 一条属于"没人"的禁止条款（独家覆盖）**
+
+§515C(c) 禁止以 PCCP 修改后的版本作 predicate。这条规则不属于任何一家厂商，所以在竞品里
+通常无人编码；但它决定了"我这个新版本能不能被别人当 predicate"——对做 510(k) 策略的人
+是硬事实。新增 `pccp_modified_version_used_as_predicate` 与 `P-CRIT-05`。
+
+**L8 — 指南日期错**
+
+终版指南 2024-12-04 发布（Federal Register 2024-28361），草稿 2023-04-03。原文写 "Aug 2025"，
+属日期错误。已改。同类问题：892.2055 的"final order 2026-06-17"无法从公开源确认，改为
+"2026-11-19 现行有效"，不再声称发布日期。
+
+### 仍未覆盖
+
+- "设备未按计划运行须通知"（§515C(a)(3)/(b)(3)）未建模：FDA **可以**要求，非必然义务。
+- 持续学习 / 自动更新型 PCCP 的 Q-Sub 建议未建模（属指南建议，非条文）。
+- 892.2055 之外的其它 PCCP 器械类型（各分类法规特殊控制不同）未逐类编码。
+
+---
+
 ## 7. 复跑
 
 ```bash

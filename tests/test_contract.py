@@ -117,6 +117,21 @@ class TestPccpJudge(unittest.TestCase):
         self.assertEqual(self._v(change_type="vibes_based_update")["verdict"], "hold")
         self.assertEqual(self._v(jurisdiction="NMPA")["verdict"], "hold")
 
+    def test_broken_equivalence_closes_the_pccp_route(self):
+        """§515C(b)(2) is two cumulative conditions: safe-and-effective AND remains
+        substantially equivalent to the predicate. A well-written plan cannot cure
+        the second one."""
+        v = self._v(remains_se_to_predicate=False)
+        self.assertEqual(v["verdict"], "reject")
+        self.assertIn("P-CRIT-04", " ".join(r["rule"] for r in v["reasons"]))
+
+    def test_modified_version_may_not_be_a_predicate(self):
+        """§515C(c) bars comparing against a PCCP-modified version — a rule that
+        belongs to nobody's device, which is exactly why nobody encodes it."""
+        v = self._v(pccp_modified_version_used_as_predicate=True, change_type="predicate_use")
+        self.assertEqual(v["verdict"], "reject")
+        self.assertIn("P-CRIT-05", " ".join(r["rule"] for r in v["reasons"]))
+
     def test_blank_ref_is_not_evidence(self):
         """An empty ref must not satisfy L2 and let a go through."""
         self.assertEqual(self._v(source_refs=[{"kind": "", "ref": "   "}])["verdict"], "hold")
@@ -294,7 +309,7 @@ class TestCliContract(unittest.TestCase):
         """The PCCP case set ships with the package, so a stranger can run it too."""
         p = self._run("--all", str(ROOT / "demo1" / "cases_pccp"), "--domain", "pccp")
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        self.assertIn("5/5", p.stdout)
+        self.assertIn("7/7", p.stdout)
 
     def test_mdr_domain_matches_expected(self):
         p = self._run("--all", str(ROOT / "demo1" / "cases_mdr"), "--domain", "mdr")
