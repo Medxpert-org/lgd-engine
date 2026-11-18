@@ -114,6 +114,9 @@ CLAUSE_BASIS: dict[str, str] = {
         "不存在「变更注册」这一许可",
     "N-MAJ-14-domestic-site-change-prerequisite":
         "LAW 47号令 第七十九条 末句 — 境内生产地址变更须先办生产许可变更，再备案",
+    "N-MAJ-15-class1-no-registration-route":
+        "LAW 47号令 第八十八条 + 第二十三条 — 第一类器械实行备案管理，无「变更注册」"
+        "「首次注册」两种许可；申请路径本身不存在时，不得签发 go",
     "N-MAJ-02-registration-item-change":
         "LAW 47号令 第七十九条 — 注册人/代理人名称住所等登记事项，30 日内备案",
     "N-MAJ-03-safety-effectiveness-unassessed":

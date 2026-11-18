@@ -20,7 +20,7 @@
 > shipped rule carries a basis in `lgd_engine/judges/basis.py`, labelled **LAW** (a
 > provision whose text we read) or **DOCTRINE** (a house rule declared as such — the L2
 > evidence bar, or the fact that a judge speaks for one jurisdiction only). Current
-> split: **60 rules · 51 LAW · 9 DOCTRINE · 0 unbased**, enforced in both directions by
+> split: **61 rules · 52 LAW · 9 DOCTRINE · 0 unbased**, enforced in both directions by
 > `TestClauseBasis` (a rule with no basis fails; a basis entry naming no rule also
 > fails, because dead authority is how citation tables rot while still looking
 > complete). Readable form: `docs/methods/Clause_Matrix.md`. The doctrinal share is
@@ -111,8 +111,25 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **60 assertions**,
-**30 case files**, **5 tables**, **12 adversarial probes**.
+The assertion count grows as tables are added. As of this version: **61 assertions**,
+**32 case files** (30 corpus + 2 red-team), **5 tables**, **12 adversarial probes**.
+
+### 1.5 One defect this method found in itself
+
+The corpus above was written by the same author as the rules, which is the weakest
+possible form of evidence. So the rules were attacked from the other side: a Class I
+device (备案管理) was given an *administrative* field change and sent down a
+**变更注册** route and, separately, a **首次注册** route. Both came back **go**.
+
+The cause was structural, not a typo: the class/route check was keyed on the *changed
+fields* (`N-MAJ-13` fires only when a 许可事项 field changes on a Class I device), so
+an administrative change riding a registration route was never examined — the route
+itself was the thing that did not exist, and it passed. `N-MAJ-15` now keys on the
+requested route, and the two probes ship as cases `NMPA-RED-01/02` with declared
+expectations, so the gap cannot silently reopen.
+
+This is the intended shape of the evidence: **a rule table that has never convicted
+itself has not been tested**, only reviewed.
 
 ---
 
@@ -228,7 +245,7 @@ shortcut is not merely discouraged; the route is marked unavailable.
 
 ### 4.1 Corpus
 
-30 case files across 6 directories (`demo1/cases*`), each with a declared expected
+32 case files across 6 directories (`demo1/cases*`), each with a declared expected
 verdict (or a per-jurisdiction pair). Cases are desensitised constructs, not
 customer data; `_desensitized_from` records what real-world pattern each one models.
 Every case is evaluated by the same code path used in production; there is no
@@ -276,7 +293,7 @@ A third party needs no credentials, no network, and no third-party packages
 ```bash
 git clone https://github.com/MedXpert-org/lgd-engine
 cd lgd-engine
-python -m unittest discover -s tests -v          # 60 assertions
+python -m unittest discover -s tests -v          # 61 assertions
 python lgd_engine/mcp_smoke.py                   # 7 tools, RBAC both ways
 python benchmarks/adversarial_baseline.py        # 12/12 vs 5/12
 python benchmarks/build_demo_page.py --check     # dossier in sync with the code
@@ -309,7 +326,7 @@ Stated plainly, because a gate that oversells itself is a liability.
 4. **No identity or sandbox layer.** This repository does not authenticate callers,
    sandbox execution, or manage secrets; RBAC here means "which MCP tools a role may
    call" and nothing more.
-5. **Corpus size.** 30 cases is enough to pin behaviour, not enough to estimate
+5. **Corpus size.** 32 cases is enough to pin behaviour, not enough to estimate
    accuracy. No precision/recall figure is claimed, because none was measured.
 6. **Adversarial robustness is bounded.** `security/` and `review/` contain injection
    and fail-closed probes; they establish specific properties on specific inputs,
@@ -390,6 +407,6 @@ Full rule ids, conditions and rationales are in each judge module and in
 
 ## 中文摘要
 
-本方法说明描述一种把"监管变更判定"从自然语言问答改写成可执行规则表的方法：输入是评审人实际持有的结构化字段，输出是三值判决（go / hold / reject）加上被触发的规则编号；判定纯粹、可离线重跑、失败时表现为"拒绝回答"而非"猜测"。已实现五张判定表（美国 510(k) 变更分类、上市后处置、FDA PCCP 范围、EU MDR 重大变更、中国 NMPA 变更注册），随包发布 30 个带预期判决的案件与 12 条对抗探针；同一批输入下，确定性判定器 12/12 命中预期，关键词捷径仅 5/12。
+本方法说明描述一种把"监管变更判定"从自然语言问答改写成可执行规则表的方法：输入是评审人实际持有的结构化字段，输出是三值判决（go / hold / reject）加上被触发的规则编号；判定纯粹、可离线重跑、失败时表现为"拒绝回答"而非"猜测"。已实现五张判定表（美国 510(k) 变更分类、上市后处置、FDA PCCP 范围、EU MDR 重大变更、中国 NMPA 变更注册），随包发布 32 个带预期判决的案件与 12 条对抗探针；同一批输入下，确定性判定器 12/12 命中预期，关键词捷径仅 5/12。
 
-本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：49 条契约断言、5 张判定表、30 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
+本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：61 条契约断言、5 张判定表、32 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
