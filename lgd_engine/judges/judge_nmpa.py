@@ -6,14 +6,21 @@ Question: *for a registered/filed device in China, does this change need a 变�
 (licence-item change), only a 备案 (registration-item filing), or a fresh
 registration?*
 
-Public basis (citable, offline):
-  - 《医疗器械注册与备案管理办法》(国家市场监督管理总局令第 47 号, 2021-10-01 施行).
-    It splits post-market changes into 许可事项变更 (product name, model/specification,
-    structure and composition, 适用范围, product technical requirements, and for
-    imported devices the manufacturing site) and 登记事项变更 (registrant name /
-    address, agent, textual corrections to the production address), with a 备案 for
-    the latter. A change outside both categories may require re-registration.
-  - 《医疗器械监督管理条例》(国务院令第 739 号) — 未依法注册/备案不得生产、进口、销售.
+Public basis (citable, offline) — article text verified 2026-11-18 against the
+consolidated statute database (see docs/methods/Legal_Check_20261118.md):
+  - 《医疗器械注册与备案管理办法》(国家市场监督管理总局令第 47 号, 2021-08-26 公布,
+    2021-10-01 施行), 第七十九条: a substantive change (design, raw material, process,
+    适用范围, method of use) that may affect safety or effectiveness requires 变更注册;
+    other changes require 备案 within 30 days. The same article enumerates the
+    registration-certificate fields: 产品名称、型号、规格、结构及组成、适用范围、
+    产品技术要求、进口医疗器械的生产地址 → 变更注册; 注册人名称和住所、代理人名称和
+    住所 → 备案; 境内医疗器械生产地址变更 → 生产许可变更后办理备案.
+  - 《医疗器械监督管理条例》(国务院令第 797 号, 2024 修订; 前身为 739 号) 第二十一条
+    (same split), 第八十一条(一) (生产、经营未取得注册证的第二类、第三类医疗器械 →
+    没收并罚款), 第五十五条 (不得经营、使用未依法注册或备案的器械).
+  - 第一类医疗器械实行备案管理（条例第二十一条参照 47 号令第八十八条：已备案产品的
+    备案信息表内容及产品技术要求变化 → 变更备案），因此一类产品的同类变更走备案，
+    不走变更注册。
 
 Verdict mapping:
   go     = no licence-item change; filing (if any) is the correct route
@@ -30,24 +37,30 @@ from typing import Any, Dict, List
 
 from .base import DomainJudge, JudgeVerdict, Reason, Evidence
 
-# 许可事项变更 — these force a 变更注册.
+# 许可事项变更 — these force a 变更注册 (第二类/第三类).
 LICENCE_FIELDS = {
     "product_name", "model_specification", "structure_composition",
     "scope_of_application", "technical_requirements", "import_manufacturing_site",
 }
-# 登记事项变更 — these are filed (备案), not reviewed.
+# 登记事项变更 — filed (备案), not technically reviewed.
 REGISTRATION_FIELDS = {
     "registrant_name", "registrant_address", "agent_name", "agent_address",
-    "production_address_textual",
 }
-ALL_FIELDS = LICENCE_FIELDS | REGISTRATION_FIELDS
+# 境内生产地址变更 — 47 号令 requires 生产许可变更 first, then 备案. Kept separate so
+# the reason text can name the prerequisite instead of silently filing it.
+DOMESTIC_SITE_FIELDS = {"domestic_manufacturing_site"}
+# A textual correction to an address already on the certificate is not an address
+# change; it needs the no-impact assessment, not the 生产许可 round.
+TEXTUAL_FIELDS = {"production_address_textual"}
+ALL_FIELDS = LICENCE_FIELDS | REGISTRATION_FIELDS | DOMESTIC_SITE_FIELDS | TEXTUAL_FIELDS
 
 _CRITICAL_RULES = [
     {
         "rule": "N-CRIT-01-no-certificate",
         "detail": "No registration certificate / filing voucher in force while a "
-                  "change is being made — 条例 739: unregistered devices may not be "
-                  "produced, imported or sold. Veto.",
+                  "change is being made — 条例 797 第八十一条(一): producing or trading "
+                  "a Class II/III device without a registration certificate is "
+                  "confiscated and fined; 第五十五条 bars trading or using it. Veto.",
         "when": lambda c: (
             c.get("has_registration_certificate") is False
             and bool(c.get("change_fields"))
@@ -60,6 +73,9 @@ _CRITICAL_RULES = [
         "when": lambda c: (
             c.get("requested_path") == "filing"
             and bool(set(c.get("change_fields") or []) & LICENCE_FIELDS)
+            # For Class I the filing route is the correct instrument, so it must not
+            # be read as an evasion of technical review.
+            and str(c.get("device_class") or "").strip().upper() not in {"I", "1", "一类"}
         ),
     },
     {
@@ -78,8 +94,31 @@ _MAJOR_RULES = [
     {
         "rule": "N-MAJ-01-licence-item-change",
         "detail": "The change touches a 许可事项 field — 变更注册 must be approved "
-                  "before the change takes effect.",
-        "when": lambda c: bool(set(c.get("change_fields") or []) & LICENCE_FIELDS),
+                  "before the change takes effect (Class II/III devices).",
+        # Class I is filed (备案管理), so its licence-field change is 变更备案, not
+        # 变更注册 — routed by N-MAJ-13 instead of being labelled with the wrong
+        # instrument. Without this guard a Class I change would be told to seek a
+        # 变更注册 that does not exist for it.
+        "when": lambda c: (
+            bool(set(c.get("change_fields") or []) & LICENCE_FIELDS)
+            and str(c.get("device_class") or "").strip().upper() not in {"I", "1", "一类"}
+        ),
+    },
+    {
+        "rule": "N-MAJ-13-class1-filed-not-registered",
+        "detail": "Class I devices are 备案管理 — the equivalent change is 变更备案, "
+                  "not 变更注册. The obligation is real; the instrument is different.",
+        "when": lambda c: (
+            bool(set(c.get("change_fields") or []) & LICENCE_FIELDS)
+            and str(c.get("device_class") or "").strip().upper() in {"I", "1", "一类"}
+        ),
+    },
+    {
+        "rule": "N-MAJ-14-domestic-site-change-prerequisite",
+        "detail": "47 号令 第七十九条: a domestic production-site change requires the "
+                  "生产许可 change first and the 备案 after it — filing alone skips "
+                  "a precondition that exists in the statute.",
+        "when": lambda c: bool(set(c.get("change_fields") or []) & DOMESTIC_SITE_FIELDS),
     },
     {
         "rule": "N-MAJ-02-registration-item-change",
@@ -128,7 +167,7 @@ _MINOR_RULES = [
         "detail": "Textual 登记事项 correction with a documented no-impact assessment — "
                   "file only, no technical review required.",
         "when": lambda c: (
-            bool(set(c.get("change_fields") or []) & REGISTRATION_FIELDS)
+            bool(set(c.get("change_fields") or []) & (REGISTRATION_FIELDS | TEXTUAL_FIELDS))
             and c.get("safety_effectiveness_assessed") is True
         ),
     },
@@ -242,4 +281,5 @@ class JudgeNmpaChangeRegistration:
         return JudgeVerdict(verdict=verdict, reasons=reasons, evidence=evidence).to_dict()
 
 
-__all__ = ["JudgeNmpaChangeRegistration", "LICENCE_FIELDS", "REGISTRATION_FIELDS"]
+__all__ = ["JudgeNmpaChangeRegistration", "LICENCE_FIELDS", "REGISTRATION_FIELDS",
+           "DOMESTIC_SITE_FIELDS", "TEXTUAL_FIELDS"]

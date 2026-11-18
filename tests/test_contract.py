@@ -215,6 +215,23 @@ class TestNmpaJudge(unittest.TestCase):
                                  change_fields=["structure_composition"])["verdict"],
                          "reject")
 
+    def test_class1_licence_field_is_filed_not_registered(self):
+        """Class I is 备案管理, so the same field change routes to 变更备案. Telling
+        a Class I registrant to seek a 变更注册 asks for an instrument that does not
+        exist for them; letting it read as an evasion of review is the mirror error."""
+        v = self._v(device_class="I", change_fields=["technical_requirements"],
+                    requested_path="filing")
+        self.assertEqual(v["verdict"], "hold")
+        self.assertIn("N-MAJ-13", " ".join(r["rule"] for r in v["reasons"]))
+
+    def test_domestic_site_change_names_its_prerequisite(self):
+        """47 号令 requires the 生产许可 change before the 备案 — filing alone skips
+        a statutory precondition, so it must not read as a clean go."""
+        v = self._v(change_fields=["domestic_manufacturing_site"],
+                    requested_path="filing")
+        self.assertEqual(v["verdict"], "hold")
+        self.assertIn("N-MAJ-14", " ".join(r["rule"] for r in v["reasons"]))
+
 
 class TestDemoPage(unittest.TestCase):
     """The browser dossier must be a view of the engine, not a second source of
@@ -262,7 +279,7 @@ class TestCliContract(unittest.TestCase):
     def test_nmpa_domain_matches_expected(self):
         p = self._run("--all", str(ROOT / "demo1" / "cases_nmpa"), "--domain", "nmpa")
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        self.assertIn("5/5", p.stdout)
+        self.assertIn("7/7", p.stdout)
 
     def test_single_case_is_deterministic(self):
         case = sorted(CASES.glob("*.json"))[0]

@@ -102,7 +102,7 @@ def main() -> int:
 
     # C1 — five tables run offline
     c, o = run(clone, [py, "-m", "lgd_engine.cli", "--all", "demo1/cases_nmpa", "--domain", "nmpa"])
-    res.check("C1", "NMPA table 5/5 offline", o, ["5/5 cases match expected verdict"])
+    res.check("C1", "NMPA table 7/7 offline", o, ["7/7 cases match expected verdict"])
 
     # C2 — byte-identical reruns
     cmd = [py, "-m", "lgd_engine.cli", "--case", "demo1/cases_mdr/mdr04_red_open_fsca.json",
@@ -161,7 +161,7 @@ def main() -> int:
 
     # X2 — assertion count claimed in the note
     c, o = run(clone, [py, "-m", "unittest", "discover", "-s", "tests"])
-    res.check("X2", "suite reports Ran 38 tests", o, ["Ran 38 tests"])
+    res.check("X2", "suite reports Ran 40 tests", o, ["Ran 40 tests"])
 
     # X3 — stdlib only
     manifest = (clone / "pyproject.toml").read_text(encoding="utf-8")
@@ -178,7 +178,7 @@ def main() -> int:
     # X4 — corpus size claimed in the note
     cases = [p for d in (clone / "demo1").glob("cases*") if d.is_dir()
              for p in d.glob("*.json")]
-    res.rows.append(("X4", f"note claims 24 cases, disk has {len(cases)}", len(cases) == 24, [str(len(cases))]))
+    res.rows.append(("X4", f"note claims 26 cases, disk has {len(cases)}", len(cases) == 26, [str(len(cases))]))
 
     # X5 — evaluation left nothing behind
     after = [ln for ln in run(clone, [GIT, "status", "--porcelain"])[1].splitlines() if ln.strip()]

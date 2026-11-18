@@ -8,6 +8,12 @@ script, not from the credential of whoever ran it)
 **Base commit:** `198bbf7` (v1.0) → evaluated on `8765b93` after fixes
 **Verdict:** **CONDITIONAL PASS at v1.0 → PASS at v1.1** (five findings, all closed)
 
+> **Snapshot note.** This report is a record of the state at `8765b93` (38 assertions,
+> 24 cases, 5/5 NMPA). After it was written, the NMPA table was re-checked against the
+> statute text and three deviations were fixed (see `Legal_Check_20261118.md`), moving
+> the counts to **40 assertions, 26 cases, 7/7 NMPA**. The findings and verdicts below
+> stand; the counts are the counts of that day, not of today.
+
 ---
 
 ## 1. What was tested, and how
