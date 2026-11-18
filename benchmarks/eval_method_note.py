@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -259,16 +260,27 @@ def main() -> int:
     # the tamper test restores the file; a byte-identical restore must not show up
     res.rows.append(("X5", "tree still clean after the whole run", len(after) == 0, after))
 
-    # X6 — the docs quote the same assertion count this run derived from source.
-    # This is the drift gate: adding a test without updating the prose fails loudly
-    # and prints the number the prose should say.
+    # X6 — the docs quote the same numbers this run derived from source, and every
+    # command the README's audit table cites actually exists. The drift gate: adding
+    # a test without updating the prose fails loudly and prints the number it should say.
     readme = (clone / "README.md").read_text(encoding="utf-8")
     note = (clone / "docs" / "methods" / "Method_Note_v1.md").read_text(encoding="utf-8")
     readme_says = f"Ran {assertions} tests" in readme
     note_says = f"{assertions} assertions" in note
-    res.rows.append(("X6", f"docs quote {assertions} assertions",
-                     readme_says and note_says,
-                     [f"readme={readme_says} method_note={note_says} expected={assertions}"]))
+    cases_says = f"{len(cases)} case files" in readme
+    cited = []
+    for m in re.finditer(r"`python benchmarks/([^` ]+)", readme):
+        cited.append(m.group(1))
+    cited_missing = [c for c in cited
+                     if not (clone / "benchmarks" / c).exists()]
+    linked_missing = [p for p in re.findall(r"\]\((docs/methods/[^)]+)\)", readme)
+                      if not (clone / p).exists()]
+    res.rows.append(("X6", f"docs quote {assertions} assertions and {len(cases)} cases, "
+                           f"and every cited audit command exists",
+                     readme_says and note_says and cases_says
+                     and not cited_missing and not linked_missing,
+                     [f"readme={readme_says} note={note_says} cases={cases_says} "
+                      f"missing_commands={cited_missing} missing_links={linked_missing}"]))
 
     # C12 — the committed report is derived, not hand-written
     rep_path = clone / "docs" / "methods" / "Eval_Report_v1.md"
@@ -276,7 +288,6 @@ def main() -> int:
     detail = ["missing report"]
     if rep_path.exists():
         text = rep_path.read_text(encoding="utf-8")
-        import re
         m = re.search(r"<!-- eval-report branch=(\S+) head=(\S+) checks=(\d+) passed=(\d+) -->", text)
         if not m:
             detail = ["marker line missing"]

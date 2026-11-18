@@ -95,8 +95,8 @@ output rather than assuming this README is right.
 ### Read it without installing anything
 
 [`demo/judge-dossier.html`](demo/judge-dossier.html) is a single self-contained page:
-24 case files, every verdict, the rule ids that fired, and the input JSON each judge
-saw. No Python, no clone — open the file.
+30 case files, every verdict, the rule ids that fired, the input JSON each judge
+saw, and a clause matrix mapping all 60 rules to a legal basis. No Python, no clone — open the file.
 
 Public mirror, no login required: <https://4mhpq75av81v1.doubao.link/app/app_17ja5t8hbn8>
 (same file, published as-is).
@@ -111,6 +111,20 @@ python benchmarks/build_demo_page.py --check    # CI: fail if the page drifted
 If the page showed a verdict the code does not produce, the `--check` step turns red.
 That constraint is the point: a comparison table can say anything, a page that CI
 re-derives from the judges cannot.
+
+### Four things you can audit without trusting me
+
+| What it answers | File | Command that settles it |
+|---|---|---|
+| Is every rule tied to a clause, or does it just assert? | [`docs/methods/Clause_Matrix.md`](docs/methods/Clause_Matrix.md) | `python benchmarks/clause_matrix.py` |
+| What does it deliberately *not* cover? | [`docs/methods/coverage_gaps.json`](docs/methods/coverage_gaps.json) | `python -m unittest tests.test_contract.TestCoverageGaps -v` |
+| Which comparisons are measured and which are only inferred? | [`docs/methods/Competitive_Edges.md`](docs/methods/Competitive_Edges.md) | `python benchmarks/edge_claims.py` |
+| Was the evaluation report generated, or written by hand? | [`docs/methods/Eval_Report_v1.md`](docs/methods/Eval_Report_v1.md) | `python benchmarks/eval_method_note.py` |
+
+None of these is a promise. Each is a file plus a command; if the file and the
+command disagree, the evaluation fails. Two of the seven competitive claims are
+marked `observed` and the other five say outright that they were not measured —
+that column exists so that inference cannot quietly become fact.
 
 One decision from a case JSON:
 
