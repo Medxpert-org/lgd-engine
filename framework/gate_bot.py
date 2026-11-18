@@ -18,6 +18,7 @@ Stdlib only. PyYAML optional (fallback: structural key check).
 from __future__ import annotations
 
 import argparse
+import json as _json
 import re
 import subprocess
 import sys
@@ -98,9 +99,35 @@ def check_license_files(root: Path) -> tuple[bool, str]:
         problems.append("missing release-prep/NOTICE")
     elif p.stat().st_size < 100:
         problems.append(f"release-prep/NOTICE suspiciously small ({p.stat().st_size}B)")
+    # Metadata must not declare a different licence than the shipped LICENSE.
+    # A Zenodo deposit reads .zenodo.json and nothing else, so a wrong value
+    # there becomes a permanent, citable error while every local check still
+    # passes ("Apache-2.0 text present" says nothing about what we advertise).
+    meta = {}
+    p = root / ".zenodo.json"
+    if p.exists():
+        try:
+            meta[".zenodo.json"] = (_json.loads(p.read_text(encoding="utf-8")).get("license") or "")
+        except Exception as exc:  # noqa: BLE001 - reported, not raised
+            problems.append(f".zenodo.json unreadable: {exc}")
+    p = root / "pyproject.toml"
+    if p.exists():
+        m = re.search(r'license\s*=\s*\{\s*text\s*=\s*"([^"]+)"', p.read_text(encoding="utf-8"))
+        meta["pyproject.toml"] = m.group(1) if m else ""
+    p = root / "CITATION.cff"
+    if p.exists():
+        m = re.search(r"^license:\s*(.+)$", p.read_text(encoding="utf-8"), re.M)
+        meta["CITATION.cff"] = m.group(1).strip() if m else ""
+    for name, value in meta.items():
+        if "apache" not in value.lower():
+            problems.append(
+                f"{name} declares licence {value!r}; the shipped LICENSE is Apache-2.0")
+
     if problems:
         return False, "; ".join(problems)
-    return True, "LICENSE (Apache-2.0 text) and NOTICE present in release-prep/"
+    return True, (
+        "LICENSE (Apache-2.0 text) and NOTICE present in release-prep/; "
+        f"licence metadata agrees in {len(meta)} file(s)")
 
 
 def scan_files(root: Path):
