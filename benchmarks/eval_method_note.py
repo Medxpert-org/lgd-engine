@@ -255,8 +255,10 @@ def main() -> int:
         else:
             b_ok = (m.group(1) == args.branch)
             h_ok = len(m.group(2)) >= 7
-            c_ok = int(m.group(3)) == len(res.rows) - 1
-            p_ok = int(m.group(4)) == len(res.rows) - 1
+            # C12 is not yet in `rows`, and the report excludes it, so the counts
+            # match len(rows) exactly at this point.
+            c_ok = int(m.group(3)) == len(res.rows)
+            p_ok = int(m.group(4)) == len(res.rows)
             marker_ok = b_ok and h_ok and c_ok and p_ok
             detail = [f"branch={m.group(1)} checks={m.group(3)}/{m.group(4)} "
                       f"cases={len(cases)} assertions={assertions}"]
