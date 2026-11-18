@@ -121,6 +121,7 @@ re-derives from the judges cannot.
 | Which comparisons are measured and which are only inferred? | [`docs/methods/Competitive_Edges.md`](docs/methods/Competitive_Edges.md) | `python benchmarks/edge_claims.py` |
 | Was the evaluation report generated, or written by hand? | [`docs/methods/Eval_Report_v1.md`](docs/methods/Eval_Report_v1.md) | `python benchmarks/eval_method_note.py` |
 | What do I have to supply to get a verdict at all? | [`docs/methods/Input_Contracts.md`](docs/methods/Input_Contracts.md) | `python benchmarks/input_contracts.py` |
+| Where do I submit a case that proves a rule wrong? | [`docs/methods/Challenge.md`](docs/methods/Challenge.md) | open the **Challenge a rule** issue form |
 
 None of these is a promise. Each is a file plus a command; if the file and the
 command disagree, the evaluation fails. Two of the seven competitive claims are

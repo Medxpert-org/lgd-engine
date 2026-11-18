@@ -6,7 +6,7 @@
     { "name": "Zhao, Xinghua", "affiliation": "LGD" }
   ],
   "access_right": "open",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "keywords": ["governance", "medical-device", "ITU-FG-TIDA", "LGD"],
   "related_identifiers": [
     { "identifier": "https://github.com/Medxpert-org/lgd-engine", "relation": "isSourceOf" }
