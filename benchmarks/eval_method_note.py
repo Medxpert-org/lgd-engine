@@ -140,6 +140,13 @@ def main() -> int:
 
     py = sys.executable
 
+    # Count assertions from source, so no figure in this file has to be hand-kept.
+    assertions = 0
+    for tf in sorted((clone / "tests").glob("test_*.py")):
+        for line in tf.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith("def test_"):
+                assertions += 1
+
     # C1 — five tables run offline
     c, o = run(clone, [py, "-m", "lgd_engine.cli", "--all", "demo1/cases_nmpa", "--domain", "nmpa"])
     res.check("C1", "NMPA table 7/7 offline", o, ["7/7 cases match expected verdict"])
@@ -217,9 +224,18 @@ def main() -> int:
     page.write_text(original, encoding="utf-8")
     res.rows.append(("X1", "tampered page makes --check fail", c != 0, [o.strip().splitlines()[-1] if o.strip() else ""]))
 
-    # X2 — assertion count claimed in the note
+    # X2 — the suite runs, and its size matches the count derived from source
     c, o = run(clone, [py, "-m", "unittest", "discover", "-s", "tests"])
-    res.check("X2", "suite reports Ran 58 tests", o, ["Ran 58 tests"])
+    ran = None
+    for line in o.splitlines():
+        if line.startswith("Ran ") and " test" in line:
+            try:
+                ran = int(line.split()[1])
+            except (IndexError, ValueError):
+                ran = None
+    res.rows.append(("X2", f"suite runs and reports {assertions} tests",
+                     c == 0 and ran == assertions,
+                     [f"ran={ran} counted={assertions} rc={c}"]))
 
     # X3 — stdlib only
     manifest = (clone / "pyproject.toml").read_text(encoding="utf-8")
@@ -243,12 +259,18 @@ def main() -> int:
     # the tamper test restores the file; a byte-identical restore must not show up
     res.rows.append(("X5", "tree still clean after the whole run", len(after) == 0, after))
 
+    # X6 — the docs quote the same assertion count this run derived from source.
+    # This is the drift gate: adding a test without updating the prose fails loudly
+    # and prints the number the prose should say.
+    readme = (clone / "README.md").read_text(encoding="utf-8")
+    note = (clone / "docs" / "methods" / "Method_Note_v1.md").read_text(encoding="utf-8")
+    readme_says = f"Ran {assertions} tests" in readme
+    note_says = f"{assertions} assertions" in note
+    res.rows.append(("X6", f"docs quote {assertions} assertions",
+                     readme_says and note_says,
+                     [f"readme={readme_says} method_note={note_says} expected={assertions}"]))
+
     # C12 — the committed report is derived, not hand-written
-    assertions = 0
-    for tf in (clone / "tests").glob("test_*.py"):
-        for line in tf.read_text(encoding="utf-8").splitlines():
-            if line.strip().startswith("def test_"):
-                assertions += 1
     rep_path = clone / "docs" / "methods" / "Eval_Report_v1.md"
     marker_ok = False
     detail = ["missing report"]
