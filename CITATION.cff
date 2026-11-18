@@ -23,6 +23,15 @@ preferred-citation:
       given-names: "X."
   year: "2027"
   note: "Placeholder — venue, DOI, and citation metadata to be completed upon submission. Do not cite this entry as a published paper."
+references:
+  - type: report
+    title: "A Deterministic Regulatory Change Gate: Method Note v1.0"
+    authors:
+      - family-names: "Zhao"
+        given-names: "Xinghua"
+    year: 2026
+    url: "https://github.com/MedXpert-org/lgd-engine/blob/main/docs/methods/Method_Note_v1.md"
+    notes: "Method note, not a peer-reviewed paper. Every claim in it is paired with the command that checks it. Cite the DOI version once one is minted; until then cite this file plus the commit hash."
 # Notes for maintainers:
 # - `date-released` is intentionally omitted: version 0.1.0 has not been
 #   published yet. Add it (ISO 8601, e.g. 2026-12-01) when the release tag
