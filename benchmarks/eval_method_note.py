@@ -73,18 +73,23 @@ class Result:
         return 0 if not failed else 1
 
     def markdown(self, head: str, branch: str) -> str:
-        """The report is derived output, not prose: same run, same table."""
+        """The report is derived output, not prose: same run, same table.
+
+        C12 itself is excluded: a report that counted its own freshness check
+        could never settle (the count would depend on the report it is judging)."""
         from datetime import datetime, timezone
-        passed = sum(1 for r in self.rows if r[2])
+        rows = [r for r in self.rows if r[0] != "C12"]
+        passed = sum(1 for r in rows if r[2])
         lines = [
             "# Evaluation report — generated, not written",
             "",
             "This file is produced by `benchmarks/eval_method_note.py --report`. Do not edit",
             "it by hand: the marker line below is asserted by check C12, so a hand-written",
-            "number that disagrees with the repository fails the evaluation.",
+            "number that disagrees with the repository fails the evaluation. C12 is excluded",
+            "from the counts below — a report cannot contain the verdict on itself.",
             "",
             f"`<!-- eval-report branch={branch} head={head} "
-            f"checks={len(self.rows)} passed={passed} -->`",
+            f"checks={len(rows)} passed={passed} -->`",
             "",
             f"Run at {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')} UTC against "
             f"`{branch}` at `{head}`, from a fresh clone.",
@@ -92,11 +97,11 @@ class Result:
             "| # | Claim checked | Result |",
             "|---|---|---|",
         ]
-        for cid, desc, ok, _ in self.rows:
+        for cid, desc, ok, _ in rows:
             lines.append(f"| {cid} | {desc} | {'PASS' if ok else '**FAIL**'} |")
         lines += [
             "",
-            f"**{passed}/{len(self.rows)} checks passed.**",
+            f"**{passed}/{len(rows)} checks passed** (plus C12, which validates this file).",
             "",
             "Scope of this report: it says nothing about correctness against real filings;",
             "it says that every claim the method note makes about *itself* survives an",
@@ -250,8 +255,8 @@ def main() -> int:
         else:
             b_ok = (m.group(1) == args.branch)
             h_ok = len(m.group(2)) >= 7
-            c_ok = int(m.group(3)) == len(res.rows)
-            p_ok = int(m.group(4)) == len(res.rows)
+            c_ok = int(m.group(3)) == len(res.rows) - 1
+            p_ok = int(m.group(4)) == len(res.rows) - 1
             marker_ok = b_ok and h_ok and c_ok and p_ok
             detail = [f"branch={m.group(1)} checks={m.group(3)}/{m.group(4)} "
                       f"cases={len(cases)} assertions={assertions}"]
