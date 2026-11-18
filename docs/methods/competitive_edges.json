@@ -1,0 +1,68 @@
+{
+  "_readme": "Every row states where OUR claim can be checked (our_proof, a command that exists in this repo) and how much we actually know about the other side (competitor_status). Statuses: observed = we looked; inferred = our reasoning, not a measurement; unverified = we did not look. A claim about a competitor may only be published as fact when status is observed AND a source is given.",
+  "edges": [
+    {
+      "id": "E-MODEL",
+      "dimension": "does the verdict call a model",
+      "our_claim": "Verdicts are pure functions: no network, no model, byte-identical across reruns.",
+      "our_proof": "benchmarks/verdict_cost.py",
+      "competitor_status": "inferred",
+      "competitor_note": "Guardrail products generally classify free text with a model. We did not measure any specific product; the cost claim is therefore about our input shape, not about their throughput.",
+      "risk": "If read as a speed comparison against LLM guardrails, it is a category error: they judge language, we judge a structured context."
+    },
+    {
+      "id": "E-BASIS",
+      "dimension": "does each rule name its legal basis",
+      "our_claim": "All 60 rules carry a LAW or DOCTRINE label, with DOCTRINE capped at 12.",
+      "our_proof": "benchmarks/clause_matrix.py",
+      "competitor_status": "unverified",
+      "competitor_note": "We have not audited whether other tools trace rules to clause numbers. Absence of evidence here is not evidence of absence.",
+      "risk": "A competitor may well cite clauses internally without publishing them; publishing is the difference we can verify."
+    },
+    {
+      "id": "E-REPORT",
+      "dimension": "is the evaluation report generated or written",
+      "our_claim": "The report is emitted by the evaluator and a check fails when its numbers disagree with the repo.",
+      "our_proof": "benchmarks/eval_method_note.py",
+      "competitor_status": "inferred",
+      "competitor_note": "Hand-maintained benchmark tables are common in this space; we observed our own report drift from 40/26 to 54/30 before we fixed it.",
+      "risk": "Our own drift is the only evidence we hold; we did not survey others' reports."
+    },
+    {
+      "id": "E-GAPS",
+      "dimension": "are coverage gaps published",
+      "our_claim": "Nine intentionally unencoded clauses are published with a status and a reason.",
+      "our_proof": "docs/methods/coverage_gaps.json",
+      "competitor_status": "unverified",
+      "competitor_note": "We did not check whether other tools publish their gaps.",
+      "risk": "Publishing gaps is not the same as having few; nine gaps may be more than a competitor has."
+    },
+    {
+      "id": "E-RERUN",
+      "dimension": "can an outsider re-run the claims",
+      "our_claim": "Eighteen checks run from a fresh clone with no credentials.",
+      "our_proof": "benchmarks/eval_method_note.py",
+      "competitor_status": "unverified",
+      "competitor_note": "Some projects do ship reproducible benchmarks; we did not rank them.",
+      "risk": "Reproducibility is a property of our repo today, not a permanent lead."
+    },
+    {
+      "id": "E-CI",
+      "dimension": "are the claims enforced in public CI",
+      "our_claim": "54 contract assertions run on every push, including the three laws.",
+      "our_proof": "tests/test_contract.py",
+      "competitor_status": "unverified",
+      "competitor_note": "We did not audit other projects' CI configurations.",
+      "risk": "A green CI badge proves assertions pass, not that the assertions are the right ones."
+    },
+    {
+      "id": "E-SCOPE",
+      "dimension": "is the scope limited to enumerated categories",
+      "our_claim": "Anything outside the tables returns hold; coverage is the bottleneck, stated as such.",
+      "our_proof": "lgd_engine/judges/base.py",
+      "competitor_status": "inferred",
+      "competitor_note": "General-purpose guardrails aim at open-ended text, so their scope is wider and shallower by design.",
+      "risk": "Wider scope may be the better product for a user who needs to catch something we never enumerated."
+    }
+  ]
+}

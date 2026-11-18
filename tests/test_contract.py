@@ -402,6 +402,37 @@ class TestVerdictCost(unittest.TestCase):
         self.assertLess(median, 500, f"median verdict {median:.1f} µs — budget is 500 µs")
 
 
+class TestEdgeClaims(unittest.TestCase):
+    """A claim about a competitor without a provenance label is a sales line."""
+
+    def setUp(self):
+        import json as _json
+        self.edges = _json.loads((ROOT / "docs" / "methods" / "competitive_edges.json")
+                                 .read_text(encoding="utf-8"))["edges"]
+
+    def test_every_claim_declares_its_provenance(self):
+        for e in self.edges:
+            self.assertIn(e["competitor_status"], {"observed", "inferred", "unverified"},
+                          f"{e['id']} has an unlabelled competitor claim")
+
+    def test_our_side_is_checkable(self):
+        for e in self.edges:
+            self.assertTrue((ROOT / e["our_proof"]).exists(),
+                            f"{e['id']}: our_proof {e['our_proof']} does not exist")
+
+    def test_observed_requires_a_source(self):
+        for e in self.edges:
+            if e["competitor_status"] == "observed":
+                self.assertTrue(e.get("source"), f"{e['id']} claims observation without a source")
+
+    def test_no_majority_claim_of_observation(self):
+        """If most rows were 'observed' we would be asserting a survey we never ran."""
+        observed = [e for e in self.edges if e["competitor_status"] == "observed"]
+        self.assertLess(len(observed), len(self.edges) / 2,
+                        "more than half the competitor claims are marked observed — "
+                        "either run a real survey or label them inferred")
+
+
 class TestCliContract(unittest.TestCase):
     def _run(self, *args):
         return subprocess.run([sys.executable, "-m", "lgd_engine.cli", *args],
