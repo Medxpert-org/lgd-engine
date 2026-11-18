@@ -151,6 +151,12 @@ def main() -> int:
     c, o = run(clone, [py, "benchmarks/build_demo_page.py", "--check"])
     res.check("C9", "dossier page in sync with engine", o, ["OK"])
 
+    # C10 — every rule names the provision it encodes, and no entry is dead air
+    c, o = run(clone, [py, "benchmarks/clause_matrix.py"])
+    res.rows.append(("C10", "every rule names a LAW / DOCTRINE basis",
+                     c == 0 and "with a basis : 60" in o,
+                     [l for l in o.splitlines() if l.startswith("with a basis")]))
+
     # X1 — the guard is real: tamper, expect failure, restore
     page = clone / "demo" / "judge-dossier.html"
     original = page.read_text(encoding="utf-8")
@@ -161,7 +167,7 @@ def main() -> int:
 
     # X2 — assertion count claimed in the note
     c, o = run(clone, [py, "-m", "unittest", "discover", "-s", "tests"])
-    res.check("X2", "suite reports Ran 45 tests", o, ["Ran 45 tests"])
+    res.check("X2", "suite reports Ran 49 tests", o, ["Ran 49 tests"])
 
     # X3 — stdlib only
     manifest = (clone / "pyproject.toml").read_text(encoding="utf-8")

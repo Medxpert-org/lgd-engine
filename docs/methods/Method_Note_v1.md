@@ -5,6 +5,19 @@
 **Licence:** see repository `LICENSE` / `NOTICE`
 **Status:** method note (not a benchmark paper, not a product claim)
 
+> **Revision note (v1.5).** Clause-level verification of all five tables exposed one
+> remaining structural weakness: a rule could state a conclusion without naming the
+> provision behind it, which makes it indistinguishable from an opinion. Now every
+> shipped rule carries a basis in `lgd_engine/judges/basis.py`, labelled **LAW** (a
+> provision whose text we read) or **DOCTRINE** (a house rule declared as such — the L2
+> evidence bar, or the fact that a judge speaks for one jurisdiction only). Current
+> split: **60 rules · 51 LAW · 9 DOCTRINE · 0 unbased**, enforced in both directions by
+> `TestClauseBasis` (a rule with no basis fails; a basis entry naming no rule also
+> fails, because dead authority is how citation tables rot while still looking
+> complete). Readable form: `docs/methods/Clause_Matrix.md`. The doctrinal share is
+> capped at 12 by test, so it cannot quietly grow into a majority of opinions wearing
+> the clothes of law. Assertions 45 → 49; the out-of-tree evaluator gained C10.
+
 > **Revision note (v1.4).** The last unchecked table — FDA PCCP — was verified against
 > FD&C §515C and 21 CFR 892.2055. Three gaps closed: (L6) the 510(k) route has **two
 > cumulative conditions** (safe-and-effective AND still substantially equivalent to the
@@ -89,7 +102,7 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **45 assertions**,
+The assertion count grows as tables are added. As of this version: **49 assertions**,
 **24 case files**, **5 tables**, **12 adversarial probes**.
 
 ---
@@ -254,7 +267,7 @@ A third party needs no credentials, no network, and no third-party packages
 ```bash
 git clone https://github.com/MedXpert-org/lgd-engine
 cd lgd-engine
-python -m unittest discover -s tests -v          # 45 assertions
+python -m unittest discover -s tests -v          # 49 assertions
 python lgd_engine/mcp_smoke.py                   # 7 tools, RBAC both ways
 python benchmarks/adversarial_baseline.py        # 12/12 vs 5/12
 python benchmarks/build_demo_page.py --check     # dossier in sync with the code
@@ -370,4 +383,4 @@ Full rule ids, conditions and rationales are in each judge module and in
 
 本方法说明描述一种把"监管变更判定"从自然语言问答改写成可执行规则表的方法：输入是评审人实际持有的结构化字段，输出是三值判决（go / hold / reject）加上被触发的规则编号；判定纯粹、可离线重跑、失败时表现为"拒绝回答"而非"猜测"。已实现五张判定表（美国 510(k) 变更分类、上市后处置、FDA PCCP 范围、EU MDR 重大变更、中国 NMPA 变更注册），随包发布 24 个带预期判决的案件与 12 条对抗探针；同一批输入下，确定性判定器 12/12 命中预期，关键词捷径仅 5/12。
 
-本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：45 条契约断言、5 张判定表、30 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
+本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：49 条契约断言、5 张判定表、30 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。

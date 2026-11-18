@@ -290,6 +290,54 @@ class TestDemoPage(unittest.TestCase):
         self.assertNotIn("__DATA__", html)
 
 
+class TestClauseBasis(unittest.TestCase):
+    """No rule may issue a verdict without naming the provision it encodes.
+
+    Both directions are asserted: a shipped rule with no basis fails, and an
+    authority entry naming no shipped rule fails too (dead authority is how
+    citation tables rot while still looking complete)."""
+
+    def setUp(self):
+        import ast
+        from lgd_engine.judges.basis import CLAUSE_BASIS
+        self.CLAUSE_BASIS = CLAUSE_BASIS
+        self.rules = {}
+        for path in sorted((ROOT / "lgd_engine" / "judges").glob("judge_*.py")):
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.Dict):
+                    continue
+                keys = {k.value for k in node.keys if isinstance(k, ast.Constant)}
+                if "rule" not in keys or "when" not in keys:
+                    continue
+                for k, v in zip(node.keys, node.values):
+                    if (isinstance(k, ast.Constant) and k.value == "rule"
+                            and isinstance(v, ast.Constant)):
+                        self.rules[v.value] = path.stem
+
+    def test_every_shipped_rule_names_a_basis(self):
+        missing = sorted(r for r in self.rules if not self.CLAUSE_BASIS.get(r))
+        self.assertEqual(missing, [], f"rules without a clause basis: {missing}")
+
+    def test_no_authority_entry_is_dead(self):
+        dead = sorted(r for r in self.CLAUSE_BASIS if r not in self.rules)
+        self.assertEqual(dead, [], f"basis entries naming no shipped rule: {dead}")
+
+    def test_basis_is_law_or_declared_doctrine(self):
+        """A house rule must say it is a house rule; it may not pose as a clause."""
+        bad = [r for r in self.rules
+               if not self.CLAUSE_BASIS[r].startswith(("LAW ", "DOCTRINE "))]
+        self.assertEqual(bad, [], f"basis not labelled LAW/DOCTRINE: {bad}")
+
+    def test_doctrine_share_is_declared_and_small(self):
+        """The point of the split is that doctrine stays visible and rare."""
+        from lgd_engine.judges.basis import is_law
+        doctrine = [r for r in self.rules if not is_law(self.CLAUSE_BASIS[r])]
+        self.assertLessEqual(len(doctrine), 12,
+                             f"doctrine share grew: {len(doctrine)} of {len(self.rules)}")
+        self.assertEqual(len(self.rules), 60, "rule count moved — update the matrix doc")
+
+
 class TestCliContract(unittest.TestCase):
     def _run(self, *args):
         return subprocess.run([sys.executable, "-m", "lgd_engine.cli", *args],
