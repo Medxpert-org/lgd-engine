@@ -18,10 +18,12 @@ from pathlib import Path
 from .gate import GateEngine
 from .judges.judge_510k import Judge510kChange
 from .judges.judge_postmarket import JudgePostmarket
+from .judges.judge_pccp import JudgePccpScope
 
 _DOMAINS = {
     "510k": Judge510kChange,
     "postmarket": JudgePostmarket,
+    "pccp": JudgePccpScope,
 }
 _STRIP_KEYS = ("expected_verdict", "expected_fda_verdict",
                "expected_nmpa_verdict", "_desensitized_from")

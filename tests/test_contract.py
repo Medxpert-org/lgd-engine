@@ -71,6 +71,57 @@ class TestThreeLaws(unittest.TestCase):
         self.assertIn("boom", r.per_judge)
 
 
+class TestPccpJudge(unittest.TestCase):
+    """The third judge must obey the same doctrine as the first two: unproven is not
+    pass, unknown is not pass, and a critical never softens into a hold."""
+
+    def setUp(self):
+        from lgd_engine.judges.judge_pccp import JudgePccpScope
+        self.ev = [{"kind": "fda_pccp", "ref": "authorized PCCP, class 2"}]
+        self.ok = {
+            "pccp_authorized": True, "change_within_pccp_scope": True,
+            "affects_intended_use": False, "change_class_described": True,
+            "acceptance_criteria_met": True, "validation_documented": True,
+            "labeling_version_history": True, "udi_updated": True,
+            "change_type": "retrain_same_distribution",
+            "evidence_sufficiency": "sufficient", "jurisdiction": "FDA",
+            "source_refs": self.ev,
+        }
+        self.judge = JudgePccpScope()
+
+    def _v(self, **kw):
+        ctx = dict(self.ok)
+        ctx.update(kw)
+        return self.judge.evaluate(ctx)
+
+    def test_covered_change_goes(self):
+        self.assertEqual(self._v()["verdict"], "go")
+
+    def test_intended_use_change_is_reject_not_hold(self):
+        """Guidance excludes intended-use changes from PCCP coverage outright; a hold
+        would invite 'resubmit the plan' as a workaround."""
+        self.assertEqual(self._v(affects_intended_use=True)["verdict"], "reject")
+
+    def test_failed_criteria_is_reject(self):
+        self.assertEqual(self._v(acceptance_criteria_met=False)["verdict"], "reject")
+
+    def test_claimed_coverage_without_pccp_is_reject(self):
+        self.assertEqual(
+            self._v(pccp_authorized=False, change_within_pccp_scope=True)["verdict"], "reject")
+
+    def test_absent_facts_are_hold_never_go(self):
+        """Unproven must not pass: missing PCCP status, unevaluated criteria, unknown
+        change type, and a non-FDA jurisdiction all land on hold."""
+        self.assertEqual(self._v(pccp_authorized=None)["verdict"], "hold")
+        self.assertEqual(self._v(acceptance_criteria_met=None)["verdict"], "hold")
+        self.assertEqual(self._v(change_type="vibes_based_update")["verdict"], "hold")
+        self.assertEqual(self._v(jurisdiction="NMPA")["verdict"], "hold")
+
+    def test_blank_ref_is_not_evidence(self):
+        """An empty ref must not satisfy L2 and let a go through."""
+        self.assertEqual(self._v(source_refs=[{"kind": "", "ref": "   "}])["verdict"], "hold")
+
+
 class TestCliContract(unittest.TestCase):
     def _run(self, *args):
         return subprocess.run([sys.executable, "-m", "lgd_engine.cli", *args],
@@ -85,6 +136,12 @@ class TestCliContract(unittest.TestCase):
         p = self._run("--all", str(CASES))
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertIn("[summary]", p.stdout)
+
+    def test_pccp_domain_matches_expected(self):
+        """The PCCP case set ships with the package, so a stranger can run it too."""
+        p = self._run("--all", str(ROOT / "demo1" / "cases_pccp"), "--domain", "pccp")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("5/5", p.stdout)
 
     def test_single_case_is_deterministic(self):
         case = sorted(CASES.glob("*.json"))[0]

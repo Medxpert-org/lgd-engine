@@ -1,0 +1,20 @@
+{
+  "case_id": "PCCP-RED-04",
+  "_desensitized_from": "21 CFR 892.2055 special controls: quantitative acceptance criteria",
+  "device_description": "Covered retraining update whose post-update sensitivity fell below the pre-specified acceptance threshold; release was proposed anyway.",
+  "pccp_authorized": true,
+  "change_within_pccp_scope": true,
+  "affects_intended_use": false,
+  "change_class_described": true,
+  "acceptance_criteria_met": false,
+  "validation_documented": true,
+  "labeling_version_history": true,
+  "udi_updated": true,
+  "change_type": "retrain_same_distribution",
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "FDA",
+  "source_refs": [
+    {"kind": "internal_verification", "ref": "post-update performance table, criterion C-3 failed"}
+  ],
+  "expected_verdict": "reject"
+}

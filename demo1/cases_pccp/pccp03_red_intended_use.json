@@ -1,0 +1,20 @@
+{
+  "case_id": "PCCP-RED-03",
+  "_desensitized_from": "FDA final PCCP guidance: intended-use changes excluded from coverage",
+  "device_description": "Cleared quantitative imaging software; proposed change extends claims to a new clinical indication while classified internally as a routine update.",
+  "pccp_authorized": true,
+  "change_within_pccp_scope": true,
+  "affects_intended_use": true,
+  "change_class_described": true,
+  "acceptance_criteria_met": true,
+  "validation_documented": true,
+  "labeling_version_history": true,
+  "udi_updated": true,
+  "change_type": "intended_use_change",
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "FDA",
+  "source_refs": [
+    {"kind": "fda_guidance", "ref": "PCCP final guidance, Aug 2025 - excluded changes"}
+  ],
+  "expected_verdict": "reject"
+}
