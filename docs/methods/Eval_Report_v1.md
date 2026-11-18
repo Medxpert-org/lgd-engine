@@ -1,6 +1,8 @@
 # Independent Evaluation Report — Method Note v1.0 → v1.1
 
-**Evaluator:** LGD-Eval pass (separate run, no author context carried into the checks)
+**Evaluator:** independent pass (separate run, no author context carried into the checks;
+the harness is committed so a third party can repeat it — independence comes from the
+script, not from the credential of whoever ran it)
 **Subject:** `docs/methods/Method_Note_v1.md` v1.0 and the repository it describes
 **Date:** 2026-11-18
 **Base commit:** `198bbf7` (v1.0) → evaluated on `8765b93` after fixes
