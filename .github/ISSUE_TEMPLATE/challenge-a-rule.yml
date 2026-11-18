@@ -1,0 +1,82 @@
+name: Challenge a rule
+description: A shipped rule gets a wrong verdict on a real (or realistic) case. This is the fastest way to falsify a claim in this repository.
+title: "[challenge] <RULE-ID>: <one line>"
+labels: ["challenge"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This repository claims every rule is traceable to a clause or labelled DOCTRINE, and
+        that the verdict is deterministic. Both claims are falsifiable, and this form is how
+        you falsify them.
+
+        A challenge is strongest when it names the rule ID, quotes the clause text that
+        contradicts it, and supplies a case that reproduces the wrong verdict. You do not
+        need to run the engine — a case file is enough, and we will run it.
+
+  - type: input
+    id: rule_id
+    attributes:
+      label: Rule ID
+      description: The identifier printed in the verdict, e.g. `N-MAJ-13`, `P-CRIT-04`, `M-MIN-02`.
+      placeholder: N-MAJ-13
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What is wrong
+      options:
+        - The rule cites a clause that does not say what the rule assumes
+        - The rule applies the right clause to the wrong situation
+        - The rule is right but the case schema cannot express the situation
+        - The verdict is non-deterministic or order-dependent
+        - Something else (explain below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: clause
+    attributes:
+      label: The clause, quoted
+      description: Paste the operative sentence(s) and give the instrument, article, and date. Paraphrase is not enough — we check against the text.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: case
+    attributes:
+      label: The case
+      description: A single JSON object in the same shape as `demo1/cases_<domain>/`. Redact client, product, and monetary details.
+      render: json
+    validations:
+      required: true
+
+  - type: input
+    id: expected
+    attributes:
+      label: What the engine should answer
+      description: One of `go`, `hold`, `reject` — plus a one-line reason.
+      placeholder: reject — class 1 devices are filed, not registered
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why this is the right answer
+      description: Your reasoning, in one paragraph. If you are a reviewer and this is your own case, say so — we will attribute it.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Before submitting
+      options:
+        - label: This case contains no client name, product name, personal data, or monetary figure.
+          required: true
+        - label: I understand a negative finding will be published as a negative finding, including in the evaluation report.
+          required: true
