@@ -167,6 +167,55 @@ class TestMdrJudge(unittest.TestCase):
         self.assertEqual(self._v(source_refs=[])["verdict"], "hold")
 
 
+class TestNmpaJudge(unittest.TestCase):
+    """NMPA: the route (变更注册 vs 备案) is decided by the field, not by what the
+    registrant finds convenient. Filing a licence item as a registration item is
+    the specific abuse this table must refuse."""
+
+    def setUp(self):
+        from lgd_engine.judges.judge_nmpa import JudgeNmpaChangeRegistration
+        self.judge = JudgeNmpaChangeRegistration()
+        self.ok = {
+            "has_registration_certificate": True,
+            "change_fields": ["production_address_textual"],
+            "requested_path": "filing",
+            "safety_effectiveness_assessed": True,
+            "technical_docs_updated": True,
+            "evidence_sufficiency": "sufficient",
+            "jurisdiction": "NMPA",
+            "source_refs": [{"kind": "nmpa_registration", "ref": "注册证 2026xxxx"}],
+        }
+
+    def _v(self, **kw):
+        ctx = dict(self.ok)
+        ctx.update(kw)
+        return self.judge.evaluate(ctx)
+
+    def test_textual_registration_change_goes(self):
+        self.assertEqual(self._v()["verdict"], "go")
+
+    def test_licence_item_requires_change_registration(self):
+        self.assertEqual(self._v(change_fields=["model_specification"],
+                                 requested_path="licence_change")["verdict"], "hold")
+
+    def test_licence_item_filed_as_registration_is_reject(self):
+        """Filing 适用范围 as 备案 to skip technical review is not a slower route,
+        it is an unavailable one."""
+        self.assertEqual(self._v(change_fields=["scope_of_application"],
+                                 requested_path="filing")["verdict"], "reject")
+
+    def test_no_certificate_is_reject(self):
+        self.assertEqual(self._v(has_registration_certificate=False)["verdict"], "reject")
+
+    def test_unassessed_and_unknown_are_hold(self):
+        self.assertEqual(self._v(safety_effectiveness_assessed=False)["verdict"], "hold")
+        self.assertEqual(self._v(change_fields=["teleport_capability"])["verdict"], "hold")
+        self.assertEqual(self._v(jurisdiction="FDA")["verdict"], "hold")
+        self.assertEqual(self._v(recall_level="level1",
+                                 change_fields=["structure_composition"])["verdict"],
+                         "reject")
+
+
 class TestCliContract(unittest.TestCase):
     def _run(self, *args):
         return subprocess.run([sys.executable, "-m", "lgd_engine.cli", *args],
@@ -190,6 +239,11 @@ class TestCliContract(unittest.TestCase):
 
     def test_mdr_domain_matches_expected(self):
         p = self._run("--all", str(ROOT / "demo1" / "cases_mdr"), "--domain", "mdr")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("5/5", p.stdout)
+
+    def test_nmpa_domain_matches_expected(self):
+        p = self._run("--all", str(ROOT / "demo1" / "cases_nmpa"), "--domain", "nmpa")
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertIn("5/5", p.stdout)
 

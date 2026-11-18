@@ -31,10 +31,11 @@ from lgd_engine.judges.judge_510k import Judge510kChange      # noqa: E402
 from lgd_engine.judges.judge_postmarket import JudgePostmarket  # noqa: E402
 from lgd_engine.judges.judge_pccp import JudgePccpScope       # noqa: E402
 from lgd_engine.judges.judge_mdr import JudgeMdrSignificance   # noqa: E402
+from lgd_engine.judges.judge_nmpa import JudgeNmpaChangeRegistration  # noqa: E402
 from lgd_engine.memory.localmem_min import LocalMemory        # noqa: E402
 
 READONLY_TOOLS = {"list_judges", "judge_change", "judge_postmarket", "judge_pccp",
-                  "judge_mdr"}
+                  "judge_mdr", "judge_nmpa"}
 
 # The one capability that separates the two roles: recording a signed-off decision
 # is an append-only audit write, not a verdict-producing read. Until 2026-11-18
@@ -112,6 +113,24 @@ TOOL_SCHEMAS = {
             },
         },
     },
+    "judge_nmpa": {
+        "description": ("Ask whether a change to a China-registered device needs 变更注册 "
+                        "(licence item), 备案 (registration item), or re-registration."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "has_registration_certificate": {"type": "boolean"},
+                "change_fields": {"type": "array"},
+                "requested_path": {"type": "string"},
+                "safety_effectiveness_assessed": {"type": "boolean"},
+                "technical_docs_updated": {"type": "boolean"},
+                "evidence_sufficiency": {"type": "string"},
+                "recall_level": {"type": "string"},
+                "jurisdiction": {"type": "string"},
+                "source_refs": {"type": "array"},
+            },
+        },
+    },
     "record_decision": {
         "description": ("Record a signed-off decision into the audit log (append-only). "
                         "Requires role=reviewer."),
@@ -149,7 +168,7 @@ def handle(recv: dict, audit: LocalMemory) -> dict:
     if method == "tools/list":
         tools = [{"name": n, **TOOL_SCHEMAS[n]} for n in
                  ("list_judges", "judge_change", "judge_postmarket", "judge_pccp",
-                  "judge_mdr", "record_decision")]
+                  "judge_mdr", "judge_nmpa", "record_decision")]
         return {"jsonrpc": "2.0", "id": mid, "result": {"tools": tools}}
 
     if method == "tools/call":
@@ -215,6 +234,7 @@ def handle(recv: dict, audit: LocalMemory) -> dict:
                 JudgePostmarket().domain,
                 JudgePccpScope().domain,
                 JudgeMdrSignificance().domain,
+                JudgeNmpaChangeRegistration().domain,
             ]}
         elif name == "judge_change":
             report = GateEngine([Judge510kChange()]).evaluate(args)
@@ -227,6 +247,9 @@ def handle(recv: dict, audit: LocalMemory) -> dict:
             result = {"report": report.to_dict()}
         elif name == "judge_mdr":
             report = GateEngine([JudgeMdrSignificance()]).evaluate(args)
+            result = {"report": report.to_dict()}
+        elif name == "judge_nmpa":
+            report = GateEngine([JudgeNmpaChangeRegistration()]).evaluate(args)
             result = {"report": report.to_dict()}
         else:  # record_decision
             verdict = args.get("verdict")

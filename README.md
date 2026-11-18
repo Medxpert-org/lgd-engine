@@ -4,7 +4,7 @@
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue)]()
 [![python](https://img.shields.io/badge/python-3.9%2B-green)]()
 [![gate CI](https://img.shields.io/github/actions/workflow/status/Medxpert-org/lgd-engine/gate.yml?branch=main&label=gate%20CI)](https://github.com/Medxpert-org/lgd-engine/actions/workflows/gate.yml)
-[![contract tests](https://img.shields.io/badge/contract%20tests-30%20assertions-success)](tests/test_contract.py)
+[![contract tests](https://img.shields.io/badge/contract%20tests-36%20assertions-success)](tests/test_contract.py)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/Medxpert-org/lgd-engine/codeql.yml?branch=main&label=CodeQL)](https://github.com/Medxpert-org/lgd-engine/actions/workflows/codeql.yml)
 
 **LGD Engine is the judgment core for medical-device AI change control.**
@@ -62,18 +62,20 @@ python framework/gate_bot.py     # CI gate (six checks)
 No install, no network, no LLM. Three commands, each ending in a line you can compare:
 
 ```bash
-python -m unittest discover -s tests -v      # -> Ran 30 tests ... OK
+python -m unittest discover -s tests -v      # -> Ran 36 tests ... OK
 python lgd_engine/mcp_smoke.py               # -> SMOKE: PASS
 python -m lgd_engine.cli --all demo1/cases   # -> [summary] 5/5 cases match expected verdict (domain=510k)
 python -m lgd_engine.cli --all demo1/cases_pccp --domain pccp
 # -> [summary] 5/5 cases match expected verdict (domain=pccp)
 python -m lgd_engine.cli --all demo1/cases_mdr --domain mdr
 # -> [summary] 5/5 cases match expected verdict (domain=mdr)
+python -m lgd_engine.cli --all demo1/cases_nmpa --domain nmpa
+# -> [summary] 5/5 cases match expected verdict (domain=nmpa)
 python benchmarks/adversarial_baseline.py
 # -> gate: 12/12 match expected / naive: 5/12 match expected
 ```
 
-These 30 assertions pin behaviour that a "did it exit 0" check cannot see:
+These 36 assertions pin behaviour that a "did it exit 0" check cannot see:
 
 - **L3** — one critical reason vetoes the whole run, and the veto is recorded.
 - **L2** — a `go` with zero evidence is downgraded to `hold`, not accepted.
@@ -112,7 +114,7 @@ The neighbouring projects are larger than this one, and it is worth saying so pl
 NVIDIA NeMo Guardrails (~7.5k stars) and Guardrails AI (~7.6k stars) shape LLM input,
 dialog and output; Microsoft's Agent Governance Toolkit (~6.6k stars) already claims
 deterministic pre-execution enforcement, agent identity and sandboxing. This repository
-has ~0 stars, four shipped judges, and no agent identity layer. If you need input/output
+has ~0 stars, five shipped judges, and no agent identity layer. If you need input/output
 safety rails or privileged-action sandboxing, use those.
 
 What they do not ship is a verdict for a **regulatory** question — *does this change to an
@@ -135,7 +137,7 @@ L1  lgd.gate  ── aggregation core (GateEngine + GateReport)
         ├── L1.5  skill registry (skill.yaml manifest)
         │
         ▼
-L2  DomainJudge ×13+  (offline, gold-tested; 4 shipped: 510(k), post-market, PCCP scope, EU MDR significance)
+L2  DomainJudge ×13+  (offline, gold-tested; 5 shipped: 510(k), post-market, PCCP scope, EU MDR significance, NMPA change registration)
         ▲
         │  evidence: precedents / cases / regulation citations
 L3  lgd_engine/theory/laws.yaml   (declarative three-law rules)
