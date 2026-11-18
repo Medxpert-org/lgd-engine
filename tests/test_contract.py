@@ -122,6 +122,51 @@ class TestPccpJudge(unittest.TestCase):
         self.assertEqual(self._v(source_refs=[{"kind": "", "ref": "   "}])["verdict"], "hold")
 
 
+class TestMdrJudge(unittest.TestCase):
+    """EU MDR: significance is a property of the change, not of what the change
+    note claims. The judge must refuse to let a declaration settle it."""
+
+    def setUp(self):
+        from lgd_engine.judges.judge_mdr import JudgeMdrSignificance
+        self.judge = JudgeMdrSignificance()
+        self.ok = {
+            "change_category": "labeling_clarification",
+            "affects_intended_purpose": False, "affects_clinical_benefit": False,
+            "affects_safety_or_performance": False, "new_clinical_data_required": False,
+            "verification_documented": True, "fsca_open": False,
+            "declared_not_significant": False, "evidence_sufficiency": "sufficient",
+            "jurisdiction": "EU",
+            "source_refs": [{"kind": "internal_verification", "ref": "labelling diff"}],
+        }
+
+    def _v(self, **kw):
+        ctx = dict(self.ok)
+        ctx.update(kw)
+        return self.judge.evaluate(ctx)
+
+    def test_administrative_change_goes(self):
+        self.assertEqual(self._v()["verdict"], "go")
+
+    def test_performance_change_is_significant(self):
+        self.assertEqual(
+            self._v(change_category="software_algorithm",
+                    affects_safety_or_performance=True)["verdict"], "hold")
+
+    def test_declaring_it_non_significant_does_not_make_it_so(self):
+        self.assertEqual(
+            self._v(affects_intended_purpose=True, declared_not_significant=True)["verdict"],
+            "reject")
+
+    def test_change_during_open_fsca_is_reject(self):
+        self.assertEqual(
+            self._v(fsca_open=True, affects_safety_or_performance=True)["verdict"], "reject")
+
+    def test_unproven_and_unknown_are_hold(self):
+        self.assertEqual(self._v(change_category="cosmetic_vibes")["verdict"], "hold")
+        self.assertEqual(self._v(jurisdiction="FDA")["verdict"], "hold")
+        self.assertEqual(self._v(source_refs=[])["verdict"], "hold")
+
+
 class TestCliContract(unittest.TestCase):
     def _run(self, *args):
         return subprocess.run([sys.executable, "-m", "lgd_engine.cli", *args],
@@ -140,6 +185,11 @@ class TestCliContract(unittest.TestCase):
     def test_pccp_domain_matches_expected(self):
         """The PCCP case set ships with the package, so a stranger can run it too."""
         p = self._run("--all", str(ROOT / "demo1" / "cases_pccp"), "--domain", "pccp")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("5/5", p.stdout)
+
+    def test_mdr_domain_matches_expected(self):
+        p = self._run("--all", str(ROOT / "demo1" / "cases_mdr"), "--domain", "mdr")
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertIn("5/5", p.stdout)
 

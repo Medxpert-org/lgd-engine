@@ -21,7 +21,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 
-EXPECTED_TOOLS = 5
+EXPECTED_TOOLS = 6
 VERDICTS = ("go", "hold", "reject")
 
 DECISION = {"case_id": "SMOKE-1", "verdict": "hold", "rationale": "smoke: V&V pending"}

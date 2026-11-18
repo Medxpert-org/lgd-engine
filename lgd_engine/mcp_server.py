@@ -30,9 +30,11 @@ from lgd_engine import __version__ as _PKG_VERSION            # noqa: E402
 from lgd_engine.judges.judge_510k import Judge510kChange      # noqa: E402
 from lgd_engine.judges.judge_postmarket import JudgePostmarket  # noqa: E402
 from lgd_engine.judges.judge_pccp import JudgePccpScope       # noqa: E402
+from lgd_engine.judges.judge_mdr import JudgeMdrSignificance   # noqa: E402
 from lgd_engine.memory.localmem_min import LocalMemory        # noqa: E402
 
-READONLY_TOOLS = {"list_judges", "judge_change", "judge_postmarket", "judge_pccp"}
+READONLY_TOOLS = {"list_judges", "judge_change", "judge_postmarket", "judge_pccp",
+                  "judge_mdr"}
 
 # The one capability that separates the two roles: recording a signed-off decision
 # is an append-only audit write, not a verdict-producing read. Until 2026-11-18
@@ -92,6 +94,24 @@ TOOL_SCHEMAS = {
             },
         },
     },
+    "judge_mdr": {
+        "description": ("Ask whether a change to a CE-marked device is significant under "
+                        "MDCG 2020-3 (needs notified-body assessment) or not."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "change_category": {"type": "string"},
+                "affects_intended_purpose": {"type": "boolean"},
+                "affects_clinical_benefit": {"type": "boolean"},
+                "affects_safety_or_performance": {"type": "boolean"},
+                "fsca_open": {"type": "boolean"},
+                "declared_not_significant": {"type": "boolean"},
+                "evidence_sufficiency": {"type": "string"},
+                "jurisdiction": {"type": "string"},
+                "source_refs": {"type": "array"},
+            },
+        },
+    },
     "record_decision": {
         "description": ("Record a signed-off decision into the audit log (append-only). "
                         "Requires role=reviewer."),
@@ -129,7 +149,7 @@ def handle(recv: dict, audit: LocalMemory) -> dict:
     if method == "tools/list":
         tools = [{"name": n, **TOOL_SCHEMAS[n]} for n in
                  ("list_judges", "judge_change", "judge_postmarket", "judge_pccp",
-                  "record_decision")]
+                  "judge_mdr", "record_decision")]
         return {"jsonrpc": "2.0", "id": mid, "result": {"tools": tools}}
 
     if method == "tools/call":
@@ -194,6 +214,7 @@ def handle(recv: dict, audit: LocalMemory) -> dict:
                 Judge510kChange().domain,
                 JudgePostmarket().domain,
                 JudgePccpScope().domain,
+                JudgeMdrSignificance().domain,
             ]}
         elif name == "judge_change":
             report = GateEngine([Judge510kChange()]).evaluate(args)
@@ -203,6 +224,9 @@ def handle(recv: dict, audit: LocalMemory) -> dict:
             result = {"report": report.to_dict()}
         elif name == "judge_pccp":
             report = GateEngine([JudgePccpScope()]).evaluate(args)
+            result = {"report": report.to_dict()}
+        elif name == "judge_mdr":
+            report = GateEngine([JudgeMdrSignificance()]).evaluate(args)
             result = {"report": report.to_dict()}
         else:  # record_decision
             verdict = args.get("verdict")
