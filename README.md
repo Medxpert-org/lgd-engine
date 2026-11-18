@@ -100,6 +100,21 @@ pip install -e .        # then use `lgd-gate` (see pyproject [project.scripts])
 Then point your MCP client at it — copy-paste configs are in
 [Interface layer](#interface-layer-beta) below.
 
+## How this differs from guardrail toolkits
+
+The neighbouring projects are larger than this one, and it is worth saying so plainly.
+NVIDIA NeMo Guardrails (~7.5k stars) and Guardrails AI (~7.6k stars) shape LLM input,
+dialog and output; Microsoft's Agent Governance Toolkit (~6.6k stars) already claims
+deterministic pre-execution enforcement, agent identity and sandboxing. This repository
+has ~0 stars, two shipped judges, and no agent identity layer. If you need input/output
+safety rails or privileged-action sandboxing, use those.
+
+What they do not ship is a verdict for a **regulatory** question — *does this change to an
+already-cleared device need a new 510(k)?* — expressed as a deterministic exit code you can
+diff between runs, driven by jurisdiction config, over a case set whose expected verdicts
+are asserted in CI. That question is the whole of this repository, and its narrowness is the
+point: a domain verdict that a regulatory lead can audit line by line, offline, with no LLM.
+
 ## Architecture
 
 Layered design — adapters on the outside, judgment core in the middle,
