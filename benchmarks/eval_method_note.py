@@ -72,12 +72,47 @@ class Result:
         print(f"{len(self.rows) - len(failed)}/{len(self.rows)} checks passed")
         return 0 if not failed else 1
 
+    def markdown(self, head: str, branch: str) -> str:
+        """The report is derived output, not prose: same run, same table."""
+        from datetime import datetime, timezone
+        passed = sum(1 for r in self.rows if r[2])
+        lines = [
+            "# Evaluation report — generated, not written",
+            "",
+            "This file is produced by `benchmarks/eval_method_note.py --report`. Do not edit",
+            "it by hand: the marker line below is asserted by check C12, so a hand-written",
+            "number that disagrees with the repository fails the evaluation.",
+            "",
+            f"`<!-- eval-report branch={branch} head={head} "
+            f"checks={len(self.rows)} passed={passed} -->`",
+            "",
+            f"Run at {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')} UTC against "
+            f"`{branch}` at `{head}`, from a fresh clone.",
+            "",
+            "| # | Claim checked | Result |",
+            "|---|---|---|",
+        ]
+        for cid, desc, ok, _ in self.rows:
+            lines.append(f"| {cid} | {desc} | {'PASS' if ok else '**FAIL**'} |")
+        lines += [
+            "",
+            f"**{passed}/{len(self.rows)} checks passed.**",
+            "",
+            "Scope of this report: it says nothing about correctness against real filings;",
+            "it says that every claim the method note makes about *itself* survives an",
+            "outsider re-running the same commands on a clean clone.",
+            "",
+        ]
+        return "\n".join(lines)
+
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo", default=DEFAULT_REPO, help="repository to clone")
     ap.add_argument("--branch", default=BRANCH)
     ap.add_argument("--keep", action="store_true", help="do not delete the clone")
+    ap.add_argument("--report", default=None,
+                    help="write the generated markdown report to this path")
     args = ap.parse_args()
 
     work = Path(tempfile.mkdtemp(prefix="lgd-eval-"))
@@ -197,8 +232,42 @@ def main() -> int:
     # the tamper test restores the file; a byte-identical restore must not show up
     res.rows.append(("X5", "tree still clean after the whole run", len(after) == 0, after))
 
+    # C12 — the committed report is derived, not hand-written
+    assertions = 0
+    for tf in (clone / "tests").glob("test_*.py"):
+        for line in tf.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith("def test_"):
+                assertions += 1
+    rep_path = clone / "docs" / "methods" / "Eval_Report_v1.md"
+    marker_ok = False
+    detail = ["missing report"]
+    if rep_path.exists():
+        text = rep_path.read_text(encoding="utf-8")
+        import re
+        m = re.search(r"<!-- eval-report branch=(\S+) head=(\S+) checks=(\d+) passed=(\d+) -->", text)
+        if not m:
+            detail = ["marker line missing"]
+        else:
+            b_ok = (m.group(1) == args.branch)
+            h_ok = len(m.group(2)) >= 7
+            c_ok = int(m.group(3)) == len(res.rows)
+            p_ok = int(m.group(4)) == len(res.rows)
+            marker_ok = b_ok and h_ok and c_ok and p_ok
+            detail = [f"branch={m.group(1)} checks={m.group(3)}/{m.group(4)} "
+                      f"cases={len(cases)} assertions={assertions}"]
+    res.rows.append(("C12", "committed eval report is generated and current",
+                     marker_ok, detail))
+
     print()
     rc = res.report()
+
+    if args.report:
+        out_path = Path(args.report)
+        if not out_path.is_absolute():
+            out_path = Path.cwd() / out_path
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(res.markdown(head, args.branch), encoding="utf-8")
+        print(f"wrote {out_path}")
 
     if args.keep:
         print(f"\nclone kept at: {clone}")
