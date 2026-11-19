@@ -203,7 +203,7 @@ KNOWN_CHANGE_TYPES = {
 KNOWN_EVIDENCE_SUFFICIENCY = {"sufficient", "needs_supplement", "none"}
 
 
-REQUIRED_FIELDS = {"pccp_authorized": bool, "change_within_pccp_scope": bool, "acceptance_criteria_met": bool, "evidence_sufficiency": str}
+REQUIRED_FIELDS = {"pccp_authorized": bool, "change_within_pccp_scope": bool, "acceptance_criteria_met": bool, "remains_se_to_predicate": bool, "evidence_sufficiency": str}
 
 # PCCP: whether a plan exists and whether this change sits inside it.
 _CONTRACT = {

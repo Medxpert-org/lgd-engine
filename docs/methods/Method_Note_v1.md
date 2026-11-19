@@ -111,7 +111,7 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **78 assertions**,
+The assertion count grows as tables are added. As of this version: **79 assertions**,
 **37 case files** (31 corpus + 6 red-team), **5 tables**, **12 adversarial probes**.
 
 ### 1.5 One defect this method found in itself
@@ -267,10 +267,10 @@ So every field any rule reads is classified, in a generated table
 
 | kind | n | meaning |
 |---|---|---|
-| `required` | 16 | absent, blank or wrongly typed → `hold` (enforced, see §1.9) |
+| `required` | 18 | absent, blank or wrongly typed → `hold` (enforced, see §1.9) |
 | `claim` | 26 | the case asserts something; removing the assertion may legitimately change the answer |
 | `bookkeeping` | 11 | identifies the case or carries citations |
-| `weak_evidence` | 5 | proof-shaped, but some shipped case omits it — cannot be required without silently flipping that case |
+| `weak_evidence` | 3 | proof-shaped, but some shipped case omits it — cannot be required without silently flipping that case |
 
 The last row is the residue, published rather than hidden, and its size is **capped in the
 test suite** so it can shrink and not quietly grow. Each entry carries the reason it is
@@ -296,6 +296,29 @@ Two things this forced, both worth more than the table:
   incomplete record may make a verdict more cautious, never more lenient.
   `TestVetoPrecedence` evaluates each critical predicate directly and requires a
   firing rule to surface as `reject`, on shipped and deliberately broken records alike.
+
+#### 1.10.1 The residue is a fact, not a mood
+
+The first version of the table capped `weak_evidence` at 5 and gave each entry a
+reason. Two of those five turned out to be wrong, and the way they were wrong is
+worth keeping:
+
+- **NMPA `safety_effectiveness_assessed` was called weak while all nine shipped
+  NMPA cases supply it.** It was never weak; it was simply not required yet.
+  Requiring it changed no verdict.
+- **PCCP `remains_se_to_predicate` was weak only because five cases predated the
+  field.** They now carry it (`true` where equivalence held, `false` on the
+  intended-use change), so it is required and no verdict moved.
+
+Each entry now carries `absent_in`, **computed by scanning the corpus** rather than
+written by hand, and the suite checks both directions: a `required` field must be
+omitted by no shipped case, and a `weak_evidence` field must be omitted by at least
+one. "Weak" can no longer quietly mean "unenforced".
+
+What is left — three PCCP fields — is weak for a specific reason: one case
+(`pccp08_red_team_absent_special_controls.json`) exists to test their absence.
+Requiring them would replace a specific rule with a generic one, which is a worse
+trade than a published residue of three.
 
 ---
 
@@ -575,4 +598,4 @@ Full rule ids, conditions and rationales are in each judge module and in
 
 本方法说明描述一种把"监管变更判定"从自然语言问答改写成可执行规则表的方法：输入是评审人实际持有的结构化字段，输出是三值判决（go / hold / reject）加上被触发的规则编号；判定纯粹、可离线重跑、失败时表现为"拒绝回答"而非"猜测"。已实现五张判定表（美国 510(k) 变更分类、上市后处置、FDA PCCP 范围、EU MDR 重大变更、中国 NMPA 变更注册），随包发布 34 个带预期判决的案件与 12 条对抗探针；同一批输入下，确定性判定器 12/12 命中预期，关键词捷径仅 5/12。
 
-本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：78 条契约断言、5 张判定表、37 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
+本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：79 条契约断言、5 张判定表、37 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
