@@ -112,7 +112,7 @@ If the page showed a verdict the code does not produce, the `--check` step turns
 That constraint is the point: a comparison table can say anything, a page that CI
 re-derives from the judges cannot.
 
-### Four things you can audit without trusting me
+### Seven things you can audit without trusting me
 
 | What it answers | File | Command that settles it |
 |---|---|---|
@@ -122,6 +122,7 @@ re-derives from the judges cannot.
 | Was the evaluation report generated, or written by hand? | [`docs/methods/Eval_Report_v1.md`](docs/methods/Eval_Report_v1.md) | `python benchmarks/eval_method_note.py` |
 | What do I have to supply to get a verdict at all? | [`docs/methods/Input_Contracts.md`](docs/methods/Input_Contracts.md) | `python benchmarks/input_contracts.py` |
 | Where do I submit a case that proves a rule wrong? | [`docs/methods/Challenge.md`](docs/methods/Challenge.md) | open the **Challenge a rule** issue form |
+| What does the gate's own red team look like, case by case? | [`docs/methods/RedTeam_Probes.md`](docs/methods/RedTeam_Probes.md) | `python -m unittest tests.test_contract.TestCliContract -v` |
 
 None of these is a promise. Each is a file plus a command; if the file and the
 command disagree, the evaluation fails. Two of the seven competitive claims are
