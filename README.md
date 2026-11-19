@@ -43,6 +43,12 @@ python -m demo1.change_gate --case demo1/cases/case01_red_pma_process.json
 > case matches its expected verdict, and `1` on any mismatch. The CLI prints
 > the same mapping on its last line.
 
+> **Cloned with `--depth 1`?** A shallow clone does not carry the three pinned
+> baseline commits that the verdict-drift assertions check out, so that one
+> test class reports *skipped* and the run says `Ran 89 tests` instead of 94.
+> `git fetch --unshallow` restores all 94. The skip names the missing commits,
+> so it cannot pass for a green suite while measuring nothing.
+
 Verify the whole gate before trusting it (stock Python 3.9+, stdlib only):
 
 ```bash

@@ -911,6 +911,23 @@ class TestVerdictDrift(unittest.TestCase):
             "verdict_drift", ROOT / "benchmarks" / "verdict_drift.py")
         cls.mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(cls.mod)
+        # The baselines are pinned commits. They are absent from a clone that does
+        # not carry them -- `--depth 1`, or a partial clone -- and then this class
+        # cannot measure anything. A shallow clone is not automatically unusable
+        # (ours has the pinned commits in its 34), so test for the refs themselves
+        # rather than for shallow-ness, and say how to get them.
+        declared_path = ROOT / "docs" / "methods" / "verdict_drift.json"
+        try:
+            bases = [row["base"] for row in
+                     json.loads(declared_path.read_text(encoding="utf-8"))["baselines"]]
+            missing = [b for b in bases
+                       if cls.mod._git(["rev-parse", "--verify", "--quiet", b]).returncode != 0]
+        except Exception:
+            missing = []
+        if missing:
+            raise unittest.SkipTest(
+                "pinned baselines absent from this clone (" + ", ".join(missing) +
+                "): run `git fetch --unshallow` or `git fetch origin <sha>` and retry")
         cls.data = cls.mod.build()
         cls.declared = json.loads((ROOT / "docs" / "methods" / "verdict_drift.json")
                                   .read_text(encoding="utf-8"))
