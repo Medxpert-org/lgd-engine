@@ -112,9 +112,9 @@ def head_verdicts(cases: list) -> dict:
 def _git(args: list, timeout: int = 180) -> subprocess.CompletedProcess:
     """Run git even where it is installed as a `.cmd` shim (Windows).
 
-    `subprocess` cannot execute a `.cmd`/`.bat` without a shell, and on Windows
-    the first `git` on PATH frequently *is* such a shim. Routing it through
-    `cmd /c` keeps this working on both platforms without shell=True.
+    `subprocess` cannot execute a `.cmd`/`.bat` directly, and on Windows the first
+    `git` on PATH frequently *is* such a shim. Routing it through `cmd /c` keeps
+    this working on both platforms, and the argument list stays a list.
     """
     exe = shutil.which("git") or "git"
     if exe.lower().endswith((".cmd", ".bat")):
