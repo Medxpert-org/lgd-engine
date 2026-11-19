@@ -8,6 +8,11 @@ jobs:
     name: LGD gate (gold-test / license / no-plaintext / manifest)
     steps:
       - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
+        with:
+          # verdict_drift checks out pinned refs (1bc5340 / 28fe22b / 58c0369) to
+          # compare two engines. A depth-1 clone has none of them, and the test
+          # would fail on a missing ref rather than on a moved verdict.
+          fetch-depth: 0
 
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
