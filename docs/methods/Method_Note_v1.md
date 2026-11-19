@@ -111,8 +111,8 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **66 assertions**,
-**36 case files** (31 corpus + 5 red-team), **5 tables**, **12 adversarial probes**.
+The assertion count grows as tables are added. As of this version: **69 assertions**,
+**37 case files** (31 corpus + 6 red-team), **5 tables**, **12 adversarial probes**.
 
 ### 1.5 One defect this method found in itself
 
@@ -178,6 +178,36 @@ immediately reported an inlined copy as dead authority, which is what an undecla
 rule is.
 
 ---
+
+### 1.8 Absence was the cheapest way through
+
+PCCP was the last domain, and the probe was one line: delete a field from an otherwise
+compliant record.
+
+Four special controls — the modification class description, the validation record, the
+labeling version history, the new UDI — were tested with `is False`. **A field that was
+simply absent returned go.** Nothing was falsified; the record did not mention it, and
+the gate read silence as satisfaction.
+
+The table already carried the right doctrine one rule earlier: `P-MAJ-04` says *unproven
+is not met* for the acceptance criteria. It had never been applied to the other four.
+They now test `is not True`, so `False` and absent land the same way; `pccp08` ships as
+`FDA-PCCP-RED-01`.
+
+Two things fell out of the fix, both worth more than the fix itself:
+
+- **The fixtures encoded the hole.** The MCP reachability test asserted `go` for a
+  payload that omitted four of the controls, and the three domain tests asserted the
+  literal `"7/7"` / `"9/9"` — the same fixed tax removed from the evaluator two
+  revisions earlier, still sitting in the suite. Adding one legitimate case broke a test
+  for a reason unrelated to the case. They now count the files on disk.
+- A suite that only ever exercises a *complete* record cannot tell "met" from
+  "unspecified". `TestPccpAbsence` asserts both spellings of "not shown" get the same
+  verdict.
+
+---
+
+## 2. What is *not* new here
 
 Being explicit about this is part of the method; a claim that everything is novel is
 usually a claim that nothing was checked.
@@ -289,7 +319,7 @@ shortcut is not merely discouraged; the route is marked unavailable.
 
 ### 4.1 Corpus
 
-36 case files across 6 directories (`demo1/cases*`), each with a declared expected
+37 case files across 6 directories (`demo1/cases*`), each with a declared expected
 verdict (or a per-jurisdiction pair). Cases are desensitised constructs, not
 customer data; `_desensitized_from` records what real-world pattern each one models.
 Every case is evaluated by the same code path used in production; there is no
@@ -453,4 +483,4 @@ Full rule ids, conditions and rationales are in each judge module and in
 
 本方法说明描述一种把"监管变更判定"从自然语言问答改写成可执行规则表的方法：输入是评审人实际持有的结构化字段，输出是三值判决（go / hold / reject）加上被触发的规则编号；判定纯粹、可离线重跑、失败时表现为"拒绝回答"而非"猜测"。已实现五张判定表（美国 510(k) 变更分类、上市后处置、FDA PCCP 范围、EU MDR 重大变更、中国 NMPA 变更注册），随包发布 34 个带预期判决的案件与 12 条对抗探针；同一批输入下，确定性判定器 12/12 命中预期，关键词捷径仅 5/12。
 
-本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：66 条契约断言、5 张判定表、36 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
+本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：69 条契约断言、5 张判定表、37 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。

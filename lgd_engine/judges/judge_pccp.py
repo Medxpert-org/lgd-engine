@@ -117,7 +117,7 @@ _MAJOR_RULES = [
                   "undescribed class is not a covered class; hold pending submission.",
         "when": lambda c: (
             c.get("change_within_pccp_scope") is not False
-            and c.get("change_class_described") is False
+            and c.get("change_class_described") is not True
         ),
     },
     {
@@ -126,7 +126,7 @@ _MAJOR_RULES = [
                   "892.2055 requires the methodology be documented as part of V&V.",
         "when": lambda c: (
             c.get("change_within_pccp_scope") is not False
-            and c.get("validation_documented") is False
+            and c.get("validation_documented") is not True
         ),
     },
     {
@@ -144,7 +144,7 @@ _MAJOR_RULES = [
                   "history among the special controls every update must carry.",
         "when": lambda c: (
             c.get("change_within_pccp_scope") is not False
-            and c.get("labeling_version_history") is False
+            and c.get("labeling_version_history") is not True
         ),
     },
     {
@@ -154,7 +154,7 @@ _MAJOR_RULES = [
                   "version is not traceable to the shipped unit.",
         "when": lambda c: (
             c.get("change_within_pccp_scope") is not False
-            and c.get("udi_updated") is False
+            and c.get("udi_updated") is not True
         ),
     },
     {
