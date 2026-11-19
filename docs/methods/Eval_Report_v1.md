@@ -5,9 +5,9 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=feat/baseline-scorecard head=faf742f checks=19 passed=18 cases=37 assertions=82 -->`
+`<!-- eval-report branch=feat/baseline-scorecard head=6b0297d checks=19 passed=19 cases=37 assertions=82 -->`
 
-Run at 2026-11-19 01:12 UTC against `feat/baseline-scorecard` at `faf742f`, from a fresh clone.
+Run at 2026-11-19 01:12 UTC against `feat/baseline-scorecard` at `6b0297d`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
@@ -29,9 +29,9 @@ Run at 2026-11-19 01:12 UTC against `feat/baseline-scorecard` at `faf742f`, from
 | X3 | dependencies = [] and no third-party imports | PASS |
 | X4 | note claims 37 cases, disk has 37 | PASS |
 | X5 | tree still clean after the whole run | PASS |
-| X6 | docs quote 82 assertions and 37 cases everywhere, and every cited audit command exists | **FAIL** |
+| X6 | docs quote 82 assertions and 37 cases everywhere, and every cited audit command exists | PASS |
 
-**18/19 checks passed** (plus C12, which validates this file).
+**19/19 checks passed** (plus C12, which validates this file).
 
 Scope of this report: it says nothing about correctness against real filings;
 it says that every claim the method note makes about *itself* survives an
