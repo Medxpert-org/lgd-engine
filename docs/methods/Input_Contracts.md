@@ -26,7 +26,9 @@ Two notions of "required" sit side by side on purpose: **required here** = every
 shipped case of that domain supplies it (derived from the corpus by this
 generator); **required in a judge** = the judge has nothing to look up without it
 (declared, and minimal — a field that only makes the record richer is not in the
-set). The second is checked against the first: a judge may not require a key that
+set). A key the judge requires must also carry a usable value: absent, `null`, `""`,
+`[]`, `{}` and a non-boolean in a boolean slot all count as missing (`is_unusable()`).
+The second is checked against the first: a judge may not require a key that
 any shipped case omits, or `TestInputContract` fails.
 
 ## Base schema (shared by all tables)

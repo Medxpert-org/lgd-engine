@@ -37,7 +37,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from .base import Reason, Evidence
+from .base import Reason, Evidence, is_unusable
 
 
 _CRITICAL = [
@@ -150,12 +150,12 @@ _ENUM_AXES = (
 )
 
 
-REQUIRED_FIELDS = {"recall_class", "harm_severity"}
+REQUIRED_FIELDS = {"recall_class": str, "harm_severity": str}
 
 # postmarket: which event was reported, and how bad it was.
 _CONTRACT = {
     "rule": "REQ-01-input-contract",
-    "when": lambda c: any(k not in c for k in REQUIRED_FIELDS),
+    "when": lambda c: bool(is_unusable(c, REQUIRED_FIELDS)),
     "guard": True,
 }
 
@@ -168,7 +168,7 @@ class JudgePostmarket:
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
-        missing = [k for k in REQUIRED_FIELDS if k not in ctx]
+        missing = is_unusable(ctx, REQUIRED_FIELDS)
         if missing:
             # An incomplete record is not a compliant record. Judging one reads
             # "nobody supplied this" as "nobody objected to this" -- the exact

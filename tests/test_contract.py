@@ -625,6 +625,31 @@ class TestInputContract(unittest.TestCase):
                                             f"deleting {key} let {f.name} go")
                         self.assertIn(f"{cls.CONTRACT_RULE}", rules)
 
+    def test_blanking_a_required_field_never_yields_go(self):
+        """The second spelling of absence: the key is there, the value says nothing.
+
+        null / "" / [] / {} used to reach a rule as "nobody objected", and 0 in a
+        boolean slot slipped through `is False`. A contract about keys is a contract
+        about the JSON file; a contract about usable values is a contract about the
+        record.
+        """
+        blanks = {"null": None, "empty_str": "", "empty_list": [], "empty_obj": {}, "zero": 0}
+        for rel, domain, cls in self.SUITES:
+            for f in sorted((ROOT / rel).glob("*.json")):
+                ctx = json.loads(f.read_text(encoding="utf-8"))
+                for key in sorted(cls.REQUIRED_FIELDS):
+                    if key not in ctx:
+                        continue
+                    for label, value in blanks.items():
+                        blanked = dict(ctx)
+                        blanked[key] = value
+                        rep = GateEngine([cls()]).evaluate(blanked).to_dict()
+                        with self.subTest(case=f.name, field=key, blank=label):
+                            self.assertNotEqual("go", rep["verdict"],
+                                                f"{key}={label} let {f.name} go")
+                            self.assertIn(f"{cls.CONTRACT_RULE}",
+                                          [r["rule"] for r in rep["reasons"]])
+
     def test_guard_rule_names_its_basis(self):
         for _rel, domain, cls in self.SUITES:
             with self.subTest(domain=domain):

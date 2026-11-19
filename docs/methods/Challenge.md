@@ -6,9 +6,10 @@ the claims, the cheapest way to break each one, and what we promise to do when y
 | Claim | How to break it | Where |
 |---|---|---|
 | "Every rule either cites a clause or declares itself doctrine" | Find a rule whose `LAW` label points to text that does not say what the rule assumes | [`Clause_Matrix.md`](Clause_Matrix.md), [`basis.py`](../../lgd_engine/judges/basis.py) |
-| "60/60 rules have a basis, 9 are DOCTRINE" | Show a shipped rule missing from the matrix, or a DOCTRINE count above the cap | `python benchmarks/clause_matrix.py` |
+| "67/67 rules have a basis, 12 are DOCTRINE" | Show a shipped rule missing from the matrix, or a DOCTRINE count above the cap | `python benchmarks/clause_matrix.py` |
 | "The verdict is deterministic and calls no model" | Produce two runs with different output on the same input, or find a network call | `python benchmarks/verdict_cost.py` |
 | "The evaluation report is generated, not written" | Make the report's `<!-- eval-report ... -->` marker disagree with the repository and see whether `C12` catches it | `python benchmarks/eval_method_note.py` |
+| "A verdict needs a usable record, not a present key" | Delete a required field, or set it to `null` / `""` / `[]` / `0`, and see whether a `go` comes back | `python benchmarks/absence_sweep.py` |
 | "Coverage gaps are published, not hidden" | Find a law we silently fail to encode and that is absent from the list | [`coverage_gaps.json`](coverage_gaps.json) |
 | "Competitive claims are labelled by evidence strength" | Find an `observed` row without a source, or a claim that should be `inferred` but says `observed` | [`competitive_edges.json`](competitive_edges.json) |
 

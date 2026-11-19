@@ -111,7 +111,7 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **73 assertions**,
+The assertion count grows as tables are added. As of this version: **74 assertions**,
 **37 case files** (31 corpus + 6 red-team), **5 tables**, **12 adversarial probes**.
 
 ### 1.5 One defect this method found in itself
@@ -241,6 +241,15 @@ Three things keep this honest:
   key from each of the 37 cases and asserts the answer is not `go`, and
   `benchmarks/absence_sweep.py` states the same invariant as a standalone check anyone
   can run: *no required field can be deleted into a green light*.
+
+The second fix came from asking the obvious follow-up: if a missing key is not a
+permission, what is a key whose value is `null`? Or `""`, `[]`, `{}`, or `0` in a boolean
+slot? Sixteen combinations across the same 37 cases still returned `go`, because the guard
+said `k not in ctx` — a check about the JSON file, not about the record. The contract now
+declares a *type* per key (`REQUIRED_FIELDS = {"pccp_authorized": bool, ...}`) and
+`is_unusable()` rejects absent, blank and wrongly-typed values alike. The invariant widened
+to match: **no required input can be deleted or blanked into a green light**, which is what
+`absence_sweep.py` and `TestInputContract` now assert over every case and five spellings.
 
 What is **not** claimed: that `hold` is correct for every incomplete record. A missing
 field that merely removes a *fact the case asserted* — no death claimed, no recall class
@@ -526,4 +535,4 @@ Full rule ids, conditions and rationales are in each judge module and in
 
 本方法说明描述一种把"监管变更判定"从自然语言问答改写成可执行规则表的方法：输入是评审人实际持有的结构化字段，输出是三值判决（go / hold / reject）加上被触发的规则编号；判定纯粹、可离线重跑、失败时表现为"拒绝回答"而非"猜测"。已实现五张判定表（美国 510(k) 变更分类、上市后处置、FDA PCCP 范围、EU MDR 重大变更、中国 NMPA 变更注册），随包发布 34 个带预期判决的案件与 12 条对抗探针；同一批输入下，确定性判定器 12/12 命中预期，关键词捷径仅 5/12。
 
-本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：73 条契约断言、5 张判定表、37 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
+本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：74 条契约断言、5 张判定表、37 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。

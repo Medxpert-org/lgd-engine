@@ -56,6 +56,38 @@ class JudgeVerdict:
         return any(r.level == "critical" for r in self.reasons)
 
 
+def is_unusable(ctx: Dict[str, Any], contract: Dict[str, type]) -> List[str]:
+    """Keys the judge cannot use, spelled as absent, blank, or of the wrong type.
+
+    Deleting a key was only the first spelling of absence (PR #40). A key that is
+    present but null, "", [] or {} reads to a rule as "nobody objected" exactly
+    as a missing one did, and a 0 in a boolean slot slips past `is False`. The
+    contract therefore says what a usable value looks like, not just that the key
+    exists.
+    """
+    bad: List[str] = []
+    for key, want in contract.items():
+        if key not in ctx:
+            bad.append(key)
+            continue
+        value = ctx[key]
+        if value is None:
+            bad.append(key)
+            continue
+        if isinstance(value, str) and not value.strip():
+            bad.append(key)
+            continue
+        if isinstance(value, (list, dict, tuple)) and len(value) == 0:
+            bad.append(key)
+            continue
+        if want is bool:
+            if not isinstance(value, bool):
+                bad.append(key)
+        elif not isinstance(value, want):
+            bad.append(key)
+    return bad
+
+
 @runtime_checkable
 class DomainJudge(Protocol):
     """Every domain adapter implements this. ctx is an input JSON dict."""
