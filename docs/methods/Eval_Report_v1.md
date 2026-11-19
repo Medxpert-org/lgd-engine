@@ -5,9 +5,9 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=feat/close-the-residue head=55f78aa checks=19 passed=18 cases=37 assertions=79 -->`
+`<!-- eval-report branch=feat/close-the-residue head=23371d2 checks=19 passed=17 cases=37 assertions=79 -->`
 
-Run at 2026-11-19 00:54 UTC against `feat/close-the-residue` at `55f78aa`, from a fresh clone.
+Run at 2026-11-19 00:55 UTC against `feat/close-the-residue` at `23371d2`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
@@ -19,19 +19,19 @@ Run at 2026-11-19 00:54 UTC against `feat/close-the-residue` at `55f78aa`, from 
 | C5 | crashing judge is flagged, not a clean veto | PASS |
 | C6 | exit codes reject=2 / go=0 / usage=64 | PASS |
 | C7 | MCP smoke: 7 tools + RBAC both ways | PASS |
-| C8 | baseline gate 12/12 vs naive 5/12 | **FAIL** |
-| C9 | dossier page in sync with engine | PASS |
+| C8 | baseline gate 12/12 vs naive 5/12 | PASS |
+| C9 | dossier page in sync with engine | **FAIL** |
 | C10 | every rule names a LAW / DOCTRINE basis | PASS |
 | C11 | verdict deterministic + cheap (no model) | PASS |
 | C13 | competitor claims carry provenance labels | PASS |
 | X1 | tampered page makes --check fail | PASS |
-| X2 | suite runs and reports 79 tests | PASS |
+| X2 | suite runs and reports 79 tests | **FAIL** |
 | X3 | dependencies = [] and no third-party imports | PASS |
 | X4 | note claims 37 cases, disk has 37 | PASS |
 | X5 | tree still clean after the whole run | PASS |
 | X6 | docs quote 79 assertions and 37 cases everywhere, and every cited audit command exists | PASS |
 
-**18/19 checks passed** (plus C12, which validates this file).
+**17/19 checks passed** (plus C12, which validates this file).
 
 Scope of this report: it says nothing about correctness against real filings;
 it says that every claim the method note makes about *itself* survives an
