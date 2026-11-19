@@ -1,6 +1,14 @@
 name: gate
 
-on: [push]
+# Push: every branch, so a branch gets its own feedback before it opens a PR.
+# Pull request: this is where the gate that compares the request against its own
+# base commit lives. It was written but never triggered while this file listened
+# to push only -- a gate that cannot run is worse than no gate, because it reads
+# as one in the docs.
+on:
+  push:
+  pull_request:
+    branches: [main]
 
 jobs:
   gate:
