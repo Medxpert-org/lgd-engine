@@ -87,7 +87,8 @@ class TestPccpJudge(unittest.TestCase):
         self.ok = {
             "pccp_authorized": True, "change_within_pccp_scope": True,
             "affects_intended_use": False, "change_class_described": True,
-            "acceptance_criteria_met": True, "validation_documented": True,
+            "acceptance_criteria_met": True, "remains_se_to_predicate": True,
+            "validation_documented": True,
             "labeling_version_history": True, "udi_updated": True,
             "change_type": "retrain_same_distribution",
             "evidence_sufficiency": "sufficient", "jurisdiction": "FDA",
@@ -666,7 +667,7 @@ class TestAbsenceTaxonomy(unittest.TestCase):
     number of proof-shaped-but-unenforced fields cannot grow.
     """
 
-    WEAK_CAP = 5
+    WEAK_CAP = 3
 
     def setUp(self):
         import importlib.util
@@ -703,6 +704,23 @@ class TestAbsenceTaxonomy(unittest.TestCase):
             with self.subTest(domain=domain):
                 self.assertEqual([], unread,
                                  f"{domain} requires field(s) no rule reads: {unread}")
+
+    def test_the_taxonomy_and_the_corpus_agree(self):
+        """`required` must be universal; `weak` must be exactly the case that omits it.
+
+        Without this, "weak" could drift into a private excuse: a field listed as
+        weak while nothing in the corpus omits it is not weak, it is unenforced.
+        """
+        for domain, fields in self.data["domains"].items():
+            for key, entry in fields.items():
+                absent = entry.get("absent_in", [])
+                if entry["kind"] == "required":
+                    with self.subTest(domain=domain, field=key, kind="required"):
+                        self.assertEqual([], absent,
+                                         f"{key} is required but {absent} omit it")
+                if entry["kind"] == "weak_evidence":
+                    with self.subTest(domain=domain, field=key, kind="weak"):
+                        self.assertTrue(absent, f"{key} is called weak but every case supplies it")
 
     def test_weak_evidence_is_capped_and_explained(self):
         weak = [(d, k) for d, fields in self.data["domains"].items()

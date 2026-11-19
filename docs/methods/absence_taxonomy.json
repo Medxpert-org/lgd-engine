@@ -2,8 +2,8 @@
   "_counts": {
     "bookkeeping": 11,
     "claim": 26,
-    "required": 16,
-    "weak_evidence": 5
+    "required": 18,
+    "weak_evidence": 3
   },
   "_fields": 58,
   "_generated_by": "benchmarks/absence_taxonomy.py --write",
@@ -21,6 +21,9 @@
         "type": "str"
       },
       "jurisdiction": {
+        "absent_in": [
+          "supplier_swap.json"
+        ],
         "kind": "bookkeeping"
       },
       "predicate_unchanged": {
@@ -58,9 +61,27 @@
         "type": "str"
       },
       "classification_changed": {
+        "absent_in": [
+          "mdr01_green_administrative.json",
+          "mdr02_yellow_software_performance.json",
+          "mdr03_yellow_intended_purpose.json",
+          "mdr04_red_open_fsca.json",
+          "mdr05_red_declared_non_significant.json",
+          "mdr06_green_intended_purpose_limitation.json",
+          "mdr07_green_corrective_action_accepted.json",
+          "mdr08_red_team_acceptance_scope_expansion.json"
+        ],
         "kind": "claim"
       },
       "corrective_action_accepted_by_authority": {
+        "absent_in": [
+          "mdr01_green_administrative.json",
+          "mdr02_yellow_software_performance.json",
+          "mdr03_yellow_intended_purpose.json",
+          "mdr04_red_open_fsca.json",
+          "mdr05_red_declared_non_significant.json",
+          "mdr06_green_intended_purpose_limitation.json"
+        ],
         "kind": "claim"
       },
       "declared_not_significant": {
@@ -74,9 +95,28 @@
         "kind": "claim"
       },
       "implements_accepted_corrective_action": {
+        "absent_in": [
+          "mdr01_green_administrative.json",
+          "mdr02_yellow_software_performance.json",
+          "mdr03_yellow_intended_purpose.json",
+          "mdr04_red_open_fsca.json",
+          "mdr05_red_declared_non_significant.json",
+          "mdr06_green_intended_purpose_limitation.json",
+          "mdr08_red_team_acceptance_scope_expansion.json",
+          "mdr09_red_team_acceptance_scope_classification.json"
+        ],
         "kind": "claim"
       },
       "intended_purpose_direction": {
+        "absent_in": [
+          "mdr01_green_administrative.json",
+          "mdr02_yellow_software_performance.json",
+          "mdr03_yellow_intended_purpose.json",
+          "mdr04_red_open_fsca.json",
+          "mdr05_red_declared_non_significant.json",
+          "mdr07_green_corrective_action_accepted.json",
+          "mdr09_red_team_acceptance_scope_classification.json"
+        ],
         "kind": "claim"
       },
       "jurisdiction": {
@@ -86,15 +126,48 @@
         "kind": "claim"
       },
       "patient_contacting_material_change": {
+        "absent_in": [
+          "mdr01_green_administrative.json",
+          "mdr02_yellow_software_performance.json",
+          "mdr03_yellow_intended_purpose.json",
+          "mdr04_red_open_fsca.json",
+          "mdr05_red_declared_non_significant.json",
+          "mdr06_green_intended_purpose_limitation.json",
+          "mdr07_green_corrective_action_accepted.json",
+          "mdr08_red_team_acceptance_scope_expansion.json",
+          "mdr09_red_team_acceptance_scope_classification.json"
+        ],
         "kind": "claim"
       },
       "source_refs": {
         "kind": "bookkeeping"
       },
       "sterility_affected": {
+        "absent_in": [
+          "mdr01_green_administrative.json",
+          "mdr02_yellow_software_performance.json",
+          "mdr03_yellow_intended_purpose.json",
+          "mdr04_red_open_fsca.json",
+          "mdr05_red_declared_non_significant.json",
+          "mdr06_green_intended_purpose_limitation.json",
+          "mdr07_green_corrective_action_accepted.json",
+          "mdr08_red_team_acceptance_scope_expansion.json",
+          "mdr09_red_team_acceptance_scope_classification.json"
+        ],
         "kind": "claim"
       },
       "sterilization_change": {
+        "absent_in": [
+          "mdr01_green_administrative.json",
+          "mdr02_yellow_software_performance.json",
+          "mdr03_yellow_intended_purpose.json",
+          "mdr04_red_open_fsca.json",
+          "mdr05_red_declared_non_significant.json",
+          "mdr06_green_intended_purpose_limitation.json",
+          "mdr07_green_corrective_action_accepted.json",
+          "mdr08_red_team_acceptance_scope_expansion.json",
+          "mdr09_red_team_acceptance_scope_classification.json"
+        ],
         "kind": "claim"
       },
       "verification_documented": {
@@ -108,6 +181,13 @@
         "type": "list"
       },
       "device_class": {
+        "absent_in": [
+          "nmpa01_green_registration_textual.json",
+          "nmpa02_yellow_licence_item.json",
+          "nmpa03_yellow_registration_unassessed.json",
+          "nmpa04_red_licence_as_filing.json",
+          "nmpa05_red_level1_recall.json"
+        ],
         "kind": "bookkeeping"
       },
       "evidence_sufficiency": {
@@ -121,6 +201,16 @@
         "kind": "bookkeeping"
       },
       "recall_level": {
+        "absent_in": [
+          "nmpa01_green_registration_textual.json",
+          "nmpa02_yellow_licence_item.json",
+          "nmpa03_yellow_registration_unassessed.json",
+          "nmpa04_red_licence_as_filing.json",
+          "nmpa06_yellow_class1_filed_not_registered.json",
+          "nmpa07_yellow_domestic_site_prerequisite.json",
+          "nmpa08_red_team_class1_registration_route.json",
+          "nmpa09_red_team_class1_first_registration.json"
+        ],
         "kind": "claim"
       },
       "requested_path": {
@@ -128,8 +218,8 @@
         "type": "str"
       },
       "safety_effectiveness_assessed": {
-        "kind": "weak_evidence",
-        "why": "a conformity assessment is proof-shaped; not every shipped NMPA case carries it"
+        "kind": "required",
+        "type": "bool"
       },
       "source_refs": {
         "kind": "bookkeeping"
@@ -165,30 +255,48 @@
         "kind": "bookkeeping"
       },
       "labeling_version_history": {
+        "absent_in": [
+          "pccp08_red_team_absent_special_controls.json"
+        ],
         "kind": "weak_evidence",
-        "why": "same: proof-shaped, not universal in the corpus"
+        "why": "same case: absence is the probe"
       },
       "pccp_authorized": {
         "kind": "required",
         "type": "bool"
       },
       "pccp_modified_version_used_as_predicate": {
+        "absent_in": [
+          "pccp01_green_covered_retrain.json",
+          "pccp02_yellow_out_of_scope.json",
+          "pccp03_red_intended_use.json",
+          "pccp04_red_criteria_not_met.json",
+          "pccp05_yellow_version_traceability.json",
+          "pccp06_red_se_to_predicate_broken.json",
+          "pccp08_red_team_absent_special_controls.json"
+        ],
         "kind": "claim"
       },
       "remains_se_to_predicate": {
-        "kind": "weak_evidence",
-        "why": "same: proof-shaped, not universal in the corpus"
+        "kind": "required",
+        "type": "bool"
       },
       "source_refs": {
         "kind": "bookkeeping"
       },
       "udi_updated": {
+        "absent_in": [
+          "pccp08_red_team_absent_special_controls.json"
+        ],
         "kind": "weak_evidence",
-        "why": "same: proof-shaped, not universal in the corpus"
+        "why": "same case: absence is the probe"
       },
       "validation_documented": {
+        "absent_in": [
+          "pccp08_red_team_absent_special_controls.json"
+        ],
         "kind": "weak_evidence",
-        "why": "a validation record is proof-shaped; not every shipped PCCP case carries it"
+        "why": "the red-team case exists to test its absence; requiring it would replace a specific rule with a generic one"
       }
     },
     "postmarket": {
@@ -203,6 +311,9 @@
         "type": "str"
       },
       "marketing_without_license": {
+        "absent_in": [
+          "pm04_red_team_death_without_recall.json"
+        ],
         "kind": "claim"
       },
       "recall_class": {

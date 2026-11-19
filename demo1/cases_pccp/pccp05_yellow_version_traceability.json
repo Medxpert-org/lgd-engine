@@ -7,6 +7,7 @@
   "affects_intended_use": false,
   "change_class_described": true,
   "acceptance_criteria_met": true,
+  "remains_se_to_predicate": true,
   "validation_documented": true,
   "labeling_version_history": false,
   "udi_updated": false,

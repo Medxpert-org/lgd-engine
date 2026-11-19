@@ -38,14 +38,14 @@ JUDGES = {
 }
 
 # Proof-shaped fields that some shipped case omits -> cannot be required yet.
+# The reason must name the case(s): a "weak" field is a fact about the corpus, not a
+# mood. `build()` fills `absent_in` by scanning the corpus, so the claim cannot go stale.
 WEAK = {
-    ("pccp", "validation_documented"): "a validation record is proof-shaped; not every "
-                                       "shipped PCCP case carries it",
-    ("pccp", "labeling_version_history"): "same: proof-shaped, not universal in the corpus",
-    ("pccp", "udi_updated"): "same: proof-shaped, not universal in the corpus",
-    ("pccp", "remains_se_to_predicate"): "same: proof-shaped, not universal in the corpus",
-    ("nmpa", "safety_effectiveness_assessed"): "a conformity assessment is proof-shaped; "
-                                               "not every shipped NMPA case carries it",
+    ("pccp", "validation_documented"): "the red-team case exists to test its absence; "
+                                       "requiring it would replace a specific rule with "
+                                       "a generic one",
+    ("pccp", "labeling_version_history"): "same case: absence is the probe",
+    ("pccp", "udi_updated"): "same case: absence is the probe",
 }
 
 # Fields that identify a case or carry citations rather than a claim about the change.
@@ -70,6 +70,21 @@ def build() -> dict:
         "510k": Judge510kChange, "postmarket": JudgePostmarket, "pccp": JudgePccpScope,
         "mdr": JudgeMdrSignificance, "nmpa": JudgeNmpaChangeRegistration,
     }
+    sys.path.insert(0, str(ROOT / "benchmarks"))
+    from build_demo_page import SUITES
+
+    corpus: dict[str, list] = {}
+    for rel, domain, _cls, _lang, _judges in SUITES:
+        corpus[domain] = [p for p in sorted((ROOT / rel).glob("*.json"))]
+
+    def omitting(domain: str, key: str) -> list:
+        missing = []
+        for path in corpus.get(domain, []):
+            ctx = json.loads(path.read_text(encoding="utf-8"))
+            if key not in ctx:
+                missing.append(path.name)
+        return missing
+
     domains: dict[str, dict] = {}
     for domain, module in JUDGES.items():
         cls = classes[domain]
@@ -89,6 +104,9 @@ def build() -> dict:
                 entry["type"] = required[key].__name__
             if (domain, key) in WEAK:
                 entry["why"] = WEAK[(domain, key)]
+            absent = omitting(domain, key)
+            if absent:
+                entry["absent_in"] = absent
             fields[key] = entry
         domains[domain] = fields
 

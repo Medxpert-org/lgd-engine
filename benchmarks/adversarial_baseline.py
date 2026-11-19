@@ -43,7 +43,8 @@ GREEN_510K = {
 GREEN_PCCP = {
     "pccp_authorized": True, "change_within_pccp_scope": True,
     "affects_intended_use": False, "change_class_described": True,
-    "acceptance_criteria_met": True, "validation_documented": True,
+    "acceptance_criteria_met": True, "remains_se_to_predicate": True,
+    "validation_documented": True,
     "labeling_version_history": True, "udi_updated": True,
     "change_type": "retrain_same_distribution",
     "evidence_sufficiency": "sufficient", "jurisdiction": "FDA",
