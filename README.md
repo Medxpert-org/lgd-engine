@@ -62,7 +62,7 @@ python framework/gate_bot.py     # CI gate (six checks)
 No install, no network, no LLM. Three commands, each ending in a line you can compare:
 
 ```bash
-python -m unittest discover -s tests -v      # -> Ran 88 tests ... OK
+python -m unittest discover -s tests -v      # -> Ran 90 tests ... OK
 python lgd_engine/mcp_smoke.py               # -> SMOKE: PASS
 python -m lgd_engine.cli --all demo1/cases   # -> [summary] 5/5 cases match expected verdict (domain=510k)
 python -m lgd_engine.cli --all demo1/cases_pccp --domain pccp
@@ -75,7 +75,7 @@ python benchmarks/adversarial_baseline.py
 # -> gate: 12/12 match expected / naive: 5/12 match expected
 ```
 
-These 88 assertions pin behaviour that a "did it exit 0" check cannot see:
+These 90 assertions pin behaviour that a "did it exit 0" check cannot see:
 
 - **L3** — one critical reason vetoes the whole run, and the veto is recorded.
 - **L2** — a `go` with zero evidence is downgraded to `hold`, not accepted.
@@ -112,7 +112,7 @@ If the page showed a verdict the code does not produce, the `--check` step turns
 That constraint is the point: a comparison table can say anything, a page that CI
 re-derives from the judges cannot.
 
-### Twelve things you can audit without trusting me
+### Thirteen things you can audit without trusting me
 
 | What it answers | File | Command that settles it |
 |---|---|---|
@@ -126,6 +126,7 @@ re-derives from the judges cannot.
 | How much better than a shortcut, counted? | [`docs/methods/Baseline_Scorecard.md`](docs/methods/Baseline_Scorecard.md) | `python benchmarks/baseline_scorecard.py` |
 | Does the same fact, spelled differently, decide differently? | [`docs/methods/Method_Note_v1.md`](docs/methods/Method_Note_v1.md) §1.12 | `python benchmarks/representation_sweep.py` |
 | Did the last fix flip somebody else's verdict? | [`docs/methods/Verdict_Drift.md`](docs/methods/Verdict_Drift.md) | `python benchmarks/verdict_drift.py --check` |
+| Can a pull request move a verdict it never declared? | [`docs/methods/Verdict_Drift.md`](docs/methods/Verdict_Drift.md) | `python benchmarks/verdict_drift.py --check-pr` |
 | Where do I submit a case that proves a rule wrong? | [`docs/methods/Challenge.md`](docs/methods/Challenge.md) | open the **Challenge a rule** issue form |
 | What does the gate's own red team look like, case by case? | [`docs/methods/RedTeam_Probes.md`](docs/methods/RedTeam_Probes.md) | `python -m unittest tests.test_contract.TestCliContract -v` |
 

@@ -955,6 +955,25 @@ class TestVerdictDrift(unittest.TestCase):
             self.assertEqual([], sorted(row["errors"]), f"{base}: a case became unjudgeable")
             self.assertEqual(self.data["cases"], row["measured"])
 
+    def test_the_pr_gate_accepts_only_declared_moves(self):
+        """The gate must pass the moves this repo already wrote down, and fail the
+        one that nobody did -- otherwise it is a rubber stamp."""
+        declared = self.mod.declared_triples(self.declared)
+        self.assertEqual([], self.mod.undeclared(self._row("1bc5340")["changed"], declared),
+                         "the seven #30 moves are written down but the gate calls them "
+                         "undeclared — the declaration set and the table disagree")
+        invented = [{"case_id": "XX-NOT-REAL-01", "base": "go", "head": "reject"}]
+        self.assertEqual(1, len(self.mod.undeclared(invented, declared)),
+                         "an invented flip passed the PR gate undeclared")
+
+    def test_a_pull_request_against_itself_moves_nothing(self):
+        """The gate's noise floor: a PR whose code is already merged must read 0."""
+        head = self.mod._git(["-C", str(self.mod.ROOT), "rev-parse", "HEAD"])
+        self.assertEqual(0, head.returncode, "cannot read HEAD")
+        row = self.mod.compare(head.stdout.strip(), self.mod.load_cases())
+        self.assertEqual([], row["changed"], "the working tree disagrees with its own commit")
+        self.assertEqual(self.data["cases"], row["measured"])
+
 
 class TestMetadataConsistency(unittest.TestCase):
     """The citation file is the first thing a stranger reads; it must not lag.
