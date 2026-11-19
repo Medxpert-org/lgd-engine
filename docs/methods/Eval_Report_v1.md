@@ -5,9 +5,9 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=page/redteam-section-20261119 head=71e8c24 checks=19 passed=19 -->`
+`<!-- eval-report branch=main head=29f12b9 checks=19 passed=19 cases=37 assertions=69 -->`
 
-Run at 2026-11-19 00:11 UTC against `page/redteam-section-20261119` at `71e8c24`, from a fresh clone.
+Run at 2026-11-19 00:16 UTC against `main` at `29f12b9`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
