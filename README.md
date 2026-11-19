@@ -53,7 +53,7 @@ Verify the whole gate before trusting it (stock Python 3.9+, stdlib only):
 # Any OS
 python demo1/test_demo1.py       # change-gate gold tests
 python demo2/test_demo2.py       # five-seat review tests
-python demo1/test_ecosystem.py   # 13-domain / 11-stage alignment tests
+python demo1/test_ecosystem.py   # post-market cases + FDA/NMPA delta (11/13 counts: gate_bot check 5)
 python framework/gate_bot.py     # CI gate (six checks)
 ```
 
