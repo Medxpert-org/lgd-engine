@@ -1,0 +1,90 @@
+{
+  "_purpose": "Which case verdicts moved between a pinned git ref and the working tree. Regenerate with `python benchmarks/verdict_drift.py --write`; the test suite fails if a declared row stops reproducing, so an undeclared verdict flip cannot ship quietly.",
+  "cases": 37,
+  "baselines": [
+    {
+      "base": "1bc5340",
+      "changed": [
+        {
+          "file": "demo1/cases/510k_red_team_label_expansion.json",
+          "case_id": "FDA-510K-RED-01",
+          "domain": "510k",
+          "base": "go",
+          "head": "hold",
+          "expected": "hold"
+        },
+        {
+          "file": "demo1/cases_postmarket/pm04_red_team_death_without_recall.json",
+          "case_id": "FDA-PM-RED-01",
+          "domain": "postmarket",
+          "base": "go",
+          "head": "hold",
+          "expected": "hold"
+        },
+        {
+          "file": "demo1/cases_pccp/pccp08_red_team_absent_special_controls.json",
+          "case_id": "FDA-PCCP-RED-01",
+          "domain": "pccp",
+          "base": "go",
+          "head": "hold",
+          "expected": "hold"
+        },
+        {
+          "file": "demo1/cases_mdr/mdr08_red_team_acceptance_scope_expansion.json",
+          "case_id": "MDR-RED-01",
+          "domain": "mdr",
+          "base": "go",
+          "head": "hold",
+          "expected": "hold"
+        },
+        {
+          "file": "demo1/cases_mdr/mdr09_red_team_acceptance_scope_classification.json",
+          "case_id": "MDR-RED-02",
+          "domain": "mdr",
+          "base": "go",
+          "head": "hold",
+          "expected": "hold"
+        },
+        {
+          "file": "demo1/cases_nmpa/nmpa08_red_team_class1_registration_route.json",
+          "case_id": "NMPA-RED-01",
+          "domain": "nmpa",
+          "base": "go",
+          "head": "hold",
+          "expected": "hold"
+        },
+        {
+          "file": "demo1/cases_nmpa/nmpa09_red_team_class1_first_registration.json",
+          "case_id": "NMPA-RED-02",
+          "domain": "nmpa",
+          "base": "go",
+          "head": "hold",
+          "expected": "hold"
+        }
+      ],
+      "unchanged": 30,
+      "errors": {},
+      "measured": 37,
+      "label": "#30 — before the seven red-team fixes",
+      "why": "seven cases still earned go; this row proves the instrument can see a flip"
+    },
+    {
+      "base": "28fe22b",
+      "changed": [],
+      "unchanged": 37,
+      "errors": {},
+      "measured": 37,
+      "label": "#44 — before representation safety",
+      "why": "only spelling was canonicalised: no shipped case was meant to move"
+    },
+    {
+      "base": "58c0369",
+      "changed": [],
+      "unchanged": 37,
+      "errors": {},
+      "measured": 37,
+      "label": "#45 — representation safety merged",
+      "why": "the anchor for this generation: an undeclared flip shows up against this row"
+    }
+  ]
+}
