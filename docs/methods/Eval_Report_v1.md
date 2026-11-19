@@ -5,9 +5,9 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=feat/verdict-drift head=aa62141 checks=19 passed=19 cases=37 assertions=88 -->`
+`<!-- eval-report branch=feat/verdict-drift head=1e9316f checks=19 passed=19 cases=37 assertions=88 -->`
 
-Run at 2026-11-19 04:37 UTC against `feat/verdict-drift` at `aa62141`, from a fresh clone.
+Run at 2026-11-19 04:37 UTC against `feat/verdict-drift` at `1e9316f`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
