@@ -312,6 +312,16 @@ a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink-2)}
 </section>
 
 <section class="sect">
+  <div class="sect-h"><h2>我们怎么把自己打穿的</h2><span class="cnt">__REDS_N__ 个自造反例 · 每个都是一份随仓库发布的案件</span></div>
+  <p class="note">这 __REDS_N__ 个案件不是外部质疑，是<b>我们自己造的反例，而且每一个都成功过</b>：它们曾经拿到 go。共同形状只有一句——<b>规则等在某个中间产物上，于是把这个产物的"缺席"读成了"许可"</b>。等的东西可以是一个布尔标记、一个词表取值、一个下游分类，或者干脆是一个没人填的字段。</p>
+  <table class="cmp">
+    <thead><tr><th style="width:150px">域</th><th style="width:170px">案件</th><th style="width:300px">文件</th><th style="width:80px">判决</th><th>现在拦它的规则</th></tr></thead>
+    <tbody>__REDS__</tbody>
+  </table>
+  <p class="note">复核方式：每个文件都带 <code>expected_verdict</code>，<code>--all</code> 在修复被回退时直接变红；逐条复跑与"过去会怎样"的说明在 <code>docs/methods/RedTeam_Probes.md</code>。三种能继续用的攻击形状也写在那份文档里：<b>删字段</b>而不是设为否定值、<b>用词表认识的值</b>而不是词表拒绝的值、<b>喂规则所键的中间产物</b>而不是它要证明的事实。</p>
+</section>
+
+<section class="sect">
   <div class="sect-h"><h2>七个"我们不一样"，各自有多少证据</h2><span class="cnt">observed __OBS__ · inferred __INF__ · unverified __UNV__</span></div>
   <p class="note">对外说"类目都怎样"很容易，说过就算的代价是外人无法验证。下表每行都写清：<b>我们这侧</b>用什么命令settle、<b>对方那侧</b>我们到底查没查。只有 <code>observed</code> 且给出链接的，才能当作对他人的事实陈述；其余是推断或未查。</p>
   <table class="cmp">
@@ -464,6 +474,29 @@ a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink-2)}
 """
 
 
+def _red_rows(cases: list) -> tuple:
+    """Cases whose id ends in -RED-nn: defects the red team found in this repo.
+
+    Derived from the case files, never a hand-kept list -- a new red-team case
+    appears here the moment it ships, and a deleted one disappears.
+    """
+    rows = [c for c in cases if (c["case_id"] or "").upper().find("-RED-") >= 0]
+    out = []
+    for c in rows:
+        rule = ""
+        for r in c["reasons"]:
+            if r.get("rule"):
+                rule = r["rule"]
+                break
+        out.append(
+            "<tr><td>%s</td><td class=\"mono\">%s</td><td class=\"mono\">%s</td>"
+            "<td class=\"mono\">%s</td><td>%s</td></tr>"
+            % (_esc(c["domain_label"]), _esc(c["case_id"]), _esc(c["file"]),
+               _esc(c["verdict"]), _esc(rule))
+        )
+    return "".join(out), len(rows)
+
+
 def build() -> str:
     cases = _load_cases()
     rules = _clause_rows()
@@ -489,6 +522,7 @@ def build() -> str:
                 .replace("__LAWN__", str(law_n))
                 .replace("__ASSERTIONS__", str(_assertion_count()))
                 .replace("__DET__", "YES" if cost["deterministic"] else "NO"))
+    reds_html, reds_n = _red_rows(cases)
     gaps_html, gaps_n = _gap_rows()
     edges_html, edge_counts = _edge_rows()
     html = (html.replace("__GAPS__", gaps_html)
@@ -496,7 +530,9 @@ def build() -> str:
                 .replace("__EDGES__", edges_html)
                 .replace("__OBS__", str(edge_counts["observed"]))
                 .replace("__INF__", str(edge_counts["inferred"]))
-                .replace("__UNV__", str(edge_counts["unverified"])))
+                .replace("__UNV__", str(edge_counts["unverified"]))
+                .replace("__REDS__", reds_html)
+                .replace("__REDS_N__", str(reds_n)))
     return html
 
 
