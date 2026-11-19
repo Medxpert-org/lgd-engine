@@ -73,7 +73,7 @@ class Result:
         print(f"{len(self.rows) - len(failed)}/{len(self.rows)} checks passed")
         return 0 if not failed else 1
 
-    def markdown(self, head: str, branch: str) -> str:
+    def markdown(self, head: str, branch: str, cases: int = 0, assertions: int = 0) -> str:
         """The report is derived output, not prose: same run, same table.
 
         C12 itself is excluded: a report that counted its own freshness check
@@ -90,7 +90,8 @@ class Result:
             "from the counts below — a report cannot contain the verdict on itself.",
             "",
             f"`<!-- eval-report branch={branch} head={head} "
-            f"checks={len(rows)} passed={passed} -->`",
+            f"checks={len(rows)} passed={passed} "
+            f"cases={cases} assertions={assertions} -->`",
             "",
             f"Run at {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')} UTC against "
             f"`{branch}` at `{head}`, from a fresh clone.",
@@ -120,6 +121,10 @@ def main() -> int:
     ap.add_argument("--report", default=None,
                     help="write the generated markdown report to this path")
     args = ap.parse_args()
+    # git clone runs with cwd=the temp workdir, so a relative --repo would be
+    # resolved there and fail with "repository . does not exist". Resolve it
+    # against the caller cwd before anything moves.
+    args.repo = str(Path(args.repo).resolve())
 
     work = Path(tempfile.mkdtemp(prefix="lgd-eval-"))
     clone = work / "clean"
@@ -326,19 +331,25 @@ def main() -> int:
     detail = ["missing report"]
     if rep_path.exists():
         text = rep_path.read_text(encoding="utf-8")
-        m = re.search(r"<!-- eval-report branch=(\S+) head=(\S+) checks=(\d+) passed=(\d+) -->", text)
+        m = re.search(
+            r"<!-- eval-report branch=(\S+) head=(\S+) checks=(\d+) passed=(\d+) "
+            r"cases=(\d+) assertions=(\d+) -->", text)
         if not m:
-            detail = ["marker line missing"]
+            detail = ["marker line missing (older four-field format?)"]
         else:
-            b_ok = (m.group(1) == args.branch)
+            # The branch name and head are provenance, not invariants: a squash
+            # merge rewrites both, so pinning either one makes the gate
+            # unsatisfiable on the merged branch. What a hand-edit cannot fake
+            # is the arithmetic -- so compare the numbers a merge cannot move.
             h_ok = len(m.group(2)) >= 7
-            # C12 is not yet in `rows`, and the report excludes it, so the counts
-            # match len(rows) exactly at this point.
-            c_ok = int(m.group(3)) == len(res.rows)
+            c_ok = int(m.group(3)) == len(res.rows)          # C12 not yet in rows
             p_ok = int(m.group(4)) == len(res.rows)
-            marker_ok = b_ok and h_ok and c_ok and p_ok
-            detail = [f"branch={m.group(1)} checks={m.group(3)}/{m.group(4)} "
-                      f"cases={len(cases)} assertions={assertions}"]
+            k_ok = int(m.group(5)) == len(cases)
+            a_ok = int(m.group(6)) == assertions
+            marker_ok = h_ok and c_ok and p_ok and k_ok and a_ok
+            detail = [f"from {m.group(1)}@{m.group(2)} checks={m.group(3)}/{m.group(4)} "
+                      f"cases={m.group(5)}/{len(cases)} assertions={m.group(6)}/{assertions}"]
+
     res.rows.append(("C12", "committed eval report is generated and current",
                      marker_ok, detail))
 
@@ -350,7 +361,8 @@ def main() -> int:
         if not out_path.is_absolute():
             out_path = Path.cwd() / out_path
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(res.markdown(head, args.branch), encoding="utf-8")
+        out_path.write_text(res.markdown(head, args.branch, len(cases), assertions),
+                            encoding="utf-8")
         print(f"wrote {out_path}")
 
     if args.keep:
