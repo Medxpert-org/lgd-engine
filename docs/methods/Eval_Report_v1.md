@@ -5,9 +5,9 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=feat/baseline-scorecard head=dd290b8 checks=19 passed=18 cases=37 assertions=82 -->`
+`<!-- eval-report branch=feat/baseline-scorecard head=faf742f checks=19 passed=18 cases=37 assertions=82 -->`
 
-Run at 2026-11-19 01:11 UTC against `feat/baseline-scorecard` at `dd290b8`, from a fresh clone.
+Run at 2026-11-19 01:12 UTC against `feat/baseline-scorecard` at `faf742f`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
