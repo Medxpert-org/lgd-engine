@@ -325,7 +325,7 @@ trade than a published residue of three.
 Every safety tool says "more reliable". A delta is a claim until it can be recomputed,
 so the comparison is generated: [`Baseline_Scorecard.md`](Baseline_Scorecard.md).
 
-Four shortcuts are scored on the same two corpora — the 37 cases with declared
+Four shortcuts are scored on the same two corpora -- the 37 cases with declared
 expectations, and 846 records made by deleting or blanking a contract field:
 
 | engine | shipped agreement | false greens |
@@ -339,11 +339,11 @@ expectations, and 846 records made by deleting or blanking a contract field:
 The second column is the honest one. On the shipped corpus a keyword shortcut is
 already close, because the cases were written to be legible. The separation appears
 only where the record is still well-formed JSON and the shortcut cannot tell *absent*
-from *not objected* — which is exactly the failure this table exists to name.
+from *not objected* -- which is exactly the failure this table exists to name.
 
 The baselines are stand-ins for the shortcuts a hurried integration converges on,
 not products, and no vendor's behaviour is claimed. A fifth shortcut, or a real
-tool, can be added in one dictionary entry and scored by anyone.
+tool, is one dictionary entry away and is scored by the same command.
 
 ---
 
