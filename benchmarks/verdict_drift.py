@@ -10,6 +10,9 @@ This tool runs two engines over the same case files -- a pinned git ref and the
 working tree -- and prints the difference per case:
 
     python benchmarks/verdict_drift.py --base 28fe22b          # report
+    python benchmarks/verdict_drift.py --since 2026-11-01      # report from a date
+    python benchmarks/verdict_drift.py --check-pr              # PR gate: every move
+                                                               # must be declared
     python benchmarks/verdict_drift.py --write                 # regenerate the
                                                                # declared baselines
     python benchmarks/verdict_drift.py --check                 # fail on drift
@@ -22,10 +25,12 @@ of shipping. `tests/test_contract.py::TestVerdictDrift` enforces that.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -109,6 +114,14 @@ def head_verdicts(cases: list) -> dict:
     return out
 
 
+def _git_exe() -> list:
+    """git's argv prefix, accounting for the Windows `.cmd` shim."""
+    exe = shutil.which("git") or "git"
+    if exe.lower().endswith((".cmd", ".bat")):
+        return ["cmd", "/c", exe]
+    return [exe]
+
+
 def _git(args: list, timeout: int = 180) -> subprocess.CompletedProcess:
     """Run git even where it is installed as a `.cmd` shim (Windows).
 
@@ -116,12 +129,8 @@ def _git(args: list, timeout: int = 180) -> subprocess.CompletedProcess:
     `git` on PATH frequently *is* such a shim. Routing it through `cmd /c` keeps
     this working on both platforms, and the argument list stays a list.
     """
-    exe = shutil.which("git") or "git"
-    if exe.lower().endswith((".cmd", ".bat")):
-        argv = ["cmd", "/c", exe] + args
-    else:
-        argv = [exe] + args
-    return subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
+    return subprocess.run(_git_exe() + args, capture_output=True, text=True,
+                          timeout=timeout)
 
 
 def ref_verdicts(ref: str, cases: list) -> tuple:
@@ -132,10 +141,33 @@ def ref_verdicts(ref: str, cases: list) -> tuple:
     engine under test.
     """
     tmp = Path(tempfile.mkdtemp(prefix="lgd-drift-"))
+    used_worktree = False
     try:
-        add = _git(["-C", str(ROOT), "worktree", "add", "--detach", str(tmp), ref])
-        if add.returncode != 0:
-            raise RuntimeError(f"cannot check out {ref}: {add.stderr.strip()[:300]}")
+        # A detached worktree is a full checkout: on a loaded box `git` can fail
+        # with "Out of memory, malloc failed" and still leave the parent repo
+        # healthy. One retry turns that into a slow run rather than a red suite;
+        # if the checkout still cannot be made, fall back to streaming the same
+        # tree out of `git archive`, which needs far less memory than an index.
+        add = None
+        for attempt in range(2):
+            if attempt:
+                time.sleep(2)
+            add = _git(["-C", str(ROOT), "worktree", "add", "--detach", str(tmp), ref])
+            if add.returncode == 0:
+                used_worktree = True
+                break
+        if not used_worktree:
+            arc = _git(["-C", str(ROOT), "archive", "--format=tar", ref])
+            if arc.returncode != 0:
+                raise RuntimeError(f"cannot check out {ref}: "
+                                   f"{(add.stderr or arc.stderr).strip()[:300]}")
+            import io
+            import tarfile
+            data = subprocess.run(_git_exe() + ["-C", str(ROOT), "archive",
+                                                "--format=tar", ref],
+                                  capture_output=True).stdout
+            with tarfile.open(fileobj=io.BytesIO(data)) as tf:
+                tf.extractall(tmp)
         case_file = tmp / "_cases.json"
         case_file.write_text(json.dumps([{"domain": c["domain"], "file": c["file"],
                                           "ctx": c["ctx"]} for c in cases],
@@ -149,7 +181,8 @@ def ref_verdicts(ref: str, cases: list) -> tuple:
         payload = json.loads(run.stdout.strip().splitlines()[-1])
         return payload["verdicts"], payload["errors"]
     finally:
-        _git(["-C", str(ROOT), "worktree", "remove", "--force", str(tmp)])
+        if used_worktree:
+            _git(["-C", str(ROOT), "worktree", "remove", "--force", str(tmp)])
         shutil.rmtree(tmp, ignore_errors=True)
 
 
@@ -225,17 +258,121 @@ def _strip(row: dict) -> dict:
     return {k: row[k] for k in ("base", "changed", "unchanged", "errors")}
 
 
+def declared_triples(doc: dict = None) -> set:
+    """Every (case, from, to) move this repository has already declared.
+
+    The baselines table *is* the declaration: a move that appears in any pinned
+    row has been seen, explained and written down. `declared_moves` exists for a
+    bare move that is not tied to a pinned ref (a case added later, say).
+    """
+    if doc is None:
+        if not OUT_JSON.exists():
+            return set()
+        doc = json.loads(OUT_JSON.read_text(encoding="utf-8"))
+    out = set()
+    for row in doc.get("baselines", []):
+        for c in row.get("changed", []):
+            out.add((c["case_id"], c["base"], c["head"]))
+    for m in doc.get("declared_moves", []):
+        out.add((m["case_id"], m["from"], m["to"]))
+    return out
+
+
+def undeclared(changed: list, declared: set) -> list:
+    """Moves a pull request makes that nobody wrote down."""
+    return [c for c in changed
+            if (c["case_id"], c["base"], c["head"]) not in declared]
+
+
+def resolve_since(spec: str) -> str:
+    """A tag, a commit, or a date -> one commit id.
+
+    Reviewers think in dates ("what moved in the last month?"), git thinks in
+    commits. `--since 2026-11-01` picks the last commit that existed before that
+    date, which is the honest "what did the tree look like then".
+    """
+    if re.match(r"^\d{4}-\d{2}-\d{2}", spec):
+        got = _git(["-C", str(ROOT), "rev-list", "-1", f"--before={spec}", "HEAD"])
+        if got.returncode != 0 or not got.stdout.strip():
+            raise SystemExit(f"no commit before {spec}: {got.stderr.strip()[:200]}")
+        return got.stdout.strip()
+    return spec
+
+
+def _report(ref: str) -> int:
+    """Print what moved between `ref` and the working tree."""
+    row = compare(ref, load_cases())
+    print(f"{ref}: {len(row['changed'])} changed / {row['unchanged']} unchanged"
+          + (f" / {len(row['errors'])} unjudgeable" if row["errors"] else ""))
+    for c in row["changed"]:
+        print(f"  {c['case_id']:<28} {c['base']:>6} -> {c['head']:<6} "
+              f"(expected {c['expected'] or '—'})")
+    return 0
+
+
+def _pr_base(argv: list) -> str:
+    """Where the pull request branched from.
+
+    CI passes the base sha explicitly. Locally we fall back to the merge base
+    with `origin/main`, and finally to the parent commit, so `--check-pr` is
+    runnable by anyone who cloned the repo.
+    """
+    if "--base" in argv:
+        return argv[argv.index("--base") + 1]
+    import os
+    for key in ("GITHUB_BASE_SHA", "LGD_DRIFT_BASE"):
+        if os.environ.get(key):
+            return os.environ[key]
+    mb = _git(["-C", str(ROOT), "merge-base", "origin/main", "HEAD"])
+    if mb.returncode == 0 and mb.stdout.strip():
+        return mb.stdout.strip()
+    return "HEAD~1"
+
+
+def _check_pr(argv: list) -> int:
+    """A pull request may not move a verdict it did not declare.
+
+    This is the part that makes the table a gate rather than a report: a PR that
+    changes a rule must either move no shipped verdict (the common case) or
+    explain each move in `verdict_drift.json` -- where it then reproduces forever
+    against a pinned ref.
+    """
+    ref = _pr_base(argv)
+    row = compare(ref, load_cases())
+    declared = declared_triples()
+    loose = undeclared(row["changed"], declared)
+    print(f"PR base {ref[:12]}: {len(row['changed'])} moved / "
+          f"{row['unchanged']} unchanged / {len(row['errors'])} unjudgeable")
+    for c in row["changed"]:
+        mark = "declared" if (c["case_id"], c["base"], c["head"]) in declared else "UNDECLARED"
+        print(f"  [{mark}] {c['case_id']:<26} {c['base']:>6} -> {c['head']:<6}")
+    if row["errors"]:
+        for f, e in sorted(row["errors"].items())[:5]:
+            print(f"  ! cannot judge {f}: {e}")
+    if loose:
+        print("\nFAIL: this pull request moves a verdict nobody declared. Either revert "
+              "the change, or add the move to `docs/methods/verdict_drift.json` "
+              "(see BASELINES in benchmarks/verdict_drift.py) with a reason.")
+        return 1
+    print("OK: no undeclared verdict moved")
+    return 0
+
+
 def main() -> int:
     argv = sys.argv[1:]
+    if "--check-pr" in argv:
+        return _check_pr(argv)
+
     if "--base" in argv:
         ref = argv[argv.index("--base") + 1]
-        row = compare(ref, load_cases())
-        print(f"{ref}: {len(row['changed'])} changed / {row['unchanged']} unchanged"
-              + (f" / {len(row['errors'])} unjudgeable" if row["errors"] else ""))
-        for c in row["changed"]:
-            print(f"  {c['case_id']:<28} {c['base']:>6} -> {c['head']:<6} "
-                  f"(expected {c['expected'] or '—'})")
-        return 0
+        return _report(ref)
+
+    if "--since" in argv:
+        spec = argv[argv.index("--since") + 1]
+        return _report(resolve_since(spec))
+
+    if "--check-pr" in argv:
+        return _check_pr(argv)
 
     data = build()
     js, md = render(data)

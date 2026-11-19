@@ -111,7 +111,7 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **88 assertions**,
+The assertion count grows as tables are added. As of this version: **90 assertions**,
 **37 case files** (31 corpus + 6 red-team), **5 tables**, **12 adversarial probes**.
 
 ### 1.5 One defect this method found in itself
@@ -400,6 +400,30 @@ decide".
 A fix that flips a case against a pinned row has to regenerate this table, which
 puts the flip in the diff where a reviewer sees it. CI runs `--check` on every
 push, so an undeclared flip fails the build instead of shipping quietly.
+
+### 1.14 Can a pull request move a verdict it never declared?
+
+Section 1.13 checks the table *after* a merge. That still leaves the merge
+itself as the place where a surprise can enter: two branches, each with a clean
+table, combine into a tree that moves a case neither branch declared.
+
+`python benchmarks/verdict_drift.py --check-pr` closes that gap. It takes the
+pull request's own base commit (CI passes `github.event.pull_request.base.sha`),
+runs the base engine and the branch engine over the same 37 cases, and requires
+every move it finds to appear in the declaration table — either as a row in
+`verdict_drift.json`, or as an explicit `declared_moves` entry. An undeclared
+move prints `UNDECLARED` and exits 1 with the file to edit.
+
+The gate is quiet on ordinary work by construction: on this repository today,
+`--since 2026-11-19` reads **0 changed / 37 unchanged**, and a branch that
+changes only its own tests or docs moves nothing. It is loud only where a rule
+change has consequences elsewhere — which is exactly the case a reviewer cannot
+check by reading the diff.
+
+`--since <date|ref>` answers the other half of the question a reviewer asks
+("what moved since I last looked?"), resolving a date to the last commit before
+it. Neither flag adds a dependency, and both run offline against a clone.
+
 
 ---
 
