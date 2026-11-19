@@ -24,6 +24,7 @@ from lgd_engine.judges.judge_pccp import JudgePccpScope  # noqa: E402
 from lgd_engine.judges.judge_mdr import JudgeMdrSignificance  # noqa: E402
 from lgd_engine.judges.judge_nmpa import JudgeNmpaChangeRegistration  # noqa: E402
 from lgd_engine.memory.localmem_min import LocalMemory  # noqa: E402
+from lgd_engine import templates                        # noqa: E402
 from lgd_engine import mcp_server                     # noqa: E402
 
 CASES = ROOT / "demo1" / "cases"
@@ -1117,6 +1118,55 @@ class TestRbac(unittest.TestCase):
                              "source_refs": [{"kind": "fda_pccp", "ref": "plan class 2"}]})
         body = json.loads(r["result"]["content"][0]["text"])
         self.assertEqual(body["report"]["verdict"], "go")
+
+
+class TestFillableTemplate(unittest.TestCase):
+    """`--template` / `--fields`: the first run should not be a guessing game.
+
+    A caller could already get a verdict, but a wrong key name or an unlisted
+    value came back as `hold` with `R-MAJ-06` — true, and useless as guidance.
+    The two read-only commands describe the input from the same corpus that
+    pins the vocabulary, and an unfilled template stays `hold`: an empty field
+    is an unanswered question, never a finding.
+    """
+
+    JUDGES = [
+        ("510k", Judge510kChange),
+        ("postmarket", JudgePostmarket),
+        ("pccp", JudgePccpScope),
+        ("mdr", JudgeMdrSignificance),
+        ("nmpa", JudgeNmpaChangeRegistration),
+    ]
+
+    def test_every_template_carries_the_keys_its_judge_demands(self):
+        for domain, cls in self.JUDGES:
+            rec = templates.template(domain, ROOT)
+            self.assertTrue(rec, f"{domain}: template is empty")
+            missing = set(getattr(cls, "REQUIRED_FIELDS", {})) - set(rec)
+            self.assertFalse(missing, f"{domain}: template lacks {sorted(missing)}")
+
+    def test_an_unfilled_template_is_never_a_go(self):
+        for domain, cls in self.JUDGES:
+            rec = templates.template(domain, ROOT)
+            rec.pop("expected_verdict", None)
+            eng = GateEngine()
+            eng.register(cls())
+            verdict = eng.evaluate(rec).verdict
+            self.assertNotEqual(verdict, "go",
+                                f"{domain}: a blank template was allowed through")
+
+    def test_the_field_list_names_the_words_the_cases_use(self):
+        text = templates.render_fields("510k", ROOT)
+        for case in templates.corpus_cases("510k", ROOT):
+            ct = case.get("change_type")
+            if isinstance(ct, str):
+                self.assertIn(ct, text, f"change_type {ct!r} missing from --fields")
+
+    def test_fields_are_derived_from_the_corpus_not_declared(self):
+        """Deleting the corpus must change the answer — that is what derived means."""
+        blank = templates.render_fields("510k", ROOT / "no-such-root")
+        self.assertIn("no corpus", blank)
+        self.assertNotIn("sufficient", blank)
 
 
 if __name__ == "__main__":
