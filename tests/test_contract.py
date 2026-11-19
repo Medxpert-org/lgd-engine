@@ -301,6 +301,56 @@ class TestNmpaJudge(unittest.TestCase):
         self.assertIn("N-MAJ-14", " ".join(r["rule"] for r in v["reasons"]))
 
 
+class TestPccpAbsence(unittest.TestCase):
+    """§515C asks whether the special controls are met, not whether anyone
+    remembered to negate them.
+
+    The four control rules tested `is False`, so an ABSENT field (the record says
+    nothing about the UDI, the validation, the version history or the class
+    description) read as compliance and returned go. Absence was the cheapest way
+    through the gate."""
+
+    def setUp(self):
+        from lgd_engine.judges.judge_pccp import JudgePccpScope
+        self.judge = JudgePccpScope()
+        self.ok = {
+            "pccp_authorized": True, "change_within_pccp_scope": True,
+            "affects_intended_use": False, "acceptance_criteria_met": True,
+            "remains_se_to_predicate": True, "change_class_described": True,
+            "validation_documented": True, "labeling_version_history": True,
+            "udi_updated": True, "change_type": "retrain_same_distribution",
+            "evidence_sufficiency": "sufficient", "jurisdiction": "FDA",
+            "source_refs": [{"kind": "doc", "ref": "r"}],
+        }
+
+    def test_a_complete_record_still_goes(self):
+        self.assertEqual(self.judge.evaluate(dict(self.ok))["verdict"], "go")
+
+    def test_an_absent_special_control_is_not_a_met_one(self):
+        cases = {
+            "change_class_described": "P-MAJ-02",
+            "validation_documented": "P-MAJ-03",
+            "labeling_version_history": "P-MAJ-05",
+            "udi_updated": "P-MAJ-06",
+        }
+        for field, rule in cases.items():
+            ctx = dict(self.ok)
+            del ctx[field]
+            v = self.judge.evaluate(ctx)
+            self.assertEqual(v["verdict"], "hold", f"{field} absent should hold")
+            self.assertIn(rule, " ".join(r["rule"] for r in v["reasons"]),
+                          f"{field} absent should name {rule}")
+
+    def test_explicit_false_and_absent_land_the_same_way(self):
+        """Otherwise the two spellings of 'not shown' get different verdicts."""
+        for field, rule in {"validation_documented": "P-MAJ-03",
+                            "udi_updated": "P-MAJ-06"}.items():
+            a = dict(self.ok); del a[field]
+            b = dict(self.ok); b[field] = False
+            self.assertEqual(self.judge.evaluate(a)["verdict"],
+                             self.judge.evaluate(b)["verdict"], field)
+
+
 class TestPostmarketJudge(unittest.TestCase):
     """Postmarket: the table used to ask only 'is there a recall?'."""
 
@@ -559,21 +609,28 @@ class TestCliContract(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertIn("[summary]", p.stdout)
 
+    def _assert_domain_all_match(self, sub, domain):
+        """Count the cases on disk instead of quoting the total.
+
+        These three tests used to assert a literal "7/7" / "9/9", which is the
+        same fixed tax the evaluator removed elsewhere: adding one legitimate case
+        broke the test for the wrong reason, and the literal told a reader nothing
+        about why the number was what it was."""
+        d = ROOT / "demo1" / sub
+        n = len(sorted(d.glob("*.json")))
+        p = self._run("--all", str(d), "--domain", domain)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn(f"{n}/{n} cases match expected verdict", p.stdout)
+
     def test_pccp_domain_matches_expected(self):
         """The PCCP case set ships with the package, so a stranger can run it too."""
-        p = self._run("--all", str(ROOT / "demo1" / "cases_pccp"), "--domain", "pccp")
-        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        self.assertIn("7/7", p.stdout)
+        self._assert_domain_all_match("cases_pccp", "pccp")
 
     def test_mdr_domain_matches_expected(self):
-        p = self._run("--all", str(ROOT / "demo1" / "cases_mdr"), "--domain", "mdr")
-        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        self.assertIn("9/9", p.stdout)
+        self._assert_domain_all_match("cases_mdr", "mdr")
 
     def test_nmpa_domain_matches_expected(self):
-        p = self._run("--all", str(ROOT / "demo1" / "cases_nmpa"), "--domain", "nmpa")
-        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        self.assertIn("9/9", p.stdout)
+        self._assert_domain_all_match("cases_nmpa", "nmpa")
 
     def test_single_case_is_deterministic(self):
         case = sorted(CASES.glob("*.json"))[0]
@@ -646,6 +703,9 @@ class TestRbac(unittest.TestCase):
         r = self._call("judge_pccp", role="read-only",
                        args={"pccp_authorized": True, "change_within_pccp_scope": True,
                              "affects_intended_use": False, "acceptance_criteria_met": True,
+                             "remains_se_to_predicate": True,
+                             "change_class_described": True, "validation_documented": True,
+                             "labeling_version_history": True, "udi_updated": True,
                              "change_type": "retrain_same_distribution",
                              "evidence_sufficiency": "sufficient", "jurisdiction": "FDA",
                              "source_refs": [{"kind": "fda_pccp", "ref": "plan class 2"}]})
