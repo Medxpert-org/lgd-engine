@@ -1,0 +1,22 @@
+{
+  "case_id": "PCCP-RED-07",
+  "_desensitized_from": "§515C(c) — a PCCP-modified version may not serve as a predicate",
+  "device_description": "竞争者拟以我们按 PCCP 修改后的新版本（而非清关时的原始版本）作为 predicate 提交 510(k)。",
+  "pccp_authorized": true,
+  "change_within_pccp_scope": true,
+  "change_class_described": true,
+  "affects_intended_use": false,
+  "acceptance_criteria_met": true,
+  "validation_documented": true,
+  "labeling_version_history": true,
+  "udi_updated": true,
+  "remains_se_to_predicate": true,
+  "pccp_modified_version_used_as_predicate": true,
+  "change_type": "predicate_use",
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "FDA",
+  "source_refs": [
+    {"kind": "statute", "ref": "FD&C Act §515C(c)"}
+  ],
+  "expected_verdict": "reject"
+}

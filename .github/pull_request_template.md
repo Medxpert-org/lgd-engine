@@ -54,3 +54,15 @@ branch protection requiring both green and reviewer approval. Confirm:
   `NOTICE` (the three laws / 有籍有证有门禁 / 触点即门).
 
 By submitting this pull request, I confirm the statements above are accurate.
+
+## 门禁自检（中文补充）
+
+- [ ] 本次变更是否触发 std-send-gate？是 / 否
+- [ ] 若触发，已跑：S1 / S3 / S4 / S5.1 / S6 / S7 / S8（逐项勾选）
+- [ ] 变更类别：文档 / 内容 · 代码 / 配置 · 门禁 / 治理
+- [ ] 一句话说明改了什么、为什么（见上方 Description）
+
+> 说明：本文件曾与 `.github/PULL_REQUEST_TEMPLATE.md`（仅大小写不同）同时存在于
+> 仓库索引，导致 Windows / macOS 克隆后工作区立即显示为脏。两个条目已合并至此，
+> 大小写重复的条目已从索引移除；GitHub 对模板文件名大小写不敏感，仍会自动识别。
+

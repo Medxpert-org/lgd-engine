@@ -1,0 +1,57 @@
+{
+  "_generated_by": "benchmarks/baseline_scorecard.py --write",
+  "corpora": {
+    "shipped": 37,
+    "absence": 846,
+    "absence_variants": [
+      "delete",
+      "null",
+      "empty-string",
+      "empty-list",
+      "empty-object",
+      "zero"
+    ]
+  },
+  "rows": [
+    {
+      "engine": "gate",
+      "shipped_agreement": 37,
+      "shipped_total": 37,
+      "absence_false_greens": 0,
+      "absence_total": 846,
+      "absence_same_as_gate": 846
+    },
+    {
+      "engine": "always_go",
+      "shipped_agreement": 7,
+      "shipped_total": 37,
+      "absence_false_greens": 702,
+      "absence_total": 846,
+      "absence_same_as_gate": 0
+    },
+    {
+      "engine": "keyword",
+      "shipped_agreement": 11,
+      "shipped_total": 37,
+      "absence_false_greens": 612,
+      "absence_total": 846,
+      "absence_same_as_gate": 84
+    },
+    {
+      "engine": "presence_checklist",
+      "shipped_agreement": 11,
+      "shipped_total": 37,
+      "absence_false_greens": 510,
+      "absence_total": 846,
+      "absence_same_as_gate": 170
+    },
+    {
+      "engine": "single_rule",
+      "shipped_agreement": 9,
+      "shipped_total": 37,
+      "absence_false_greens": 648,
+      "absence_total": 846,
+      "absence_same_as_gate": 48
+    }
+  ]
+}

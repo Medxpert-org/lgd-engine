@@ -1,0 +1,21 @@
+{
+  "case_id": "PCCP-YELLOW-02",
+  "_desensitized_from": "PCCP scope boundary, §515C consistency requirement",
+  "device_description": "Same cleared device; proposed change adds a second acquisition modality that the authorized plan never described.",
+  "pccp_authorized": true,
+  "change_within_pccp_scope": false,
+  "affects_intended_use": false,
+  "change_class_described": false,
+  "acceptance_criteria_met": true,
+  "remains_se_to_predicate": true,
+  "validation_documented": true,
+  "labeling_version_history": true,
+  "udi_updated": true,
+  "change_type": "add_new_modality",
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "FDA",
+  "source_refs": [
+    {"kind": "fda_pccp", "ref": "authorized PCCP, modification classes 1-2 only"}
+  ],
+  "expected_verdict": "hold"
+}

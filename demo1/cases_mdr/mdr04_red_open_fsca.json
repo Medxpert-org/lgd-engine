@@ -1,0 +1,19 @@
+{
+  "case_id": "MDR-RED-04",
+  "_desensitized_from": "MDR Art. 87 vigilance - change during an open field safety corrective action",
+  "device_description": "CE-marked Class IIb ventilator under an open field safety corrective action for alarm failure; a firmware change touching alarm logic is proposed for release.",
+  "change_category": "software_algorithm",
+  "affects_intended_purpose": false,
+  "affects_clinical_benefit": false,
+  "affects_safety_or_performance": true,
+  "new_clinical_data_required": false,
+  "verification_documented": true,
+  "fsca_open": true,
+  "declared_not_significant": false,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "EU",
+  "source_refs": [
+    {"kind": "vigilance", "ref": "FSCA-2026-0117 (open)"}
+  ],
+  "expected_verdict": "reject"
+}

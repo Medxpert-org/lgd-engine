@@ -1,0 +1,78 @@
+{
+  "_readme": "Every row states where OUR claim can be checked (our_proof, a command that exists in this repo) and how much we actually know about the other side (competitor_status). Statuses: observed = we looked and a source is given; inferred = our reasoning, not a measurement; unverified = we looked and did not find a public example, or we did not look — search_note must say which. A claim about a competitor may only be published as fact when status is observed AND a source is given.",
+  "searched_at": "2026-11-19",
+  "edges": [
+    {
+      "id": "E-MODEL",
+      "dimension": "does the verdict call a model",
+      "our_claim": "Verdicts are pure functions: no network, no model, byte-identical across reruns.",
+      "our_proof": "benchmarks/verdict_cost.py",
+      "competitor_status": "inferred",
+      "competitor_note": "Guardrail products generally classify free text with a model. We measured none of them; the cost claim is therefore about our input shape, not their throughput.",
+      "search_note": "Searched 2026-11-19 for open-source medical-device change-assessment engines; results were FDA 510(k) records plus one peer project whose charter does not describe model usage. No latency measurement of any product was obtained.",
+      "risk": "If read as a speed comparison against LLM guardrails it is a category error: they judge language, we judge a structured context."
+    },
+    {
+      "id": "E-BASIS",
+      "dimension": "does each rule name its legal basis",
+      "our_claim": "All 60 rules carry a LAW or DOCTRINE label, with DOCTRINE capped at 12.",
+      "our_proof": "benchmarks/clause_matrix.py",
+      "competitor_status": "observed",
+      "competitor_note": "OpenOnco documents a 'transparent YAML rule engine, not opaque ML' — so rule transparency is NOT unique to us. Its charter makes no claim about per-rule clause citations, but we did not read its rules in full.",
+      "search_note": "Read romeo111/OpenOnco CHARTER.md on 2026-11-19: transparent YAML rules, and an explicit statement that technical checks are not clinical validation.",
+      "source": "https://raw.githubusercontent.com/romeo111/OpenOnco/master/specs/CHARTER.md",
+      "risk": "Transparency exists elsewhere. Our narrower, defensible difference is clause-level citation plus a machine check that no rule lacks a basis — not 'we are the only auditable one'."
+    },
+    {
+      "id": "E-REPORT",
+      "dimension": "is the evaluation report generated or written",
+      "our_claim": "The report is emitted by the evaluator and a check fails when its numbers disagree with the repo.",
+      "our_proof": "benchmarks/eval_method_note.py",
+      "competitor_status": "unverified",
+      "competitor_note": "OpenOnco's charter commits to recording 'actual technical verification and unresolved content limitations', but says nothing about whether that record is generated or hand-written. We could not determine this from outside.",
+      "search_note": "Read the peer charter on 2026-11-19; it states a process obligation, not a mechanism. Nothing public showed whether its reports are derived from runs.",
+      "risk": "Our own drift (40/26 -> 54/30) is the only drift we can evidence; peers may already do this and we would not know."
+    },
+    {
+      "id": "E-GAPS",
+      "dimension": "are coverage gaps published",
+      "our_claim": "Nine intentionally unencoded clauses are published with a status and a reason.",
+      "our_proof": "docs/methods/coverage_gaps.json",
+      "competitor_status": "observed",
+      "competitor_note": "OpenOnco publishes scope limits and 'changes requiring a new scope assessment' — publishing boundaries is also not unique. Its list is human-readable prose; ours is machine-checked with a status enum.",
+      "search_note": "Read the peer charter on 2026-11-19; it lists five scope constraints and the change types that trigger reassessment.",
+      "source": "https://raw.githubusercontent.com/romeo111/OpenOnco/master/specs/CHARTER.md",
+      "risk": "Nine published gaps may be more than a competitor has; publishing is not the same as having few."
+    },
+    {
+      "id": "E-RERUN",
+      "dimension": "can an outsider re-run the claims",
+      "our_claim": "Twenty checks run from a fresh clone with no credentials.",
+      "our_proof": "benchmarks/eval_method_note.py",
+      "competitor_status": "unverified",
+      "competitor_note": "Solo-maintainer peer projects often rely on their own CI. We did not inspect any peer's test setup closely enough to say whether an outsider can reproduce its claims.",
+      "search_note": "Searched 2026-11-19; the peer's public charter makes no statement about reproducing verification from a clean clone.",
+      "risk": "Reproducibility is a property of our repo today, not a permanent lead."
+    },
+    {
+      "id": "E-CI",
+      "dimension": "are the claims enforced in public CI",
+      "our_claim": "58 contract assertions run on every push, including the three laws.",
+      "our_proof": "tests/test_contract.py",
+      "competitor_status": "unverified",
+      "competitor_note": "We did not audit any peer's CI configuration, nor whether its assertions cover behavioural laws rather than exit codes.",
+      "search_note": "Not inspected on 2026-11-19; this row requires opening a peer repository's workflow files, which we did not do.",
+      "risk": "A green CI badge proves assertions pass, not that the assertions are the right ones."
+    },
+    {
+      "id": "E-SCOPE",
+      "dimension": "is the scope limited to enumerated categories",
+      "our_claim": "Anything outside the tables returns hold; coverage is the bottleneck, stated as such.",
+      "our_proof": "lgd_engine/judges/base.py",
+      "competitor_status": "inferred",
+      "competitor_note": "General-purpose guardrails aim at open-ended text, so their scope is wider and shallower by design; the peer we read targets clinical decision support and explicitly disclaims device classification.",
+      "search_note": "Compared scopes on 2026-11-19 from the peer charter: it declares an intended use in clinician-facing decision support and disclaims any regulatory classification.",
+      "risk": "Wider scope may be the better product for a user who needs to catch something we never enumerated."
+    }
+  ]
+}

@@ -37,7 +37,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from .base import Reason, Evidence
+from .base import Reason, Evidence, is_unusable, misused
 
 
 _CRITICAL = [
@@ -53,7 +53,7 @@ _CRITICAL = [
         "detail": "Product/feature on US/EU market without premarket clearance "
                   "or PMA (No Marketing Application). Immediate removal from "
                   "distribution; cannot operate until gate passes.",
-        "when": lambda c: bool(c.get("marketing_without_license")),
+        "when": lambda c: c.get("marketing_without_license") is True,
     },
     {
         "rule": "PM-CRIT-03-death-or-serious-causal",
@@ -70,6 +70,18 @@ _CRITICAL = [
     },
 ]
 
+# Structural guard for the green side. Declared as a rule (with "guard": True,
+# no predicate) rather than inlined at the call site: an undeclared rule is an
+# unauditable one, and the clause matrix caught exactly that when this was first
+# written inline.
+_GUARD_MINOR = {
+    "rule": "PM-MIN-02-no-recall-recorded",
+    "guard": True,
+    "detail": "No recall class recorded and no escalation rule fired — logged as "
+              "record-and-continue: harm severity below the reportable threshold "
+              "and report volume below the watch threshold.",
+}
+
 _MAJOR = [
     {
         "rule": "PM-MAJ-01-class2-recall",
@@ -84,6 +96,22 @@ _MAJOR = [
                   "configuration (user tampering). Re-seat to validated config "
                   "and audit access controls.",
         "when": lambda c: c.get("fda_cause_type") == "user_config_tampering",
+    },
+    {
+        "rule": "PM-MAJ-04-reportable-event-without-recall",
+        "detail": "A record carries a death or a serious injury but no recall class "
+                  "has been assigned yet — that is an MDR-reportable event before it "
+                  "is a recall. 21 CFR 803.50 requires the manufacturer to report a "
+                  "device-related death or serious injury within 30 days; hold "
+                  "pending the report and the causality assessment.",
+        # Red-team finding: harm_severity=death with recall_class=none returned go
+        # with an EMPTY reason chain. The table only asked "is there a recall?",
+        # and the answer was no — but a death is reportable whether or not a recall
+        # has been opened.
+        "when": lambda c: (
+            c.get("harm_severity") in {"death", "serious_injury"}
+            and c.get("recall_class") == "none"
+        ),
     },
     {
         "rule": "PM-MAJ-03-high-report-volume",
@@ -122,12 +150,57 @@ _ENUM_AXES = (
 )
 
 
+REQUIRED_FIELDS = {"recall_class": str, "harm_severity": str}
+
+# Every boolean this judge reads with `is True` / `is False`. A record that
+# supplies "false" as a string has not said false -- it has left the fact out.
+BOOL_FIELDS = {
+    "marketing_without_license": bool,
+}
+
+# postmarket: which event was reported, and how bad it was.
+_CONTRACT = {
+    "rule": "REQ-01-input-contract",
+    "when": lambda c: bool((is_unusable(c, REQUIRED_FIELDS) or misused(c, BOOL_FIELDS))),
+    "guard": True,
+}
+
+
 class JudgePostmarket:
     domain = "postmarket-surveillance"
+    CONTRACT_RULE = _CONTRACT["rule"]
+    REQUIRED_FIELDS = REQUIRED_FIELDS
 
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
+        missing = (is_unusable(ctx, REQUIRED_FIELDS) or misused(ctx, BOOL_FIELDS))
+        if missing:
+            # A critical veto outranks an incomplete record. Checking the contract
+            # first let a record that is missing a required field soften a
+            # critical violation into a hold (demo1 INV veto-not-softened).
+            for rule in _CRITICAL:
+                try:
+                    if rule["when"](ctx):
+                        return {"verdict": "reject",
+                                "reasons": [
+                                    {"rule": rule["rule"], "level": "critical",
+                                     "detail": rule["detail"]},
+                                    {"rule": _CONTRACT["rule"], "level": "major",
+                                     "detail": "required input absent: "
+                                               + ", ".join(missing)},
+                                ],
+                                "evidence": []}
+                except Exception:
+                    continue
+            # An incomplete record is not a compliant record. Judging one reads
+            # "nobody supplied this" as "nobody objected to this" -- the exact
+            # shape behind five red-team defects (docs/methods/RedTeam_Probes.md).
+            return {"verdict": "hold",
+                    "reasons": [{"rule": _CONTRACT["rule"], "level": "major",
+                                 "detail": "required input absent: "
+                                           + ", ".join(missing)}],
+                    "evidence": []}
         # A blank ref is not evidence (class fix, 2026-11-04): {"kind": "",
         # "ref": ""} used to satisfy the law-2 count here exactly as it did in
         # the 510(k) judge before probe B3 closed it there.
@@ -197,6 +270,15 @@ class JudgePostmarket:
                        "to hold pending documented evidence.",
             ))
             verdict = "hold"
+
+        # A go must still name its rule — not to escalate, but so a reader can see
+        # what was considered. Silence was indistinguishable from "no rule applies"
+        # and from "the table has nothing for this field".
+        if verdict == "go" and not reasons:
+            reasons.append(Reason(
+                rule=_GUARD_MINOR["rule"], level="minor",
+                detail=_GUARD_MINOR["detail"],
+            ))
 
         return {
             "verdict": verdict,

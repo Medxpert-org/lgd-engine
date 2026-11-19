@@ -1,0 +1,14 @@
+{
+  "case_id": "NMPA-RED-04",
+  "_desensitized_from": "47号令 以备案规避变更注册",
+  "device_description": "适用范围由成人扩展至儿童；内部按登记事项备案提交，试图跳过技术审评。",
+  "has_registration_certificate": true,
+  "change_fields": ["scope_of_application"],
+  "requested_path": "filing",
+  "safety_effectiveness_assessed": true,
+  "technical_docs_updated": true,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "NMPA",
+  "source_refs": [{"kind": "internal", "ref": "备案材料 CN-77"}],
+  "expected_verdict": "reject"
+}

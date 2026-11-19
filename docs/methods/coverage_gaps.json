@@ -1,0 +1,69 @@
+{
+  "_purpose": "Provisions we know exist and deliberately do not encode. Published so a reviewer can see the boundary of the claim instead of discovering it. Every entry carries a status and a reason; `tests/test_contract.py::TestCoverageGaps` fails if a field is missing or a status is outside the allowed set.",
+  "_status_values": ["out_of_scope", "deferred", "optional_by_law"],
+  "gaps": [
+    {
+      "id": "G-NMPA-30DAY",
+      "jurisdiction": "NMPA",
+      "provision": "47号令 第七十九条 — 其他变化，30 日内备案",
+      "status": "out_of_scope",
+      "reason": "The table judges which route applies, not whether the clock was met. No days_since_change field exists, so a late filing cannot be detected — adding one would turn a routing judge into a compliance clock, and the caller's timestamps would have to be trusted."
+    },
+    {
+      "id": "G-NMPA-SUBSTANCE",
+      "jurisdiction": "NMPA",
+      "provision": "47号令 第七十九条 第一款 — 实质性变化且可能影响安全有效",
+      "status": "deferred",
+      "reason": "The substantive judgement is carried by the caller's safety_effectiveness_assessed flag; the table accepts the conclusion, not the argument behind it."
+    },
+    {
+      "id": "G-NMPA-LOCAL",
+      "jurisdiction": "NMPA",
+      "provision": "各省对一类器械备案的实施细则",
+      "status": "out_of_scope",
+      "reason": "Provincial implementing rules differ and are outside the central-law basis we verified; encoding them would mean picking provinces."
+    },
+    {
+      "id": "G-MDR-TRANSITION",
+      "jurisdiction": "EU",
+      "provision": "MDR Art.120(3) as amended by Regulation (EU) 2023/607 — 2027-12-31 / 2028-12-31 endpoints",
+      "status": "out_of_scope",
+      "reason": "The table judges significance, not transitional validity. Validity depends on certificate dates the case JSON does not carry."
+    },
+    {
+      "id": "G-MDR-CHART-C",
+      "jurisdiction": "EU",
+      "provision": "MDCG 2020-3 rev.1 — software change decision support",
+      "status": "deferred",
+      "reason": "Chart C is guidance on how to reach the significance conclusion; the rules encode the criteria (design/intended-purpose, cumulative), not the flowchart."
+    },
+    {
+      "id": "G-FDA-NOTIFY",
+      "jurisdiction": "FDA",
+      "provision": "FD&C §515C(a)(3)/(b)(3) — labeling, notification if the device does not function as intended, performance requirements",
+      "status": "optional_by_law",
+      "reason": "The statute says the Secretary *may* require these; a plan without a notification clause is not thereby unlawful."
+    },
+    {
+      "id": "G-FDA-QSUB",
+      "jurisdiction": "FDA",
+      "provision": "FDA PCCP guidance (4 Dec 2024) — continuous learning / automatic update Q-Sub discussion",
+      "status": "optional_by_law",
+      "reason": "A recommendation, not an obligation; making it a rule would manufacture a requirement the guidance does not impose."
+    },
+    {
+      "id": "G-FDA-OTHER-CLASSES",
+      "jurisdiction": "FDA",
+      "provision": "21 CFR 892.2055 之外的 PCCP 器械分类特殊控制",
+      "status": "deferred",
+      "reason": "Each classification regulation carries its own special controls; only 892.2055 has been read end to end so far."
+    },
+    {
+      "id": "G-510K-GUIDE",
+      "jurisdiction": "FDA",
+      "provision": "510(k) 变更分类之外的判据（如 510(k) 摘要与 SE 论证细则）",
+      "status": "out_of_scope",
+      "reason": "This table answers 'is a new submission needed', not 'is the submission adequate'."
+    }
+  ]
+}

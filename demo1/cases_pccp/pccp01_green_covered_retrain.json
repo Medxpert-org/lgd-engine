@@ -1,0 +1,22 @@
+{
+  "case_id": "PCCP-GREEN-01",
+  "_desensitized_from": "public PCCP structure per 21 CFR 892.2055 special controls",
+  "device_description": "Class II radiological ML quantitative imaging software cleared with an authorized PCCP; routine retraining on data from the same acquisition distribution.",
+  "pccp_authorized": true,
+  "change_within_pccp_scope": true,
+  "affects_intended_use": false,
+  "change_class_described": true,
+  "acceptance_criteria_met": true,
+  "remains_se_to_predicate": true,
+  "validation_documented": true,
+  "labeling_version_history": true,
+  "udi_updated": true,
+  "change_type": "retrain_same_distribution",
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "FDA",
+  "source_refs": [
+    {"kind": "fda_pccp", "ref": "authorized PCCP, modification class 2 (routine retraining)"},
+    {"kind": "internal_verification", "ref": "V&V report, acceptance criteria table"}
+  ],
+  "expected_verdict": "go"
+}

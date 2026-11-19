@@ -1,0 +1,19 @@
+{
+  "case_id": "MDR-GREEN-01",
+  "_desensitized_from": "MDCG 2020-3 rev.1 - changes that are not significant",
+  "device_description": "CE-marked Class IIa infusion pump; labelling clarification of an already-cleared warning, no claim change.",
+  "change_category": "labeling_clarification",
+  "affects_intended_purpose": false,
+  "affects_clinical_benefit": false,
+  "affects_safety_or_performance": false,
+  "new_clinical_data_required": false,
+  "verification_documented": true,
+  "fsca_open": false,
+  "declared_not_significant": false,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "EU",
+  "source_refs": [
+    {"kind": "internal_verification", "ref": "labelling diff review, no claim change"}
+  ],
+  "expected_verdict": "go"
+}

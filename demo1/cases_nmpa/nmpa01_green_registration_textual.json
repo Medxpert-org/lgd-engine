@@ -1,0 +1,14 @@
+{
+  "case_id": "NMPA-GREEN-01",
+  "_desensitized_from": "47号令 登记事项变更（备案）",
+  "device_description": "已取得二类医疗器械注册证；生产地址仅作文字性更正，无实质变化。",
+  "has_registration_certificate": true,
+  "change_fields": ["production_address_textual"],
+  "requested_path": "filing",
+  "safety_effectiveness_assessed": true,
+  "technical_docs_updated": true,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "NMPA",
+  "source_refs": [{"kind": "nmpa_registration", "ref": "注册证 苏械注准2026xxxx"}],
+  "expected_verdict": "go"
+}
