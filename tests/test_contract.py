@@ -890,6 +890,72 @@ class TestRepresentation(unittest.TestCase):
         self.assertEqual([], missing,
                          "a boolean is read but never declared in REQUIRED_FIELDS/BOOL_FIELDS")
 
+class TestVerdictDrift(unittest.TestCase):
+    """A release may change how a field is read without changing what anything decides.
+
+    The other benchmarks measure one version of the engine. This one measures the
+    distance between two versions over the same 37 cases, and holds three claims:
+
+    * the declared baseline table reproduces exactly (a flip nobody declared turns
+      this red, so "harmless" fixes stop being harmless silently);
+    * the instrument can actually see a flip -- at #30 seven red-team cases still
+      earned `go`, and every one of them now lands on its declared expectation;
+    * the two most recent releases moved no shipped verdict at all.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "verdict_drift", ROOT / "benchmarks" / "verdict_drift.py")
+        cls.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.mod)
+        cls.data = cls.mod.build()
+        cls.declared = json.loads((ROOT / "docs" / "methods" / "verdict_drift.json")
+                                  .read_text(encoding="utf-8"))
+
+    def _row(self, base):
+        for row in self.data["baselines"]:
+            if row["base"] == base:
+                return row
+        raise AssertionError("no measured row for " + base)
+
+    def test_declared_baselines_reproduce(self):
+        js, md = self.mod.render(self.data)
+        self.assertEqual(
+            js, (ROOT / "docs" / "methods" / "verdict_drift.json").read_text(encoding="utf-8"),
+            "verdict_drift.json is stale — run `python benchmarks/verdict_drift.py --write`")
+        self.assertEqual(
+            md, (ROOT / "docs" / "methods" / "Verdict_Drift.md").read_text(encoding="utf-8"),
+            "Verdict_Drift.md is stale — run `python benchmarks/verdict_drift.py --write`")
+        for row in self.data["baselines"]:
+            declared = next((d for d in self.declared["baselines"]
+                             if d["base"] == row["base"]), None)
+            self.assertIsNotNone(declared, f"no declared row for {row['base']}")
+            self.assertEqual(self.mod._strip(declared), self.mod._strip(row),
+                             f"verdicts moved at {row['base']} without being declared")
+
+    def test_the_instrument_actually_sees_a_flip(self):
+        row = self._row("1bc5340")
+        self.assertGreater(len(row["changed"]), 0, "the drift measure reports zero for every "
+                             "ref, which would make it a no-op rather than a clean history")
+        for c in row["changed"]:
+            self.assertEqual("hold", c["head"], f"{c['case_id']} is not on its declared answer")
+            self.assertEqual(c["head"], c["expected"],
+                             f"{c['case_id']} moved, but not to what the case declares")
+            self.assertTrue((c["case_id"] or "").upper().find("-RED-") >= 0,
+                            f"{c['case_id']} moved and is not a red-team case — unexpected")
+
+    def test_no_shipped_verdict_moved_since_44_and_45(self):
+        for base in ("28fe22b", "58c0369"):
+            row = self._row(base)
+            self.assertEqual([], row["changed"],
+                             f"a shipped verdict moved against {base}: "
+                             f"{[c['case_id'] for c in row['changed']]}")
+            self.assertEqual([], sorted(row["errors"]), f"{base}: a case became unjudgeable")
+            self.assertEqual(self.data["cases"], row["measured"])
+
+
 class TestMetadataConsistency(unittest.TestCase):
     """The citation file is the first thing a stranger reads; it must not lag.
 

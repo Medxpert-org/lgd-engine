@@ -111,7 +111,7 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **85 assertions**,
+The assertion count grows as tables are added. As of this version: **88 assertions**,
 **37 case files** (31 corpus + 6 red-team), **5 tables**, **12 adversarial probes**.
 
 ### 1.5 One defect this method found in itself
@@ -373,6 +373,33 @@ boolean it reads with `is True` / `is False`, and `misused()` puts those under t
 same guard as the contract, so a mistyped flag yields `hold` rather than a verdict
 built on a string. A test scans judge source for booleans that are read but not
 declared, so the next field cannot be added without a decision.
+
+### 1.13 Did the last fix flip somebody else's verdict?
+
+Every measurement above looks at one version of the engine. None of them could
+answer the question a maintainer is actually asked: this release changed how a
+field is read -- which *other* verdicts moved?
+
+`benchmarks/verdict_drift.py` runs two engines over the same 37 case files: a
+pinned git ref, checked out into a throwaway worktree, and the working tree. The
+result is published as `docs/methods/verdict_drift.json` and checked by the test
+suite, not remembered:
+
+| pinned ref | verdicts changed | what the row proves |
+|---|---|---|
+| `1bc5340` (#30) | **7** -- all `go -> hold`, every one a red-team case | the instrument can see a flip; a tool that reports zero for every ref would be broken, not clean |
+| `28fe22b` (#44) | **0** of 37 | canonicalising spelling moved no shipped verdict |
+| `58c0369` (#45) | **0** of 37 | the anchor for this generation |
+
+The seven moves are the point of the row. At #30, cases whose own JSON declares
+`hold` were still earning `go`; they are the probes that later became the
+absence contract. Naming them one by one from a checkout, rather than from
+memory, is the difference between "we fixed it" and "we can show what it used to
+decide".
+
+A fix that flips a case against a pinned row has to regenerate this table, which
+puts the flip in the diff where a reviewer sees it. CI runs `--check` on every
+push, so an undeclared flip fails the build instead of shipping quietly.
 
 ---
 
