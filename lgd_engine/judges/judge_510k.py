@@ -37,7 +37,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from .base import DomainJudge, JudgeVerdict, Reason, Evidence, is_unusable
+from .base import DomainJudge, JudgeVerdict, Reason, Evidence, is_unusable, misused
 
 
 # ----- rule tables, distilled from the 10 verified cases ------------------
@@ -202,10 +202,17 @@ _ENUM_AXES = (
 
 REQUIRED_FIELDS = {"change_type": str, "predicate_unchanged": bool, "evidence_sufficiency": str}
 
+# Every boolean this judge reads with `is True` / `is False`. A record that
+# supplies "false" as a string has not said false -- it has left the fact out.
+BOOL_FIELDS = {
+    "equivalence_declared": bool,
+    "predicate_unchanged": bool,
+}
+
 # 510(k): the one field without which no change can be classified at all.
 _CONTRACT = {
     "rule": "REQ-01-input-contract",
-    "when": lambda c: bool(is_unusable(c, REQUIRED_FIELDS)),
+    "when": lambda c: bool((is_unusable(c, REQUIRED_FIELDS) or misused(c, BOOL_FIELDS))),
     "guard": True,
 }
 
@@ -225,7 +232,7 @@ class Judge510kChange:
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
-        missing = is_unusable(ctx, REQUIRED_FIELDS)
+        missing = (is_unusable(ctx, REQUIRED_FIELDS) or misused(ctx, BOOL_FIELDS))
         if missing:
             # A critical veto outranks an incomplete record. Checking the contract
             # first let a record that is missing a required field soften a

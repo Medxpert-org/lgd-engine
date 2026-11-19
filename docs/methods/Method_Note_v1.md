@@ -111,7 +111,7 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **82 assertions**,
+The assertion count grows as tables are added. As of this version: **85 assertions**,
 **37 case files** (31 corpus + 6 red-team), **5 tables**, **12 adversarial probes**.
 
 ### 1.5 One defect this method found in itself
@@ -344,6 +344,35 @@ from *not objected* -- which is exactly the failure this table exists to name.
 The baselines are stand-ins for the shortcuts a hurried integration converges on,
 not products, and no vendor's behaviour is claimed. A fifth shortcut, or a real
 tool, is one dictionary entry away and is scored by the same command.
+
+### 1.12 The same fact, written differently
+
+Deleting a field was attack one. Every field present, only the spelling changed,
+is attack two -- and it is the one a real integration hits first, because a
+downstream system that writes `CLASS1` instead of `class1` has not lied about
+anything.
+
+`benchmarks/representation_sweep.py` re-runs each of the 37 cases with every
+scalar rewritten, 1725 variants, and holds two promises:
+
+| family | variants | promised outcome | measured |
+|---|---|---|---|
+| lexical (case, padding, spacing) | ~1400 | identical verdict | **0 flips** |
+| boolean written as string / int | ~330 | same or *more cautious*, never `go`, never `reject` | **0 go · 0 reject · 137 hold** |
+
+Both promises failed before this section existed: 9 variants turned a `reject`
+or `hold` into `go`, and 6 turned a `go` into `reject`. The causes were two, both
+old bugs wearing new clothes: rules compared exact tokens, so casing decided
+semantics; and a boolean written `"true"` is a type error that reads as truthy
+to a plain `if`, so a *typo* could manufacture a veto.
+
+The fixes are one boundary and one declaration. Strings are canonicalised once at
+the engine entry (strip, collapse spacing, casefold) -- no field dropped, no value
+coerced, and a wrong type is still not repaired. Each judge now declares every
+boolean it reads with `is True` / `is False`, and `misused()` puts those under the
+same guard as the contract, so a mistyped flag yields `hold` rather than a verdict
+built on a string. A test scans judge source for booleans that are read but not
+declared, so the next field cannot be added without a decision.
 
 ---
 

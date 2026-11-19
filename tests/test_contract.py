@@ -845,6 +845,51 @@ class TestBaselineScorecard(unittest.TestCase):
                 self.assertGreater(row["absence_false_greens"], 0,
                                    "a baseline with no false greens means the corpus is too easy")
 
+class TestRepresentation(unittest.TestCase):
+    """The same fact, spelled differently, must not decide differently.
+
+    Absence was one attack surface; this is the other one. Every field present,
+    every value present, only the spelling changed. Two promises, both checked:
+
+    * lexical variants (casing, padding, spacing) must produce an *identical*
+      verdict -- otherwise the tool is deciding on the spelling;
+    * a boolean written as "true" may answer *the same* or *more cautiously*
+      (hold), never `go` (the string is not a permission) and never `reject`
+      (the string is not a veto).
+    """
+
+    def setUp(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "representation_sweep", ROOT / "benchmarks" / "representation_sweep.py")
+        self.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.mod)
+
+    def test_spelling_does_not_decide(self):
+        res = self.mod.measure()
+        self.assertGreater(res["variants"], 1000)
+        self.assertEqual([], res["lexical_flips"][:5], "a casing or spacing change moved a verdict")
+
+    def test_a_typed_string_is_neither_permission_nor_veto(self):
+        res = self.mod.measure()
+        self.assertEqual([], res["type_to_go"][:5],
+                         "a boolean written as a string was read as a permission")
+        self.assertEqual([], res["type_to_reject"][:5],
+                         "a boolean written as a string was read as a veto")
+
+    def test_every_boolean_a_rule_reads_is_declared(self):
+        import re
+        """Guards against the next omission: the declaration is checked against source."""
+        missing = []
+        for path in sorted((ROOT / "lgd_engine" / "judges").glob("judge_*.py")):
+            src = path.read_text(encoding="utf-8")
+            declared = set(re.findall(r'^\s*"([A-Za-z_]+)": bool', src, re.M))
+            read = set(re.findall(r'\.get\("([A-Za-z_]+)"\)\s+is\s+(?:True|False)', src))
+            for key in sorted(read - declared):
+                missing.append(f"{path.name}: {key}")
+        self.assertEqual([], missing,
+                         "a boolean is read but never declared in REQUIRED_FIELDS/BOOL_FIELDS")
+
 class TestMetadataConsistency(unittest.TestCase):
     """The citation file is the first thing a stranger reads; it must not lag.
 
