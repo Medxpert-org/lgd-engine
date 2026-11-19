@@ -5,9 +5,9 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=feat/fillable-template head=d7d32bf checks=19 passed=19 cases=37 assertions=94 -->`
+`<!-- eval-report branch=feat/fillable-template head=3b02264 checks=19 passed=19 cases=37 assertions=94 -->`
 
-Run at 2026-11-19 06:22 UTC against `feat/fillable-template` at `d7d32bf`, from a fresh clone.
+Run at 2026-11-19 06:23 UTC against `feat/fillable-template` at `3b02264`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
