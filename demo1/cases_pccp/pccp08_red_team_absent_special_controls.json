@@ -1,0 +1,16 @@
+{
+  "case_id": "FDA-PCCP-RED-01",
+  "_desensitized_from": "红队自造：PCCP 文本未声明 UDI 与验证记录，按缺失即合规放行",
+  "device_description": "已获授权 PCCP 的 AI 影像辅助软件；本次为同分布内再训练，但记录中未声明设计验证与 UDI 重新生成。",
+  "pccp_authorized": true,
+  "change_within_pccp_scope": true,
+  "affects_intended_use": false,
+  "acceptance_criteria_met": true,
+  "remains_se_to_predicate": true,
+  "change_class_described": true,
+  "change_type": "retrain_same_distribution",
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "FDA",
+  "source_refs": [{"kind": "statute", "ref": "21 CFR 892.2055"}],
+  "expected_verdict": "hold"
+}

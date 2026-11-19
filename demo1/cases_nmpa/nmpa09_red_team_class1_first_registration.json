@@ -1,0 +1,15 @@
+{
+  "case_id": "NMPA-RED-02",
+  "_desensitized_from": "红队自造：第一类器械申请首次注册（该类别走首次备案）",
+  "device_description": "拟上市的第一类医疗器械；按首次注册路径提交，而非首次备案。",
+  "has_registration_certificate": true,
+  "device_class": "I",
+  "change_fields": ["registrant_address"],
+  "requested_path": "new_registration",
+  "safety_effectiveness_assessed": true,
+  "technical_docs_updated": true,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "NMPA",
+  "source_refs": [{"kind": "nmpa_filing_voucher", "ref": "一类器械备案凭证（脱敏）"}],
+  "expected_verdict": "hold"
+}

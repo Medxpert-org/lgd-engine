@@ -37,7 +37,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from .base import DomainJudge, JudgeVerdict, Reason, Evidence
+from .base import DomainJudge, JudgeVerdict, Reason, Evidence, is_unusable, misused
 
 
 # ----- rule tables, distilled from the 10 verified cases ------------------
@@ -123,6 +123,17 @@ _MAJOR_RULES = [
         ),
     },
     {
+        "rule": "R-MAJ-09-label-expansion-new-claim",
+        "detail": "Labelling that adds or expands a claim (new indication, new "
+                  "population, stronger performance statement) changes the intended "
+                  "use — 21 CFR 807.81(a)(3)(i) puts it on the new-510(k) side, not "
+                  "on the label-correction side. Hold pending equivalence review.",
+        # Red-team finding: `label_expansion` sat in KNOWN_CHANGE_TYPES but no rule
+        # claimed it, so it returned go with an EMPTY reason chain — a value the
+        # vocabulary recognises and the table never places.
+        "when": lambda c: c.get("change_type") == "label_expansion",
+    },
+    {
         "rule": "R-MAJ-08-predicate-changed",
         # The comparison basis moved, so equivalence is unproven — this is the
         # *more* dangerous direction and used to score better than an unchanged
@@ -154,6 +165,17 @@ _MINOR_RULES = [
 # is unknown to the rule table, and unknown must not ride out as a silent go
 # (red team S7 2026-11-04, F-2: 87.5% of unknown change types returned GO with
 # zero reasons and empty evidence).
+# Structural guard, not a predicate on facts: it fires when NO rule claimed the
+# change. Declared here (rather than inlined at the call site) so the clause matrix
+# and the basis test can see it — an undeclared rule is an unauditable one.
+_GUARD_RULE = {
+    "rule": "R-MAJ-10-no-rule-claims-this-change",
+    "guard": True,
+    "detail": "The change type is in the vocabulary but no rule places it on either "
+              "side — a verdict that cannot name its rule is not a verdict; hold "
+              "pending classification.",
+}
+
 KNOWN_CHANGE_TYPES = {
     "label_correction", "label_clarification", "label_expansion",
     "function_config_change", "process_change_control",
@@ -178,18 +200,65 @@ _ENUM_AXES = (
 )
 
 
+REQUIRED_FIELDS = {"change_type": str, "predicate_unchanged": bool, "evidence_sufficiency": str}
+
+# Every boolean this judge reads with `is True` / `is False`. A record that
+# supplies "false" as a string has not said false -- it has left the fact out.
+BOOL_FIELDS = {
+    "equivalence_declared": bool,
+    "predicate_unchanged": bool,
+}
+
+# 510(k): the one field without which no change can be classified at all.
+_CONTRACT = {
+    "rule": "REQ-01-input-contract",
+    "when": lambda c: bool((is_unusable(c, REQUIRED_FIELDS) or misused(c, BOOL_FIELDS))),
+    "guard": True,
+}
+
+
 class Judge510kChange:
+
     """DomainJudge adapter for 510(k) change-classification.
 
     Instantiate and pass into GateEngine, or call .evaluate(ctx) directly.
     """
 
+    CONTRACT_RULE = _CONTRACT["rule"]
+    REQUIRED_FIELDS = REQUIRED_FIELDS
     domain = "510k-change-classification"
 
     # Friendly public handle, used by CLI / web layer.
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
+        missing = (is_unusable(ctx, REQUIRED_FIELDS) or misused(ctx, BOOL_FIELDS))
+        if missing:
+            # A critical veto outranks an incomplete record. Checking the contract
+            # first let a record that is missing a required field soften a
+            # critical violation into a hold (demo1 INV veto-not-softened).
+            for rule in _CRITICAL_RULES:
+                try:
+                    if rule["when"](ctx):
+                        return {"verdict": "reject",
+                                "reasons": [
+                                    {"rule": rule["rule"], "level": "critical",
+                                     "detail": rule["detail"]},
+                                    {"rule": _CONTRACT["rule"], "level": "major",
+                                     "detail": "required input absent: "
+                                               + ", ".join(missing)},
+                                ],
+                                "evidence": []}
+                except Exception:
+                    continue
+            # An incomplete record is not a compliant record. Judging one reads
+            # "nobody supplied this" as "nobody objected to this" -- the exact
+            # shape behind five red-team defects (docs/methods/RedTeam_Probes.md).
+            return {"verdict": "hold",
+                    "reasons": [{"rule": _CONTRACT["rule"], "level": "major",
+                                 "detail": "required input absent: "
+                                           + ", ".join(missing)}],
+                    "evidence": []}
 
         # External evidence refs passed in. A blank ref is not evidence: before
         # this filter, {"kind": "", "ref": ""} satisfied the L2 count and let a
@@ -353,6 +422,19 @@ class Judge510kChange:
                            "even with equivalence data.",
                 ))
                 verdict = "hold"
+
+        # A go must be able to say why. Red-teaming found four change types that are
+        # in KNOWN_CHANGE_TYPES yet claimed only *conditionally* (design_defect,
+        # material_nonconforming, process_change_control, maintenance_execution):
+        # given neutral facts they matched nothing and returned go with an EMPTY
+        # reason chain. Unknown values were already blocked; known-but-unplaced ones
+        # were not. This closes the class instead of adding one rule per value.
+        if verdict == "go" and not reasons:
+            reasons.append(Reason(
+                rule=_GUARD_RULE["rule"], level="major",
+                detail=(f"change_type {ct!r}: " + _GUARD_RULE["detail"]),
+            ))
+            verdict = "hold"
 
         v = JudgeVerdict(verdict=verdict, reasons=reasons, evidence=evidence)
         return v.to_dict()

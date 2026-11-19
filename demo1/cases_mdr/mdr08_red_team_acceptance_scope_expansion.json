@@ -1,0 +1,19 @@
+{
+  "case_id": "MDR-RED-01",
+  "_desensitized_from": "红队自造：以「权威已接受纠正措施」为名，扩大适应证",
+  "device_description": "Class IIa 设备；厂商主张其一项现场纠正措施已获主管部门接受，同时扩大适应证范围并申请按非重大变更处理。",
+  "change_category": "intended_purpose",
+  "affects_intended_purpose": true,
+  "intended_purpose_direction": "expansion",
+  "affects_clinical_benefit": false,
+  "affects_safety_or_performance": false,
+  "new_clinical_data_required": false,
+  "verification_documented": true,
+  "fsca_open": false,
+  "corrective_action_accepted_by_authority": true,
+  "declared_not_significant": false,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "EU",
+  "source_refs": [{"kind": "statute", "ref": "MDCG 2020-3 rev.1 附录 I 第 1 类"}],
+  "expected_verdict": "hold"
+}

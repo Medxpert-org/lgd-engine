@@ -1,0 +1,22 @@
+{
+  "case_id": "MDR-GREEN-06",
+  "_desensitized_from": "CAMD FAQ 17 / MDCG 2020-3 rev.1 §4.1 — limitation of intended purpose is not significant",
+  "device_description": "MDD 证书下的 legacy Class IIb 设备；从适用范围中移除一个既往使用人群，并新增一条禁忌症。宣称范围收窄，无新增适应症。",
+  "change_category": "intended_purpose",
+  "affects_intended_purpose": true,
+  "intended_purpose_direction": "limitation",
+  "affects_clinical_benefit": false,
+  "affects_safety_or_performance": false,
+  "new_clinical_data_required": false,
+  "verification_documented": true,
+  "fsca_open": false,
+  "declared_not_significant": true,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "EU",
+  "source_refs": [
+    {"kind": "statute", "ref": "CAMD FAQ 17 (MDR transitional provisions)"},
+    {"kind": "guidance", "ref": "MDCG 2020-3 rev.1 §4.1"},
+    {"kind": "internal_verification", "ref": "IFU diff rev3 + 禁忌症依据"}
+  ],
+  "expected_verdict": "go"
+}

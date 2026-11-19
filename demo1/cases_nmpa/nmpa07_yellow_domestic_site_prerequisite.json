@@ -1,0 +1,18 @@
+{
+  "case_id": "NMPA-YELLOW-07",
+  "_desensitized_from": "47号令 第七十九条：境内生产地址变更须先办生产许可变更后备案",
+  "device_description": "已注册二类设备；生产地址从 A 厂区迁至 B 厂区，申报路径填「仅备案」。",
+  "has_registration_certificate": true,
+  "device_class": "II",
+  "change_fields": ["domestic_manufacturing_site"],
+  "requested_path": "filing",
+  "safety_effectiveness_assessed": true,
+  "technical_docs_updated": true,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "NMPA",
+  "source_refs": [
+    {"kind": "statute", "ref": "《医疗器械注册与备案管理办法》第七十九条"},
+    {"kind": "internal_verification", "ref": "迁址说明 rev1"}
+  ],
+  "expected_verdict": "hold"
+}

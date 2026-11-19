@@ -1,0 +1,22 @@
+{
+  "case_id": "PCCP-RED-06",
+  "_desensitized_from": "§515C(b)(2)(B) two cumulative conditions for the 510(k) route",
+  "device_description": "已清关的放射影像定量软件（带 PCCP）；本次更新虽在计划描述的范围内，但改变了与predicate的等同性基础（新增输出类别，predicate 不具备）。",
+  "pccp_authorized": true,
+  "change_within_pccp_scope": true,
+  "change_class_described": true,
+  "affects_intended_use": false,
+  "acceptance_criteria_met": true,
+  "validation_documented": true,
+  "labeling_version_history": true,
+  "udi_updated": true,
+  "remains_se_to_predicate": false,
+  "change_type": "algorithm_update",
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "FDA",
+  "source_refs": [
+    {"kind": "statute", "ref": "FD&C Act §515C(b)(2)(A)-(B)"},
+    {"kind": "regulation", "ref": "21 CFR 892.2055(b)(2)"}
+  ],
+  "expected_verdict": "reject"
+}

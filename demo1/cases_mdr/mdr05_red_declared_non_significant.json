@@ -1,0 +1,19 @@
+{
+  "case_id": "MDR-RED-05",
+  "_desensitized_from": "MDCG 2020-3 - significance criteria cannot be declared away",
+  "device_description": "CE-marked Class IIa device; indication extension filed internally as a 'non-significant labelling update' to avoid notified-body assessment.",
+  "change_category": "intended_purpose",
+  "affects_intended_purpose": true,
+  "affects_clinical_benefit": false,
+  "affects_safety_or_performance": false,
+  "new_clinical_data_required": false,
+  "verification_documented": true,
+  "fsca_open": false,
+  "declared_not_significant": true,
+  "evidence_sufficiency": "sufficient",
+  "jurisdiction": "EU",
+  "source_refs": [
+    {"kind": "internal_verification", "ref": "change note CN-441, declared non-significant"}
+  ],
+  "expected_verdict": "reject"
+}
