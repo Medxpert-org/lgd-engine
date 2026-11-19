@@ -112,7 +112,7 @@ If the page showed a verdict the code does not produce, the `--check` step turns
 That constraint is the point: a comparison table can say anything, a page that CI
 re-derives from the judges cannot.
 
-### Nine things you can audit without trusting me
+### Ten things you can audit without trusting me
 
 | What it answers | File | Command that settles it |
 |---|---|---|
@@ -123,6 +123,7 @@ re-derives from the judges cannot.
 | What do I have to supply to get a verdict at all? | [`docs/methods/Input_Contracts.md`](docs/methods/Input_Contracts.md) | `python benchmarks/input_contracts.py` |
 | Can I get a green light by deleting or blanking a field? | this page, §1.9 | `python benchmarks/absence_sweep.py` |
 | What does a field's absence mean, for all 58 fields? | [`docs/methods/absence_taxonomy.json`](docs/methods/absence_taxonomy.json) | `python benchmarks/absence_taxonomy.py` |
+| How much better than a shortcut, counted? | [`docs/methods/Baseline_Scorecard.md`](docs/methods/Baseline_Scorecard.md) | `python benchmarks/baseline_scorecard.py` |
 | Where do I submit a case that proves a rule wrong? | [`docs/methods/Challenge.md`](docs/methods/Challenge.md) | open the **Challenge a rule** issue form |
 | What does the gate's own red team look like, case by case? | [`docs/methods/RedTeam_Probes.md`](docs/methods/RedTeam_Probes.md) | `python -m unittest tests.test_contract.TestCliContract -v` |
 

@@ -792,6 +792,59 @@ class TestVetoPrecedence(unittest.TestCase):
         self.assertGreater(checked, 100, "too few records exercised")
         self.assertGreater(fired, 40, "too few firing critical rules exercised")
 
+class TestBaselineScorecard(unittest.TestCase):
+    """"Better" is a number, and the number is regenerated, not remembered.
+
+    Four shortcuts (approval-biased, keyword grep, presence checklist, single rule)
+    are scored on the same two corpora as the gate. These three assertions hold the
+    scorecard to its purpose: it is generated, the gate's own claim survives on both
+    corpora, and every shortcut is actually worse -- otherwise the table would prove
+    nothing and should be deleted rather than published.
+    """
+
+    def setUp(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "baseline_scorecard", ROOT / "benchmarks" / "baseline_scorecard.py")
+        self.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.mod)
+        self.data = self.mod.build()
+
+    def test_scorecard_is_generated_not_edited(self):
+        js, md = self.mod.render(self.data)
+        self.assertEqual(js, (ROOT / "docs" / "methods" / "baseline_scorecard.json")
+                         .read_text(encoding="utf-8"),
+                         "baseline_scorecard.json is stale — run "
+                         "python benchmarks/baseline_scorecard.py --write")
+        self.assertEqual(md, (ROOT / "docs" / "methods" / "Baseline_Scorecard.md")
+                         .read_text(encoding="utf-8"),
+                         "Baseline_Scorecard.md is stale — run "
+                         "python benchmarks/baseline_scorecard.py --write")
+
+    def _row(self, name):
+        for row in self.data["rows"]:
+            if row["engine"] == name:
+                return row
+        raise AssertionError("no row for " + name)
+
+    def test_the_gate_wins_both_corpora(self):
+        gate = self._row("gate")
+        self.assertEqual(gate["shipped_total"], gate["shipped_agreement"],
+                         "the gate disagrees with a declared expectation")
+        self.assertEqual(0, gate["absence_false_greens"],
+                         "the gate answered go on a record it should not have")
+
+    def test_every_baseline_is_actually_worse(self):
+        gate = self._row("gate")
+        self.assertGreater(gate["absence_total"], 100, "absence corpus too small to discriminate")
+        for row in self.data["rows"]:
+            if row["engine"] == "gate":
+                continue
+            with self.subTest(engine=row["engine"]):
+                self.assertLess(row["shipped_agreement"], gate["shipped_agreement"])
+                self.assertGreater(row["absence_false_greens"], 0,
+                                   "a baseline with no false greens means the corpus is too easy")
+
 class TestMetadataConsistency(unittest.TestCase):
     """The citation file is the first thing a stranger reads; it must not lag.
 
