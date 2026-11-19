@@ -17,6 +17,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from lgd_engine.gate.engine import GateEngine          # noqa: E402
+from lgd_engine.judges.basis import basis_for           # noqa: E402
+from lgd_engine.judges.judge_510k import Judge510kChange  # noqa: E402
+from lgd_engine.judges.judge_postmarket import JudgePostmarket  # noqa: E402
+from lgd_engine.judges.judge_pccp import JudgePccpScope  # noqa: E402
+from lgd_engine.judges.judge_mdr import JudgeMdrSignificance  # noqa: E402
+from lgd_engine.judges.judge_nmpa import JudgeNmpaChangeRegistration  # noqa: E402
 from lgd_engine.memory.localmem_min import LocalMemory  # noqa: E402
 from lgd_engine import mcp_server                     # noqa: E402
 
@@ -471,7 +477,7 @@ class TestClauseBasis(unittest.TestCase):
         doctrine = [r for r in self.rules if not is_law(self.CLAUSE_BASIS[r])]
         self.assertLessEqual(len(doctrine), 12,
                              f"doctrine share grew: {len(doctrine)} of {len(self.rules)}")
-        self.assertEqual(len(self.rules), 66, "rule count moved — update the matrix doc")
+        self.assertEqual(len(self.rules), 67, "rule count moved — update the matrix doc")
 
 
 class TestCoverageGaps(unittest.TestCase):
@@ -567,6 +573,62 @@ class TestEdgeClaims(unittest.TestCase):
         self.assertLess(len(observed), len(self.edges) / 2,
                         "more than half the competitor claims are marked observed — "
                         "either run a real survey or label them inferred")
+
+
+class TestInputContract(unittest.TestCase):
+    """The input contract, executed at run time instead of described in prose.
+
+    Five red-team rounds each found a rule that read a missing field as a
+    permissive one. The fix is not twenty more predicates: a judge declares the
+    few fields without which it cannot say anything, and refuses to judge a
+    record that omits them. Absence becomes `hold`, never `go`.
+    """
+
+    SUITES = [
+        ("demo1/cases", "510k", Judge510kChange),
+        ("cases_jurisdiction", "510k-jurisdiction", Judge510kChange),
+        ("cases_postmarket", "postmarket", JudgePostmarket),
+        ("cases_pccp", "pccp", JudgePccpScope),
+        ("cases_mdr", "mdr", JudgeMdrSignificance),
+        ("cases_nmpa", "nmpa", JudgeNmpaChangeRegistration),
+    ]
+
+    def test_every_judge_declares_a_contract(self):
+        for _rel, domain, cls in self.SUITES:
+            with self.subTest(domain=domain):
+                self.assertTrue(getattr(cls, "REQUIRED_FIELDS", None),
+                                f"{cls.__name__} declares no REQUIRED_FIELDS")
+
+    def test_declared_contract_is_supplied_by_every_shipped_case(self):
+        # A field required of the domain but absent from one shipped case would
+        # silently turn that case into a hold. Fail loudly instead.
+        for rel, domain, cls in self.SUITES:
+            for f in sorted((ROOT / rel).glob("*.json")):
+                ctx = json.loads(f.read_text(encoding="utf-8"))
+                missing = [k for k in cls.REQUIRED_FIELDS if k not in ctx]
+                with self.subTest(case=f.name):
+                    self.assertEqual([], missing,
+                                     f"{f.name} omits required field(s) {missing}")
+
+    def test_deleting_a_required_field_never_yields_go(self):
+        for rel, domain, cls in self.SUITES:
+            for f in sorted((ROOT / rel).glob("*.json")):
+                ctx = json.loads(f.read_text(encoding="utf-8"))
+                for key in sorted(cls.REQUIRED_FIELDS):
+                    if key not in ctx:
+                        continue
+                    trimmed = {k: v for k, v in ctx.items() if k != key}
+                    rep = GateEngine([cls()]).evaluate(trimmed).to_dict()
+                    rules = [r["rule"] for r in rep["reasons"]]
+                    with self.subTest(case=f.name, field=key):
+                        self.assertNotEqual("go", rep["verdict"],
+                                            f"deleting {key} let {f.name} go")
+                        self.assertIn(f"{cls.CONTRACT_RULE}", rules)
+
+    def test_guard_rule_names_its_basis(self):
+        for _rel, domain, cls in self.SUITES:
+            with self.subTest(domain=domain):
+                self.assertTrue(basis_for(cls.CONTRACT_RULE))
 
 
 class TestMetadataConsistency(unittest.TestCase):

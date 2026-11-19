@@ -10,14 +10,32 @@ judges' internals: if a case gains a field, this table moves with it.
 Verdict semantics are unchanged: exit code 0 = go, 1 = hold, 2 = reject,
 3 = tool error, 64 = usage. Anything outside the enumerated categories returns `hold`.
 
+## This table is enforced, not just documented
+
+The contract above describes a *complete* record. It says nothing about what
+happens when a field is simply not there — and for five red-team rounds the
+answer was `go`. Each judge now declares the smallest set of keys it cannot
+work without (`REQUIRED_FIELDS`) and refuses to judge a record that omits one,
+returning `hold` under the single cross-cutting rule `REQ-01-input-contract`.
+
+```bash
+python benchmarks/absence_sweep.py    # exit 1 if any required field can be deleted into a go
+```
+
+Two notions of "required" sit side by side on purpose: **required here** = every
+shipped case of that domain supplies it (derived from the corpus by this
+generator); **required in a judge** = the judge has nothing to look up without it
+(declared, and minimal — a field that only makes the record richer is not in the
+set). The second is checked against the first: a judge may not require a key that
+any shipped case omits, or `TestInputContract` fails.
+
 ## Base schema (shared by all tables)
 
-`python -m lgd_engine.cli --all demo1/cases --domain 510k` — 5 cases
+`python -m lgd_engine.cli --all demo1/cases --domain 510k` — 6 cases
 
 | key | status | note |
 |---|---|---|
 | `change_type` | **required** | The change, in the vocabulary each table enumerates. Unlisted types return hold. |
-| `device_risk_class` | **required** | — |
 | `evidence_sufficiency` | **required** | 'sufficient' / 'insufficient'. A go without evidence is downgraded to hold. |
 | `predicate_unchanged` | **required** | 510(k): whether the predicate device itself is untouched. |
 | `recall_class` | **required** | 510(k) / post-market: I / II / III recall class. |
@@ -25,10 +43,12 @@ Verdict semantics are unchanged: exit code 0 = go, 1 = hold, 2 = reject,
 | `requires_submission` | **required** | 510(k): whether the applicant believes a submission is required. |
 | `safety_impact` | **required** | 510(k): effect on safety or effectiveness. |
 | `source_refs` | **required** | What the caller is relying on. Presence is checked; truth is not. |
+| `device_risk_class` | optional | — |
+| `jurisdiction` | optional | Which regime's rules apply. One report never mixes two regimes. |
 
 ## Post-market disposition
 
-`python -m lgd_engine.cli --all demo1/cases_postmarket --domain postmarket` — 3 cases
+`python -m lgd_engine.cli --all demo1/cases_postmarket --domain postmarket` — 4 cases
 
 | key | status | note |
 |---|---|---|
@@ -36,13 +56,14 @@ Verdict semantics are unchanged: exit code 0 = go, 1 = hold, 2 = reject,
 | `event_report_count` | **required** | — |
 | `fda_cause_type` | **required** | — |
 | `harm_severity` | **required** | — |
-| `marketing_without_license` | **required** | — |
 | `recall_class` | **required** | 510(k) / post-market: I / II / III recall class. |
 | `source_refs` | **required** | What the caller is relying on. Presence is checked; truth is not. |
+| `jurisdiction` | optional | Which regime's rules apply. One report never mixes two regimes. |
+| `marketing_without_license` | optional | — |
 
 ## FDA PCCP scope
 
-`python -m lgd_engine.cli --all demo1/cases_pccp --domain pccp` — 7 cases
+`python -m lgd_engine.cli --all demo1/cases_pccp --domain pccp` — 8 cases
 
 | key | status | note |
 |---|---|---|
@@ -53,17 +74,17 @@ Verdict semantics are unchanged: exit code 0 = go, 1 = hold, 2 = reject,
 | `change_within_pccp_scope` | **required** | — |
 | `evidence_sufficiency` | **required** | 'sufficient' / 'insufficient'. A go without evidence is downgraded to hold. |
 | `jurisdiction` | **required** | Which regime's rules apply. One report never mixes two regimes. |
-| `labeling_version_history` | **required** | — |
 | `pccp_authorized` | **required** | — |
 | `source_refs` | **required** | What the caller is relying on. Presence is checked; truth is not. |
-| `udi_updated` | **required** | — |
-| `validation_documented` | **required** | — |
+| `labeling_version_history` | optional | — |
 | `pccp_modified_version_used_as_predicate` | optional | §515C(c) forbids this outright. |
 | `remains_se_to_predicate` | optional | Second cumulative condition of §515C(b). |
+| `udi_updated` | optional | — |
+| `validation_documented` | optional | — |
 
 ## EU MDR significance
 
-`python -m lgd_engine.cli --all demo1/cases_mdr --domain mdr` — 7 cases
+`python -m lgd_engine.cli --all demo1/cases_mdr --domain mdr` — 9 cases
 
 | key | status | note |
 |---|---|---|
@@ -78,12 +99,14 @@ Verdict semantics are unchanged: exit code 0 = go, 1 = hold, 2 = reject,
 | `new_clinical_data_required` | **required** | — |
 | `source_refs` | **required** | What the caller is relying on. Presence is checked; truth is not. |
 | `verification_documented` | **required** | — |
+| `classification_changed` | optional | — |
 | `corrective_action_accepted_by_authority` | optional | — |
+| `implements_accepted_corrective_action` | optional | — |
 | `intended_purpose_direction` | optional | 'narrow' or 'widen'. Narrowing is not automatically significant. |
 
 ## NMPA change route
 
-`python -m lgd_engine.cli --all demo1/cases_nmpa --domain nmpa` — 7 cases
+`python -m lgd_engine.cli --all demo1/cases_nmpa --domain nmpa` — 9 cases
 
 | key | status | note |
 |---|---|---|

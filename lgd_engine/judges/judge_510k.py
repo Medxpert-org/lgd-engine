@@ -200,18 +200,41 @@ _ENUM_AXES = (
 )
 
 
+REQUIRED_FIELDS = {"change_type"}
+
+# 510(k): the one field without which no change can be classified at all.
+_CONTRACT = {
+    "rule": "REQ-01-input-contract",
+    "when": lambda c: any(k not in c for k in REQUIRED_FIELDS),
+    "guard": True,
+}
+
+
 class Judge510kChange:
+
     """DomainJudge adapter for 510(k) change-classification.
 
     Instantiate and pass into GateEngine, or call .evaluate(ctx) directly.
     """
 
+    CONTRACT_RULE = _CONTRACT["rule"]
+    REQUIRED_FIELDS = REQUIRED_FIELDS
     domain = "510k-change-classification"
 
     # Friendly public handle, used by CLI / web layer.
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
+        missing = [k for k in REQUIRED_FIELDS if k not in ctx]
+        if missing:
+            # An incomplete record is not a compliant record. Judging one reads
+            # "nobody supplied this" as "nobody objected to this" -- the exact
+            # shape behind five red-team defects (docs/methods/RedTeam_Probes.md).
+            return {"verdict": "hold",
+                    "reasons": [{"rule": _CONTRACT["rule"], "level": "major",
+                                 "detail": "required input absent: "
+                                           + ", ".join(missing)}],
+                    "evidence": []}
 
         # External evidence refs passed in. A blank ref is not evidence: before
         # this filter, {"kind": "", "ref": ""} satisfied the L2 count and let a

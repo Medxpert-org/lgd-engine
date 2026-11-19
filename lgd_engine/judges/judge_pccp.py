@@ -203,14 +203,38 @@ KNOWN_CHANGE_TYPES = {
 KNOWN_EVIDENCE_SUFFICIENCY = {"sufficient", "needs_supplement", "none"}
 
 
+REQUIRED_FIELDS = {"pccp_authorized", "change_within_pccp_scope"}
+
+# PCCP: whether a plan exists and whether this change sits inside it.
+_CONTRACT = {
+    "rule": "REQ-01-input-contract",
+    "when": lambda c: any(k not in c for k in REQUIRED_FIELDS),
+    "guard": True,
+}
+
+
 class JudgePccpScope:
+
     """DomainJudge adapter for PCCP change-scope."""
+
+    CONTRACT_RULE = _CONTRACT["rule"]
+    REQUIRED_FIELDS = REQUIRED_FIELDS
 
     domain = "pccp-change-scope"
 
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
+        missing = [k for k in REQUIRED_FIELDS if k not in ctx]
+        if missing:
+            # An incomplete record is not a compliant record. Judging one reads
+            # "nobody supplied this" as "nobody objected to this" -- the exact
+            # shape behind five red-team defects (docs/methods/RedTeam_Probes.md).
+            return {"verdict": "hold",
+                    "reasons": [{"rule": _CONTRACT["rule"], "level": "major",
+                                 "detail": "required input absent: "
+                                           + ", ".join(missing)}],
+                    "evidence": []}
 
         # A blank ref is not evidence (same filter as the 510k judge: an empty
         # {"kind": "", "ref": ""} once satisfied the L2 count).

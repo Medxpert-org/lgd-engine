@@ -193,14 +193,38 @@ KNOWN_EVIDENCE_SUFFICIENCY = {"sufficient", "needs_supplement", "none"}
 KNOWN_RECALL_LEVELS = {"none", "level1", "level2", "level3"}
 
 
+REQUIRED_FIELDS = {"change_fields", "requested_path"}
+
+# NMPA: which fields change, and which approval route is being requested.
+_CONTRACT = {
+    "rule": "REQ-01-input-contract",
+    "when": lambda c: any(k not in c for k in REQUIRED_FIELDS),
+    "guard": True,
+}
+
+
 class JudgeNmpaChangeRegistration:
+
     """DomainJudge adapter for NMPA change registration."""
+
+    CONTRACT_RULE = _CONTRACT["rule"]
+    REQUIRED_FIELDS = REQUIRED_FIELDS
 
     domain = "nmpa-change-registration"
 
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
+        missing = [k for k in REQUIRED_FIELDS if k not in ctx]
+        if missing:
+            # An incomplete record is not a compliant record. Judging one reads
+            # "nobody supplied this" as "nobody objected to this" -- the exact
+            # shape behind five red-team defects (docs/methods/RedTeam_Probes.md).
+            return {"verdict": "hold",
+                    "reasons": [{"rule": _CONTRACT["rule"], "level": "major",
+                                 "detail": "required input absent: "
+                                           + ", ".join(missing)}],
+                    "evidence": []}
 
         for e in ctx.get("source_refs", []) or []:
             ref = (e.get("ref") or "").strip()
