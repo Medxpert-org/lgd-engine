@@ -466,11 +466,18 @@ def p_engine_error(env) -> tuple:
        "CLI exit codes carry the verdict: 0=go 1=hold 2=reject 64=usage")
 def p_exit_codes(env) -> tuple:
     cases = [
+        # The payloads carry the fields the 510(k) contract requires: a probe about
+        # exit-code mapping must not fail because its own fixture is an incomplete
+        # record (that is a different probe, docs/methods/Input_Contracts.md).
         ({"change_type": "label_correction", "safety_impact": "none",
-          "recall_class": "none", "source_refs": [{"kind": "sop", "ref": "SOP-11"}]}, 0),
+          "recall_class": "none", "predicate_unchanged": True,
+          "evidence_sufficiency": "sufficient",
+          "source_refs": [{"kind": "sop", "ref": "SOP-11"}]}, 0),
         ({"change_type": "design_defect", "recall_class": "class2",
+          "predicate_unchanged": True, "evidence_sufficiency": "insufficient",
           "source_refs": [{"kind": "fda_510k", "ref": "K190204"}]}, 1),
         ({"change_type": "design_defect", "recall_class": "class1",
+          "predicate_unchanged": True, "evidence_sufficiency": "sufficient",
           "source_refs": [{"kind": "fda_510k", "ref": "K190204"}]}, 2),
     ]
     bad = []
@@ -499,7 +506,8 @@ def p_cli_db_guard(env) -> tuple:
     case = os.path.join(tmp, "case.json")
     with open(case, "w", encoding="utf-8") as f:
         json.dump({"change_type": "label_correction", "safety_impact": "none",
-                   "recall_class": "none",
+                   "recall_class": "none", "predicate_unchanged": True,
+                   "evidence_sufficiency": "sufficient",
                    "source_refs": [{"kind": "sop", "ref": "SOP-11"}]}, f)
     bad_rc, bad_out = env.cli_args(["--case", case, "--db", junk])
     empty_rc, _ = env.cli_args(["--case", case, "--db", ""])
