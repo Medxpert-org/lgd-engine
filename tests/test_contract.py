@@ -714,6 +714,66 @@ class TestAbsenceTaxonomy(unittest.TestCase):
                 self.assertTrue((ROOT / "docs" / "methods" / "absence_taxonomy.json")
                                 .read_text(encoding="utf-8").find(key) >= 0)
 
+class TestVetoPrecedence(unittest.TestCase):
+    """If a critical rule fires, the verdict must say `reject`.
+
+    The input contract runs before the judgement proper, and that ordering had a
+    cost: a record missing a required field *and* violating a critical rule
+    returned `hold` and dropped the veto reason entirely. demo1's
+    INV veto-not-softened caught one instance; this pins the precedence for every
+    critical rule, by evaluating the rule predicates itself.
+
+    The honest boundary: when the missing field is the fact the critical rule
+    reads, the predicate cannot fire and `hold` is correct -- so a predicate that
+    raises is skipped rather than counted.
+    """
+
+    MODULES = {"510k": "judge_510k", "postmarket": "judge_postmarket",
+               "pccp": "judge_pccp", "mdr": "judge_mdr", "nmpa": "judge_nmpa"}
+
+    def test_a_firing_critical_rule_is_never_reported_as_hold_or_go(self):
+        import importlib
+        import json
+        import sys
+        sys.path.insert(0, str(ROOT / "benchmarks"))
+        from build_demo_page import SUITES
+        from lgd_engine.gate import GateEngine
+
+        checked = 0
+        fired = 0
+        for rel, domain, cls, _lang, _judges in SUITES:
+            module = importlib.import_module("lgd_engine.judges." + self.MODULES[domain])
+            critical = getattr(module, "_CRITICAL_RULES", None) or getattr(module, "_CRITICAL")
+            required = dict(getattr(cls, "REQUIRED_FIELDS", {}))
+            for case_path in sorted((ROOT / rel).glob("*.json")):
+                ctx = json.loads(case_path.read_text(encoding="utf-8"))
+                variants = [("as shipped", ctx)]
+                for key in required:
+                    if key in ctx:
+                        broken = dict(ctx)
+                        broken.pop(key)
+                        variants.append(("without " + key, broken))
+                for label, variant in variants:
+                    checked += 1
+                    rules_firing = []
+                    for rule in critical:
+                        try:
+                            if rule["when"](variant):
+                                rules_firing.append(rule["rule"])
+                        except Exception:
+                            continue
+                    if not rules_firing:
+                        continue
+                    fired += 1
+                    report = GateEngine([cls()]).evaluate(variant).to_dict()
+                    with self.subTest(case=ctx.get("case_id") or case_path.stem,
+                                      variant=label, rules=rules_firing):
+                        self.assertEqual("reject", report["verdict"],
+                                         "a firing critical rule was reported as "
+                                         + report["verdict"])
+        self.assertGreater(checked, 100, "too few records exercised")
+        self.assertGreater(fired, 40, "too few firing critical rules exercised")
+
 class TestMetadataConsistency(unittest.TestCase):
     """The citation file is the first thing a stranger reads; it must not lag.
 
