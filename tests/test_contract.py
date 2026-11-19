@@ -656,6 +656,64 @@ class TestInputContract(unittest.TestCase):
                 self.assertTrue(basis_for(cls.CONTRACT_RULE))
 
 
+class TestAbsenceTaxonomy(unittest.TestCase):
+    """The rest of the fields, classified instead of implied.
+
+    `absence_sweep.py` proves a property about *required* fields. Once you notice that,
+    the honest question is what the other 42 fields mean when they vanish. Answering it
+    in prose invites drift, so the answer is a generated table plus three assertions:
+    the table is current, every required field is one the judge actually reads, and the
+    number of proof-shaped-but-unenforced fields cannot grow.
+    """
+
+    WEAK_CAP = 5
+
+    def setUp(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "absence_taxonomy", ROOT / "benchmarks" / "absence_taxonomy.py")
+        self.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.mod)
+        self.data = self.mod.build()
+
+    def test_table_is_generated_not_edited(self):
+        text = self.mod.render(self.data)
+        on_disk = (ROOT / "docs" / "methods" / "absence_taxonomy.json").read_text(encoding="utf-8")
+        self.assertEqual(text, on_disk,
+                         "absence_taxonomy.json is stale — run "
+                         "python benchmarks/absence_taxonomy.py --write")
+
+    def test_a_judge_may_not_require_a_field_it_never_reads(self):
+        """Read the source directly, not the generator's own output.
+
+        A field can be in every shipped case and still be a field the rules never look
+        at -- requiring it would be a contract about the corpus rather than about the
+        judgement. The near-miss that motivated this: postmarket `evidence_sufficiency`
+        was briefly required although `judge_postmarket.py` never reads it.
+        """
+        import re
+        for domain, module in self.mod.JUDGES.items():
+            text = (ROOT / "lgd_engine" / "judges" / module).read_text(encoding="utf-8")
+            read = set(re.findall(r'(?:ctx|c)\.get\("([a-z_]+)"', text))
+            required = set(self.data["domains"][domain]) & read
+            cls = {"510k": Judge510kChange, "postmarket": JudgePostmarket,
+                   "pccp": JudgePccpScope, "mdr": JudgeMdrSignificance,
+                   "nmpa": JudgeNmpaChangeRegistration}[domain]
+            unread = sorted(set(cls.REQUIRED_FIELDS) - read)
+            with self.subTest(domain=domain):
+                self.assertEqual([], unread,
+                                 f"{domain} requires field(s) no rule reads: {unread}")
+
+    def test_weak_evidence_is_capped_and_explained(self):
+        weak = [(d, k) for d, fields in self.data["domains"].items()
+                for k, e in fields.items() if e["kind"] == "weak_evidence"]
+        self.assertLessEqual(len(weak), self.WEAK_CAP,
+                             f"proof-shaped-but-unenforced fields grew to {len(weak)}: {weak}")
+        for _d, key in weak:
+            with self.subTest(field=key):
+                self.assertTrue((ROOT / "docs" / "methods" / "absence_taxonomy.json")
+                                .read_text(encoding="utf-8").find(key) >= 0)
+
 class TestMetadataConsistency(unittest.TestCase):
     """The citation file is the first thing a stranger reads; it must not lag.
 

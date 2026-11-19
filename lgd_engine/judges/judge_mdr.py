@@ -205,7 +205,7 @@ KNOWN_CATEGORIES = {
 KNOWN_EVIDENCE_SUFFICIENCY = {"sufficient", "needs_supplement", "none"}
 
 
-REQUIRED_FIELDS = {"change_category": str}
+REQUIRED_FIELDS = {"change_category": str, "verification_documented": bool, "evidence_sufficiency": str}
 
 # MDR: the category the change is claimed to fall in.
 _CONTRACT = {

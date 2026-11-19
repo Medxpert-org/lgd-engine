@@ -200,7 +200,7 @@ _ENUM_AXES = (
 )
 
 
-REQUIRED_FIELDS = {"change_type": str}
+REQUIRED_FIELDS = {"change_type": str, "predicate_unchanged": bool, "evidence_sufficiency": str}
 
 # 510(k): the one field without which no change can be classified at all.
 _CONTRACT = {

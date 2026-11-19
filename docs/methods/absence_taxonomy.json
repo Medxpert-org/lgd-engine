@@ -1,0 +1,217 @@
+{
+  "_counts": {
+    "bookkeeping": 11,
+    "claim": 26,
+    "required": 16,
+    "weak_evidence": 5
+  },
+  "_fields": 58,
+  "_generated_by": "benchmarks/absence_taxonomy.py --write",
+  "domains": {
+    "510k": {
+      "change_type": {
+        "kind": "required",
+        "type": "str"
+      },
+      "equivalence_declared": {
+        "kind": "claim"
+      },
+      "evidence_sufficiency": {
+        "kind": "required",
+        "type": "str"
+      },
+      "jurisdiction": {
+        "kind": "bookkeeping"
+      },
+      "predicate_unchanged": {
+        "kind": "required",
+        "type": "bool"
+      },
+      "recall_class": {
+        "kind": "claim"
+      },
+      "regulatory_path": {
+        "kind": "claim"
+      },
+      "requires_submission": {
+        "kind": "claim"
+      },
+      "safety_impact": {
+        "kind": "claim"
+      },
+      "source_refs": {
+        "kind": "bookkeeping"
+      }
+    },
+    "mdr": {
+      "affects_clinical_benefit": {
+        "kind": "claim"
+      },
+      "affects_intended_purpose": {
+        "kind": "claim"
+      },
+      "affects_safety_or_performance": {
+        "kind": "claim"
+      },
+      "change_category": {
+        "kind": "required",
+        "type": "str"
+      },
+      "classification_changed": {
+        "kind": "claim"
+      },
+      "corrective_action_accepted_by_authority": {
+        "kind": "claim"
+      },
+      "declared_not_significant": {
+        "kind": "claim"
+      },
+      "evidence_sufficiency": {
+        "kind": "required",
+        "type": "str"
+      },
+      "fsca_open": {
+        "kind": "claim"
+      },
+      "implements_accepted_corrective_action": {
+        "kind": "claim"
+      },
+      "intended_purpose_direction": {
+        "kind": "claim"
+      },
+      "jurisdiction": {
+        "kind": "bookkeeping"
+      },
+      "new_clinical_data_required": {
+        "kind": "claim"
+      },
+      "patient_contacting_material_change": {
+        "kind": "claim"
+      },
+      "source_refs": {
+        "kind": "bookkeeping"
+      },
+      "sterility_affected": {
+        "kind": "claim"
+      },
+      "sterilization_change": {
+        "kind": "claim"
+      },
+      "verification_documented": {
+        "kind": "required",
+        "type": "bool"
+      }
+    },
+    "nmpa": {
+      "change_fields": {
+        "kind": "required",
+        "type": "list"
+      },
+      "device_class": {
+        "kind": "bookkeeping"
+      },
+      "evidence_sufficiency": {
+        "kind": "required",
+        "type": "str"
+      },
+      "has_registration_certificate": {
+        "kind": "claim"
+      },
+      "jurisdiction": {
+        "kind": "bookkeeping"
+      },
+      "recall_level": {
+        "kind": "claim"
+      },
+      "requested_path": {
+        "kind": "required",
+        "type": "str"
+      },
+      "safety_effectiveness_assessed": {
+        "kind": "weak_evidence",
+        "why": "a conformity assessment is proof-shaped; not every shipped NMPA case carries it"
+      },
+      "source_refs": {
+        "kind": "bookkeeping"
+      },
+      "technical_docs_updated": {
+        "kind": "required",
+        "type": "bool"
+      }
+    },
+    "pccp": {
+      "acceptance_criteria_met": {
+        "kind": "required",
+        "type": "bool"
+      },
+      "affects_intended_use": {
+        "kind": "claim"
+      },
+      "change_class_described": {
+        "kind": "claim"
+      },
+      "change_type": {
+        "kind": "bookkeeping"
+      },
+      "change_within_pccp_scope": {
+        "kind": "required",
+        "type": "bool"
+      },
+      "evidence_sufficiency": {
+        "kind": "required",
+        "type": "str"
+      },
+      "jurisdiction": {
+        "kind": "bookkeeping"
+      },
+      "labeling_version_history": {
+        "kind": "weak_evidence",
+        "why": "same: proof-shaped, not universal in the corpus"
+      },
+      "pccp_authorized": {
+        "kind": "required",
+        "type": "bool"
+      },
+      "pccp_modified_version_used_as_predicate": {
+        "kind": "claim"
+      },
+      "remains_se_to_predicate": {
+        "kind": "weak_evidence",
+        "why": "same: proof-shaped, not universal in the corpus"
+      },
+      "source_refs": {
+        "kind": "bookkeeping"
+      },
+      "udi_updated": {
+        "kind": "weak_evidence",
+        "why": "same: proof-shaped, not universal in the corpus"
+      },
+      "validation_documented": {
+        "kind": "weak_evidence",
+        "why": "a validation record is proof-shaped; not every shipped PCCP case carries it"
+      }
+    },
+    "postmarket": {
+      "event_report_count": {
+        "kind": "claim"
+      },
+      "fda_cause_type": {
+        "kind": "claim"
+      },
+      "harm_severity": {
+        "kind": "required",
+        "type": "str"
+      },
+      "marketing_without_license": {
+        "kind": "claim"
+      },
+      "recall_class": {
+        "kind": "required",
+        "type": "str"
+      },
+      "source_refs": {
+        "kind": "bookkeeping"
+      }
+    }
+  }
+}

@@ -193,7 +193,7 @@ KNOWN_EVIDENCE_SUFFICIENCY = {"sufficient", "needs_supplement", "none"}
 KNOWN_RECALL_LEVELS = {"none", "level1", "level2", "level3"}
 
 
-REQUIRED_FIELDS = {"change_fields": list, "requested_path": str}
+REQUIRED_FIELDS = {"change_fields": list, "requested_path": str, "technical_docs_updated": bool, "evidence_sufficiency": str}
 
 # NMPA: which fields change, and which approval route is being requested.
 _CONTRACT = {

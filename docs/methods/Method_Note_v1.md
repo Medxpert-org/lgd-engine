@@ -111,7 +111,7 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **74 assertions**,
+The assertion count grows as tables are added. As of this version: **77 assertions**,
 **37 case files** (31 corpus + 6 red-team), **5 tables**, **12 adversarial probes**.
 
 ### 1.5 One defect this method found in itself
@@ -256,6 +256,38 @@ field that merely removes a *fact the case asserted* — no death claimed, no re
 claimed — legitimately returns `go`, because the record no longer asserts the hazard.
 The invariant is narrower and it is the one we can defend: an input the judge cannot work
 without may never be read as an input nobody objected to.
+
+### 1.10 The other forty-two fields
+
+`absence_sweep.py` proves something about the fields we chose to require. The obvious
+reviewer question is what happens to the rest — and "we thought about it" is not an answer.
+
+So every field any rule reads is classified, in a generated table
+([`absence_taxonomy.json`](absence_taxonomy.json), 58 fields):
+
+| kind | n | meaning |
+|---|---|---|
+| `required` | 16 | absent, blank or wrongly typed → `hold` (enforced, see §1.9) |
+| `claim` | 26 | the case asserts something; removing the assertion may legitimately change the answer |
+| `bookkeeping` | 11 | identifies the case or carries citations |
+| `weak_evidence` | 5 | proof-shaped, but some shipped case omits it — cannot be required without silently flipping that case |
+
+The last row is the residue, published rather than hidden, and its size is **capped in the
+test suite** so it can shrink and not quietly grow. Each entry carries the reason it is
+still weak.
+
+Two things this forced, both worth more than the table:
+
+- **`evidence_sufficiency` was briefly required in postmarket, where no rule reads it.**
+  A field can be in every shipped case and still be a field the judgement never consults;
+  requiring it would be a contract about the corpus rather than about the decision. The
+  suite now reads the judge source directly and fails if a required field is never read.
+- **The strong reading of "evidence" turns out to be expensive.** `predicate_unchanged`,
+  `verification_documented`, `technical_docs_updated`, `acceptance_criteria_met` and
+  `evidence_sufficiency` are evidence-shaped *and* universal, so they moved from
+  "unclassified" to required — that is where the 42 green results came from. The five
+  PCCP/NMPA fields that stayed weak are weak only because a shipped case omits them: the
+  way to close them is to make the corpus universal, not to relax the guard.
 
 ---
 
@@ -535,4 +567,4 @@ Full rule ids, conditions and rationales are in each judge module and in
 
 本方法说明描述一种把"监管变更判定"从自然语言问答改写成可执行规则表的方法：输入是评审人实际持有的结构化字段，输出是三值判决（go / hold / reject）加上被触发的规则编号；判定纯粹、可离线重跑、失败时表现为"拒绝回答"而非"猜测"。已实现五张判定表（美国 510(k) 变更分类、上市后处置、FDA PCCP 范围、EU MDR 重大变更、中国 NMPA 变更注册），随包发布 34 个带预期判决的案件与 12 条对抗探针；同一批输入下，确定性判定器 12/12 命中预期，关键词捷径仅 5/12。
 
-本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：74 条契约断言、5 张判定表、37 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
+本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：77 条契约断言、5 张判定表、37 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
