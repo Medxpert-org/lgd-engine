@@ -54,7 +54,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from .base import DomainJudge, JudgeVerdict, Reason, Evidence
+from .base import DomainJudge, JudgeVerdict, Reason, Evidence, is_unusable
 
 
 # ---- critical rules: one vote → reject ------------------------------------
@@ -203,12 +203,12 @@ KNOWN_CHANGE_TYPES = {
 KNOWN_EVIDENCE_SUFFICIENCY = {"sufficient", "needs_supplement", "none"}
 
 
-REQUIRED_FIELDS = {"pccp_authorized", "change_within_pccp_scope"}
+REQUIRED_FIELDS = {"pccp_authorized": bool, "change_within_pccp_scope": bool}
 
 # PCCP: whether a plan exists and whether this change sits inside it.
 _CONTRACT = {
     "rule": "REQ-01-input-contract",
-    "when": lambda c: any(k not in c for k in REQUIRED_FIELDS),
+    "when": lambda c: bool(is_unusable(c, REQUIRED_FIELDS)),
     "guard": True,
 }
 
@@ -225,7 +225,7 @@ class JudgePccpScope:
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
-        missing = [k for k in REQUIRED_FIELDS if k not in ctx]
+        missing = is_unusable(ctx, REQUIRED_FIELDS)
         if missing:
             # An incomplete record is not a compliant record. Judging one reads
             # "nobody supplied this" as "nobody objected to this" -- the exact

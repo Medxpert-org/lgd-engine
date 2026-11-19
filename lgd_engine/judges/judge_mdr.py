@@ -38,7 +38,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from .base import DomainJudge, JudgeVerdict, Reason, Evidence
+from .base import DomainJudge, JudgeVerdict, Reason, Evidence, is_unusable
 
 
 _CRITICAL_RULES = [
@@ -205,12 +205,12 @@ KNOWN_CATEGORIES = {
 KNOWN_EVIDENCE_SUFFICIENCY = {"sufficient", "needs_supplement", "none"}
 
 
-REQUIRED_FIELDS = {"change_category"}
+REQUIRED_FIELDS = {"change_category": str}
 
 # MDR: the category the change is claimed to fall in.
 _CONTRACT = {
     "rule": "REQ-01-input-contract",
-    "when": lambda c: any(k not in c for k in REQUIRED_FIELDS),
+    "when": lambda c: bool(is_unusable(c, REQUIRED_FIELDS)),
     "guard": True,
 }
 
@@ -227,7 +227,7 @@ class JudgeMdrSignificance:
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
-        missing = [k for k in REQUIRED_FIELDS if k not in ctx]
+        missing = is_unusable(ctx, REQUIRED_FIELDS)
         if missing:
             # An incomplete record is not a compliant record. Judging one reads
             # "nobody supplied this" as "nobody objected to this" -- the exact
