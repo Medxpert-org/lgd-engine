@@ -5,9 +5,9 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=feat/pr-gate head=b50c4b2 checks=19 passed=19 cases=37 assertions=90 -->`
+`<!-- eval-report branch=feat/pr-gate head=7b4f7ec checks=19 passed=19 cases=37 assertions=90 -->`
 
-Run at 2026-11-19 05:04 UTC against `feat/pr-gate` at `b50c4b2`, from a fresh clone.
+Run at 2026-11-19 05:05 UTC against `feat/pr-gate` at `7b4f7ec`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
