@@ -111,7 +111,7 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **90 assertions**,
+The assertion count grows as tables are added. As of this version: **94 assertions**,
 **37 case files** (31 corpus + 6 red-team), **5 tables**, **12 adversarial probes**.
 
 ### 1.5 One defect this method found in itself
@@ -423,6 +423,35 @@ check by reading the diff.
 `--since <date|ref>` answers the other half of the question a reviewer asks
 ("what moved since I last looked?"), resolving a date to the last commit before
 it. Neither flag adds a dependency, and both run offline against a clone.
+
+### 1.15 Can you use it, or only audit it?
+
+Both are separate questions, and the repo had only answered the second. Judging
+your own change worked — the counterexample is recorded in the 2026-11-19 run:
+a supplier-change record returned `hold` for three missing keys, then `hold`
+again because `change_type 'supplier'` and `evidence_sufficiency 'full'` are
+words this judge cannot classify (`R-MAJ-06`). Both answers are correct and both
+are useless as guidance: the caller learns the vocabulary by trial.
+
+Two read-only commands describe the input instead of judging it:
+
+```bash
+python -m lgd_engine.cli --template --domain 510k > my-case.json
+python -m lgd_engine.cli --fields   --domain 510k
+```
+
+`--template` emits the required keys for that domain, **derived from the shipped
+cases** (`lgd_engine/templates.py`, the same corpus `benchmarks/input_contracts.py`
+reads), so the vocabulary cannot drift from the cases that pin it. The values
+are left empty on purpose: a prefilled example reads like a finding, and the
+engine would classify it as though someone had asserted it. `--fields` prints
+the values the corpus actually uses, marked required or optional, and states the
+consequence of going outside them — unclassified, `hold`, not a guess.
+
+Pinned by `TestFillableTemplate` (4 assertions): every domain's template carries
+the keys its judge demands; a blank template is never a `go` in any of the five
+domains; `--fields` names every `change_type` the corpus uses; and deleting the
+corpus changes the output, which is what "derived" has to mean.
 
 
 ---

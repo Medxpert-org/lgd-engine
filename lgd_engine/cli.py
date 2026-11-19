@@ -55,6 +55,26 @@ def _run_one(path: Path, args) -> tuple:
     return eng.evaluate(ctx), expected
 
 
+def _describe(args) -> int:
+    """--template / --fields: describe the input, never judge it (exit 0)."""
+    from .templates import blank_template, render_fields, template
+
+    judge = _DOMAINS[args.domain]()
+    required = getattr(judge, "REQUIRED_FIELDS", {})
+    if args.fields:
+        print(render_fields(args.domain, args.corpus))
+        return 0
+    rec = template(args.domain, args.corpus) or blank_template(args.domain, required)
+    print(json.dumps(rec, ensure_ascii=False, indent=2))
+    where = (f"keys derived from the shipped {args.domain} cases; an empty value is an "
+             f"unanswered question, not a finding. `lgd-gate --fields --domain "
+             f"{args.domain}` lists the words this judge can classify" if rec and
+             set(required) <= set(rec) else
+             "no corpus found: keys only; run from the repository root for a derived template")
+    print(f"# {args.domain} template — {where}", file=sys.stderr)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = _Parser(
         prog="lgd-gate",
@@ -68,10 +88,20 @@ def main(argv: list[str] | None = None) -> int:
                     help="judge family to run (default 510k)")
     ap.add_argument("--jurisdiction", choices=["FDA", "NMPA"], default=None,
                     help="override the jurisdiction in the case JSON")
+    ap.add_argument("--template", action="store_true",
+                    help="print a fillable case record (every required key) instead of judging")
+    ap.add_argument("--fields", action="store_true",
+                    help="print the values the shipped cases use for each key, instead of judging")
+    ap.add_argument("--corpus", default=".", metavar="ROOT",
+                    help="repository root holding demo1/cases* (default: .)")
     args = ap.parse_args(argv)
 
-    if bool(args.case) == bool(args.all):
-        ap.error("exactly one of --case PATH or --all CASES_DIR is required")
+    modes = [bool(args.case), bool(args.all), args.template, args.fields]
+    if sum(modes) != 1:
+        ap.error("exactly one of --case PATH, --all CASES_DIR, --template, --fields is required")
+
+    if args.template or args.fields:
+        return _describe(args)
 
     if args.all:
         root = Path(args.all)
