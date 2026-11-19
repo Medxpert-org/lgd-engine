@@ -5,9 +5,9 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=feat/absence-taxonomy head=8cdbd77 checks=19 passed=19 cases=37 assertions=77 -->`
+`<!-- eval-report branch=feat/absence-taxonomy head=bf2e9ba checks=19 passed=19 cases=37 assertions=78 -->`
 
-Run at 2026-11-19 00:38 UTC against `feat/absence-taxonomy` at `8cdbd77`, from a fresh clone.
+Run at 2026-11-19 00:46 UTC against `feat/absence-taxonomy` at `bf2e9ba`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
@@ -25,11 +25,11 @@ Run at 2026-11-19 00:38 UTC against `feat/absence-taxonomy` at `8cdbd77`, from a
 | C11 | verdict deterministic + cheap (no model) | PASS |
 | C13 | competitor claims carry provenance labels | PASS |
 | X1 | tampered page makes --check fail | PASS |
-| X2 | suite runs and reports 77 tests | PASS |
+| X2 | suite runs and reports 78 tests | PASS |
 | X3 | dependencies = [] and no third-party imports | PASS |
 | X4 | note claims 37 cases, disk has 37 | PASS |
 | X5 | tree still clean after the whole run | PASS |
-| X6 | docs quote 77 assertions and 37 cases everywhere, and every cited audit command exists | PASS |
+| X6 | docs quote 78 assertions and 37 cases everywhere, and every cited audit command exists | PASS |
 
 **19/19 checks passed** (plus C12, which validates this file).
 
