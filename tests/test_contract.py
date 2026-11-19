@@ -656,6 +656,124 @@ class TestInputContract(unittest.TestCase):
                 self.assertTrue(basis_for(cls.CONTRACT_RULE))
 
 
+class TestAbsenceTaxonomy(unittest.TestCase):
+    """The rest of the fields, classified instead of implied.
+
+    `absence_sweep.py` proves a property about *required* fields. Once you notice that,
+    the honest question is what the other 42 fields mean when they vanish. Answering it
+    in prose invites drift, so the answer is a generated table plus three assertions:
+    the table is current, every required field is one the judge actually reads, and the
+    number of proof-shaped-but-unenforced fields cannot grow.
+    """
+
+    WEAK_CAP = 5
+
+    def setUp(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "absence_taxonomy", ROOT / "benchmarks" / "absence_taxonomy.py")
+        self.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.mod)
+        self.data = self.mod.build()
+
+    def test_table_is_generated_not_edited(self):
+        text = self.mod.render(self.data)
+        on_disk = (ROOT / "docs" / "methods" / "absence_taxonomy.json").read_text(encoding="utf-8")
+        self.assertEqual(text, on_disk,
+                         "absence_taxonomy.json is stale — run "
+                         "python benchmarks/absence_taxonomy.py --write")
+
+    def test_a_judge_may_not_require_a_field_it_never_reads(self):
+        """Read the source directly, not the generator's own output.
+
+        A field can be in every shipped case and still be a field the rules never look
+        at -- requiring it would be a contract about the corpus rather than about the
+        judgement. The near-miss that motivated this: postmarket `evidence_sufficiency`
+        was briefly required although `judge_postmarket.py` never reads it.
+        """
+        import re
+        for domain, module in self.mod.JUDGES.items():
+            text = (ROOT / "lgd_engine" / "judges" / module).read_text(encoding="utf-8")
+            read = set(re.findall(r'(?:ctx|c)\.get\("([a-z_]+)"', text))
+            required = set(self.data["domains"][domain]) & read
+            cls = {"510k": Judge510kChange, "postmarket": JudgePostmarket,
+                   "pccp": JudgePccpScope, "mdr": JudgeMdrSignificance,
+                   "nmpa": JudgeNmpaChangeRegistration}[domain]
+            unread = sorted(set(cls.REQUIRED_FIELDS) - read)
+            with self.subTest(domain=domain):
+                self.assertEqual([], unread,
+                                 f"{domain} requires field(s) no rule reads: {unread}")
+
+    def test_weak_evidence_is_capped_and_explained(self):
+        weak = [(d, k) for d, fields in self.data["domains"].items()
+                for k, e in fields.items() if e["kind"] == "weak_evidence"]
+        self.assertLessEqual(len(weak), self.WEAK_CAP,
+                             f"proof-shaped-but-unenforced fields grew to {len(weak)}: {weak}")
+        for _d, key in weak:
+            with self.subTest(field=key):
+                self.assertTrue((ROOT / "docs" / "methods" / "absence_taxonomy.json")
+                                .read_text(encoding="utf-8").find(key) >= 0)
+
+class TestVetoPrecedence(unittest.TestCase):
+    """If a critical rule fires, the verdict must say `reject`.
+
+    The input contract runs before the judgement proper, and that ordering had a
+    cost: a record missing a required field *and* violating a critical rule
+    returned `hold` and dropped the veto reason entirely. demo1's
+    INV veto-not-softened caught one instance; this pins the precedence for every
+    critical rule, by evaluating the rule predicates itself.
+
+    The honest boundary: when the missing field is the fact the critical rule
+    reads, the predicate cannot fire and `hold` is correct -- so a predicate that
+    raises is skipped rather than counted.
+    """
+
+    MODULES = {"510k": "judge_510k", "postmarket": "judge_postmarket",
+               "pccp": "judge_pccp", "mdr": "judge_mdr", "nmpa": "judge_nmpa"}
+
+    def test_a_firing_critical_rule_is_never_reported_as_hold_or_go(self):
+        import importlib
+        import json
+        import sys
+        sys.path.insert(0, str(ROOT / "benchmarks"))
+        from build_demo_page import SUITES
+        from lgd_engine.gate import GateEngine
+
+        checked = 0
+        fired = 0
+        for rel, domain, cls, _lang, _judges in SUITES:
+            module = importlib.import_module("lgd_engine.judges." + self.MODULES[domain])
+            critical = getattr(module, "_CRITICAL_RULES", None) or getattr(module, "_CRITICAL")
+            required = dict(getattr(cls, "REQUIRED_FIELDS", {}))
+            for case_path in sorted((ROOT / rel).glob("*.json")):
+                ctx = json.loads(case_path.read_text(encoding="utf-8"))
+                variants = [("as shipped", ctx)]
+                for key in required:
+                    if key in ctx:
+                        broken = dict(ctx)
+                        broken.pop(key)
+                        variants.append(("without " + key, broken))
+                for label, variant in variants:
+                    checked += 1
+                    rules_firing = []
+                    for rule in critical:
+                        try:
+                            if rule["when"](variant):
+                                rules_firing.append(rule["rule"])
+                        except Exception:
+                            continue
+                    if not rules_firing:
+                        continue
+                    fired += 1
+                    report = GateEngine([cls()]).evaluate(variant).to_dict()
+                    with self.subTest(case=ctx.get("case_id") or case_path.stem,
+                                      variant=label, rules=rules_firing):
+                        self.assertEqual("reject", report["verdict"],
+                                         "a firing critical rule was reported as "
+                                         + report["verdict"])
+        self.assertGreater(checked, 100, "too few records exercised")
+        self.assertGreater(fired, 40, "too few firing critical rules exercised")
+
 class TestMetadataConsistency(unittest.TestCase):
     """The citation file is the first thing a stranger reads; it must not lag.
 

@@ -200,7 +200,7 @@ _ENUM_AXES = (
 )
 
 
-REQUIRED_FIELDS = {"change_type": str}
+REQUIRED_FIELDS = {"change_type": str, "predicate_unchanged": bool, "evidence_sufficiency": str}
 
 # 510(k): the one field without which no change can be classified at all.
 _CONTRACT = {
@@ -227,6 +227,23 @@ class Judge510kChange:
         evidence: List[Evidence] = []
         missing = is_unusable(ctx, REQUIRED_FIELDS)
         if missing:
+            # A critical veto outranks an incomplete record. Checking the contract
+            # first let a record that is missing a required field soften a
+            # critical violation into a hold (demo1 INV veto-not-softened).
+            for rule in _CRITICAL_RULES:
+                try:
+                    if rule["when"](ctx):
+                        return {"verdict": "reject",
+                                "reasons": [
+                                    {"rule": rule["rule"], "level": "critical",
+                                     "detail": rule["detail"]},
+                                    {"rule": _CONTRACT["rule"], "level": "major",
+                                     "detail": "required input absent: "
+                                               + ", ".join(missing)},
+                                ],
+                                "evidence": []}
+                except Exception:
+                    continue
             # An incomplete record is not a compliant record. Judging one reads
             # "nobody supplied this" as "nobody objected to this" -- the exact
             # shape behind five red-team defects (docs/methods/RedTeam_Probes.md).
