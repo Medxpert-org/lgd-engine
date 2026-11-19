@@ -210,6 +210,9 @@ CLAUSE_BASIS: dict[str, str] = {
         "803 supplies the reporting base",
     "PM-MIN-01-class3-record":
         "LAW 21 CFR 7.3(m)(3) — Class III recall: unlikely adverse health consequences",
+    "REQ-01-input-contract":
+        "DOCTRINE 无据不判 — 判定所需的最小输入缺失时，正确结果是“不可判”而非“无异议”；"
+        "缺席不是许可。五域共用同一条规则（跨域规则，同 L2-EVIDENCED 的位置）",
 }
 
 

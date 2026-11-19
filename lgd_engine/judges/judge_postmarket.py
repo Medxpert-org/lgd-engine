@@ -150,12 +150,34 @@ _ENUM_AXES = (
 )
 
 
+REQUIRED_FIELDS = {"recall_class", "harm_severity"}
+
+# postmarket: which event was reported, and how bad it was.
+_CONTRACT = {
+    "rule": "REQ-01-input-contract",
+    "when": lambda c: any(k not in c for k in REQUIRED_FIELDS),
+    "guard": True,
+}
+
+
 class JudgePostmarket:
     domain = "postmarket-surveillance"
+    CONTRACT_RULE = _CONTRACT["rule"]
+    REQUIRED_FIELDS = REQUIRED_FIELDS
 
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
+        missing = [k for k in REQUIRED_FIELDS if k not in ctx]
+        if missing:
+            # An incomplete record is not a compliant record. Judging one reads
+            # "nobody supplied this" as "nobody objected to this" -- the exact
+            # shape behind five red-team defects (docs/methods/RedTeam_Probes.md).
+            return {"verdict": "hold",
+                    "reasons": [{"rule": _CONTRACT["rule"], "level": "major",
+                                 "detail": "required input absent: "
+                                           + ", ".join(missing)}],
+                    "evidence": []}
         # A blank ref is not evidence (class fix, 2026-11-04): {"kind": "",
         # "ref": ""} used to satisfy the law-2 count here exactly as it did in
         # the 510(k) judge before probe B3 closed it there.

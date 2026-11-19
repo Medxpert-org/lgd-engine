@@ -20,7 +20,7 @@
 > shipped rule carries a basis in `lgd_engine/judges/basis.py`, labelled **LAW** (a
 > provision whose text we read) or **DOCTRINE** (a house rule declared as such — the L2
 > evidence bar, or the fact that a judge speaks for one jurisdiction only). Current
-> split: **66 rules · 55 LAW · 11 DOCTRINE · 0 unbased**, enforced in both directions by
+> split: **67 rules · 55 LAW · 12 DOCTRINE · 0 unbased**, enforced in both directions by
 > `TestClauseBasis` (a rule with no basis fails; a basis entry naming no rule also
 > fails, because dead authority is how citation tables rot while still looking
 > complete). Readable form: `docs/methods/Clause_Matrix.md`. The doctrinal share is
@@ -111,7 +111,7 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **69 assertions**,
+The assertion count grows as tables are added. As of this version: **73 assertions**,
 **37 case files** (31 corpus + 6 red-team), **5 tables**, **12 adversarial probes**.
 
 ### 1.5 One defect this method found in itself
@@ -204,6 +204,49 @@ Two things fell out of the fix, both worth more than the fix itself:
 - A suite that only ever exercises a *complete* record cannot tell "met" from
   "unspecified". `TestPccpAbsence` asserts both spellings of "not shown" get the same
   verdict.
+
+### 1.9 From a habit to a mechanism
+
+Five domains, five fixes, one shape: rule after rule waited on an intermediate artefact,
+so the artefact's absence read as permission. By the fifth fix it was clear the
+per-domain patches were the wrong unit. A list of twenty fixed predicates only covers
+the twenty absent fields someone happened to think of; the twenty-first would be found
+by whoever came next, and they would be right to call it a bug.
+
+So the input contract stops being a document and becomes an assertion at run time. Each
+judge declares `REQUIRED_FIELDS` — the smallest set of keys without which it cannot say
+anything at all — and `evaluate()` refuses to judge a record that omits one:
+
+    missing = [k for k in REQUIRED_FIELDS if k not in ctx]
+    if missing:
+        return {"verdict": "hold", "reasons": [{"rule": "REQ-01-input-contract", ...}]}
+
+The sets are deliberately *minimal*, not the whole schema: 510(k) asks for `change_type`,
+MDR for `change_category`, NMPA for `change_fields` and `requested_path`, PCCP for
+`pccp_authorized` and `change_within_pccp_scope`, postmarket for `recall_class` and
+`harm_severity`. A field that only makes a case richer is not required; a field without
+which the table has nothing to look up is.
+
+Three things keep this honest:
+
+- **One rule, not five.** `REQ-01-input-contract` is a single cross-cutting rule with a
+  single basis entry, in the same position as `L2-EVIDENCED`. Five copies of a rule that
+  says one thing is how a rule table starts lying about its own size (67 rules, 12
+  DOCTRINE).
+- **The declaration is checked against the corpus.** A field declared required but missing
+  from one shipped case would silently flip that case to `hold`; `TestInputContract` fails
+  instead, so a contract and its cases cannot drift apart.
+- **The property is tested over every case, not one probe per domain.**
+  `TestInputContract.test_deleting_a_required_field_never_yields_go` deletes each required
+  key from each of the 37 cases and asserts the answer is not `go`, and
+  `benchmarks/absence_sweep.py` states the same invariant as a standalone check anyone
+  can run: *no required field can be deleted into a green light*.
+
+What is **not** claimed: that `hold` is correct for every incomplete record. A missing
+field that merely removes a *fact the case asserted* — no death claimed, no recall class
+claimed — legitimately returns `go`, because the record no longer asserts the hazard.
+The invariant is narrower and it is the one we can defend: an input the judge cannot work
+without may never be read as an input nobody objected to.
 
 ---
 
@@ -483,4 +526,4 @@ Full rule ids, conditions and rationales are in each judge module and in
 
 本方法说明描述一种把"监管变更判定"从自然语言问答改写成可执行规则表的方法：输入是评审人实际持有的结构化字段，输出是三值判决（go / hold / reject）加上被触发的规则编号；判定纯粹、可离线重跑、失败时表现为"拒绝回答"而非"猜测"。已实现五张判定表（美国 510(k) 变更分类、上市后处置、FDA PCCP 范围、EU MDR 重大变更、中国 NMPA 变更注册），随包发布 34 个带预期判决的案件与 12 条对抗探针；同一批输入下，确定性判定器 12/12 命中预期，关键词捷径仅 5/12。
 
-本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：69 条契约断言、5 张判定表、37 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
+本说明明确划出边界：确定性策略求值、智能体前置拦截、监管决策树均非本文首创；本文的贡献限于"把可枚举的变更类别做成可复跑的规则表，并用案件语料钉住行为"。不宣称精度/召回率，不宣称可替代监管判断，不宣称具备身份与沙箱能力。截至本版本：73 条契约断言、5 张判定表、37 个案件、7 个 MCP 工具，全部由公共 CI 每次推送执行。
