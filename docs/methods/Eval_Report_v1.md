@@ -5,9 +5,9 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=feat/baseline-scorecard head=231ba6f checks=19 passed=19 cases=37 assertions=82 -->`
+`<!-- eval-report branch=feat/representation-safety head=973e161 checks=19 passed=19 cases=37 assertions=85 -->`
 
-Run at 2026-11-19 01:34 UTC against `feat/baseline-scorecard` at `231ba6f`, from a fresh clone.
+Run at 2026-11-19 01:44 UTC against `feat/representation-safety` at `973e161`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
@@ -25,11 +25,11 @@ Run at 2026-11-19 01:34 UTC against `feat/baseline-scorecard` at `231ba6f`, from
 | C11 | verdict deterministic + cheap (no model) | PASS |
 | C13 | competitor claims carry provenance labels | PASS |
 | X1 | tampered page makes --check fail | PASS |
-| X2 | suite runs and reports 82 tests | PASS |
+| X2 | suite runs and reports 85 tests | PASS |
 | X3 | dependencies = [] and no third-party imports | PASS |
 | X4 | note claims 37 cases, disk has 37 | PASS |
 | X5 | tree still clean after the whole run | PASS |
-| X6 | docs quote 82 assertions and 37 cases everywhere, and every cited audit command exists | PASS |
+| X6 | docs quote 85 assertions and 37 cases everywhere, and every cited audit command exists | PASS |
 
 **19/19 checks passed** (plus C12, which validates this file).
 
