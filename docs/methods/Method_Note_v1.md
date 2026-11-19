@@ -111,7 +111,7 @@ to be explained away.
 | C9 | The browser dossier cannot drift from the code | `python benchmarks/build_demo_page.py --check` | `OK` |
 | C10 | All of the above run on every push | GitHub Actions `gate` workflow | green on every commit cited below |
 
-The assertion count grows as tables are added. As of this version: **79 assertions**,
+The assertion count grows as tables are added. As of this version: **82 assertions**,
 **37 case files** (31 corpus + 6 red-team), **5 tables**, **12 adversarial probes**.
 
 ### 1.5 One defect this method found in itself
@@ -319,6 +319,31 @@ What is left — three PCCP fields — is weak for a specific reason: one case
 (`pccp08_red_team_absent_special_controls.json`) exists to test their absence.
 Requiring them would replace a specific rule with a generic one, which is a worse
 trade than a published residue of three.
+
+### 1.11 How much better, counted
+
+Every safety tool says "more reliable". A delta is a claim until it can be recomputed,
+so the comparison is generated: [`Baseline_Scorecard.md`](Baseline_Scorecard.md).
+
+Four shortcuts are scored on the same two corpora -- the 37 cases with declared
+expectations, and 846 records made by deleting or blanking a contract field:
+
+| engine | shipped agreement | false greens |
+|---|---|---|
+| **gate** | **37/37** | **0/846** |
+| always-go | 7/37 | 702/846 |
+| keyword grep | 11/37 | 612/846 |
+| presence checklist + keyword | 11/37 | 510/846 |
+| single severity rule | 9/37 | 648/846 |
+
+The second column is the honest one. On the shipped corpus a keyword shortcut is
+already close, because the cases were written to be legible. The separation appears
+only where the record is still well-formed JSON and the shortcut cannot tell *absent*
+from *not objected* -- which is exactly the failure this table exists to name.
+
+The baselines are stand-ins for the shortcuts a hurried integration converges on,
+not products, and no vendor's behaviour is claimed. A fifth shortcut, or a real
+tool, is one dictionary entry away and is scored by the same command.
 
 ---
 
