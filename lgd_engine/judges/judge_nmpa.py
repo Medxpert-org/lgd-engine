@@ -35,7 +35,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from .base import DomainJudge, JudgeVerdict, Reason, Evidence, is_unusable
+from .base import DomainJudge, JudgeVerdict, Reason, Evidence, is_unusable, misused
 
 # 许可事项变更 — these force a 变更注册 (第二类/第三类).
 LICENCE_FIELDS = {
@@ -195,10 +195,18 @@ KNOWN_RECALL_LEVELS = {"none", "level1", "level2", "level3"}
 
 REQUIRED_FIELDS = {"change_fields": list, "requested_path": str, "technical_docs_updated": bool, "safety_effectiveness_assessed": bool, "evidence_sufficiency": str}
 
+# Every boolean this judge reads with `is True` / `is False`. A record that
+# supplies "false" as a string has not said false -- it has left the fact out.
+BOOL_FIELDS = {
+    "has_registration_certificate": bool,
+    "safety_effectiveness_assessed": bool,
+    "technical_docs_updated": bool,
+}
+
 # NMPA: which fields change, and which approval route is being requested.
 _CONTRACT = {
     "rule": "REQ-01-input-contract",
-    "when": lambda c: bool(is_unusable(c, REQUIRED_FIELDS)),
+    "when": lambda c: bool((is_unusable(c, REQUIRED_FIELDS) or misused(c, BOOL_FIELDS))),
     "guard": True,
 }
 
@@ -215,7 +223,7 @@ class JudgeNmpaChangeRegistration:
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
-        missing = is_unusable(ctx, REQUIRED_FIELDS)
+        missing = (is_unusable(ctx, REQUIRED_FIELDS) or misused(ctx, BOOL_FIELDS))
         if missing:
             # A critical veto outranks an incomplete record. Checking the contract
             # first let a record that is missing a required field soften a

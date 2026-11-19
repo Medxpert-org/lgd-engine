@@ -38,7 +38,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from .base import DomainJudge, JudgeVerdict, Reason, Evidence, is_unusable
+from .base import DomainJudge, JudgeVerdict, Reason, Evidence, is_unusable, misused
 
 
 _CRITICAL_RULES = [
@@ -57,6 +57,12 @@ _CRITICAL_RULES = [
             # alone must not disarm the veto for unrelated changes.
             and not (c.get("corrective_action_accepted_by_authority") is True
                      and c.get("implements_accepted_corrective_action") is True)
+            # A flag written as "true" instead of true is a type error,
+            # not a missing exemption. Reading it as "no accepted action"
+            # would let a typo manufacture a veto -- the guard turns that
+            # record into hold instead, so the veto stands down.
+            and not misused(c, {"corrective_action_accepted_by_authority": bool,
+                                "implements_accepted_corrective_action": bool})
         ),
     },
     {
@@ -207,10 +213,28 @@ KNOWN_EVIDENCE_SUFFICIENCY = {"sufficient", "needs_supplement", "none"}
 
 REQUIRED_FIELDS = {"change_category": str, "verification_documented": bool, "evidence_sufficiency": str}
 
+# Every boolean this judge reads with `is True` / `is False`. A record that
+# supplies "false" as a string has not said false -- it has left the fact out.
+BOOL_FIELDS = {
+    "affects_clinical_benefit": bool,
+    "affects_intended_purpose": bool,
+    "affects_safety_or_performance": bool,
+    "classification_changed": bool,
+    "corrective_action_accepted_by_authority": bool,
+    "declared_not_significant": bool,
+    "fsca_open": bool,
+    "implements_accepted_corrective_action": bool,
+    "new_clinical_data_required": bool,
+    "patient_contacting_material_change": bool,
+    "sterility_affected": bool,
+    "sterilization_change": bool,
+    "verification_documented": bool,
+}
+
 # MDR: the category the change is claimed to fall in.
 _CONTRACT = {
     "rule": "REQ-01-input-contract",
-    "when": lambda c: bool(is_unusable(c, REQUIRED_FIELDS)),
+    "when": lambda c: bool((is_unusable(c, REQUIRED_FIELDS) or misused(c, BOOL_FIELDS))),
     "guard": True,
 }
 
@@ -227,7 +251,7 @@ class JudgeMdrSignificance:
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
-        missing = is_unusable(ctx, REQUIRED_FIELDS)
+        missing = (is_unusable(ctx, REQUIRED_FIELDS) or misused(ctx, BOOL_FIELDS))
         if missing:
             # A critical veto outranks an incomplete record. Checking the contract
             # first let a record that is missing a required field soften a

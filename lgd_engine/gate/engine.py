@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
-from ..judges.base import DomainJudge, JudgeVerdict
+from ..judges.base import DomainJudge, JudgeVerdict, canonicalize
 
 
 @dataclass
@@ -79,6 +79,7 @@ class GateEngine:
 
     # ------------------------------------------------------------------ run
     def evaluate(self, ctx: Dict[str, Any]) -> GateReport:
+        ctx = canonicalize(ctx)
         per_judge: Dict[str, Dict[str, Any]] = {}
         all_reasons: List[Dict[str, str]] = []
         all_evidence: List[Dict[str, str]] = []

@@ -37,7 +37,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from .base import Reason, Evidence, is_unusable
+from .base import Reason, Evidence, is_unusable, misused
 
 
 _CRITICAL = [
@@ -53,7 +53,7 @@ _CRITICAL = [
         "detail": "Product/feature on US/EU market without premarket clearance "
                   "or PMA (No Marketing Application). Immediate removal from "
                   "distribution; cannot operate until gate passes.",
-        "when": lambda c: bool(c.get("marketing_without_license")),
+        "when": lambda c: c.get("marketing_without_license") is True,
     },
     {
         "rule": "PM-CRIT-03-death-or-serious-causal",
@@ -152,10 +152,16 @@ _ENUM_AXES = (
 
 REQUIRED_FIELDS = {"recall_class": str, "harm_severity": str}
 
+# Every boolean this judge reads with `is True` / `is False`. A record that
+# supplies "false" as a string has not said false -- it has left the fact out.
+BOOL_FIELDS = {
+    "marketing_without_license": bool,
+}
+
 # postmarket: which event was reported, and how bad it was.
 _CONTRACT = {
     "rule": "REQ-01-input-contract",
-    "when": lambda c: bool(is_unusable(c, REQUIRED_FIELDS)),
+    "when": lambda c: bool((is_unusable(c, REQUIRED_FIELDS) or misused(c, BOOL_FIELDS))),
     "guard": True,
 }
 
@@ -168,7 +174,7 @@ class JudgePostmarket:
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
-        missing = is_unusable(ctx, REQUIRED_FIELDS)
+        missing = (is_unusable(ctx, REQUIRED_FIELDS) or misused(ctx, BOOL_FIELDS))
         if missing:
             # A critical veto outranks an incomplete record. Checking the contract
             # first let a record that is missing a required field soften a

@@ -54,7 +54,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from .base import DomainJudge, JudgeVerdict, Reason, Evidence, is_unusable
+from .base import DomainJudge, JudgeVerdict, Reason, Evidence, is_unusable, misused
 
 
 # ---- critical rules: one vote → reject ------------------------------------
@@ -205,10 +205,21 @@ KNOWN_EVIDENCE_SUFFICIENCY = {"sufficient", "needs_supplement", "none"}
 
 REQUIRED_FIELDS = {"pccp_authorized": bool, "change_within_pccp_scope": bool, "acceptance_criteria_met": bool, "remains_se_to_predicate": bool, "evidence_sufficiency": str}
 
+# Every boolean this judge reads with `is True` / `is False`. A record that
+# supplies "false" as a string has not said false -- it has left the fact out.
+BOOL_FIELDS = {
+    "acceptance_criteria_met": bool,
+    "affects_intended_use": bool,
+    "change_within_pccp_scope": bool,
+    "pccp_authorized": bool,
+    "pccp_modified_version_used_as_predicate": bool,
+    "remains_se_to_predicate": bool,
+}
+
 # PCCP: whether a plan exists and whether this change sits inside it.
 _CONTRACT = {
     "rule": "REQ-01-input-contract",
-    "when": lambda c: bool(is_unusable(c, REQUIRED_FIELDS)),
+    "when": lambda c: bool((is_unusable(c, REQUIRED_FIELDS) or misused(c, BOOL_FIELDS))),
     "guard": True,
 }
 
@@ -225,7 +236,7 @@ class JudgePccpScope:
     def evaluate(self, ctx: Dict[str, Any]) -> Dict[str, Any]:
         reasons: List[Reason] = []
         evidence: List[Evidence] = []
-        missing = is_unusable(ctx, REQUIRED_FIELDS)
+        missing = (is_unusable(ctx, REQUIRED_FIELDS) or misused(ctx, BOOL_FIELDS))
         if missing:
             # A critical veto outranks an incomplete record. Checking the contract
             # first let a record that is missing a required field soften a

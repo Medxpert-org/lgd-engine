@@ -62,7 +62,7 @@ python framework/gate_bot.py     # CI gate (six checks)
 No install, no network, no LLM. Three commands, each ending in a line you can compare:
 
 ```bash
-python -m unittest discover -s tests -v      # -> Ran 82 tests ... OK
+python -m unittest discover -s tests -v      # -> Ran 85 tests ... OK
 python lgd_engine/mcp_smoke.py               # -> SMOKE: PASS
 python -m lgd_engine.cli --all demo1/cases   # -> [summary] 5/5 cases match expected verdict (domain=510k)
 python -m lgd_engine.cli --all demo1/cases_pccp --domain pccp
@@ -75,7 +75,7 @@ python benchmarks/adversarial_baseline.py
 # -> gate: 12/12 match expected / naive: 5/12 match expected
 ```
 
-These 82 assertions pin behaviour that a "did it exit 0" check cannot see:
+These 85 assertions pin behaviour that a "did it exit 0" check cannot see:
 
 - **L3** — one critical reason vetoes the whole run, and the veto is recorded.
 - **L2** — a `go` with zero evidence is downgraded to `hold`, not accepted.
@@ -112,7 +112,7 @@ If the page showed a verdict the code does not produce, the `--check` step turns
 That constraint is the point: a comparison table can say anything, a page that CI
 re-derives from the judges cannot.
 
-### Ten things you can audit without trusting me
+### Eleven things you can audit without trusting me
 
 | What it answers | File | Command that settles it |
 |---|---|---|
@@ -124,6 +124,7 @@ re-derives from the judges cannot.
 | Can I get a green light by deleting or blanking a field? | this page, §1.9 | `python benchmarks/absence_sweep.py` |
 | What does a field's absence mean, for all 58 fields? | [`docs/methods/absence_taxonomy.json`](docs/methods/absence_taxonomy.json) | `python benchmarks/absence_taxonomy.py` |
 | How much better than a shortcut, counted? | [`docs/methods/Baseline_Scorecard.md`](docs/methods/Baseline_Scorecard.md) | `python benchmarks/baseline_scorecard.py` |
+| Does the same fact, spelled differently, decide differently? | [`docs/methods/Method_Note_v1.md`](docs/methods/Method_Note_v1.md) §1.12 | `python benchmarks/representation_sweep.py` |
 | Where do I submit a case that proves a rule wrong? | [`docs/methods/Challenge.md`](docs/methods/Challenge.md) | open the **Challenge a rule** issue form |
 | What does the gate's own red team look like, case by case? | [`docs/methods/RedTeam_Probes.md`](docs/methods/RedTeam_Probes.md) | `python -m unittest tests.test_contract.TestCliContract -v` |
 
