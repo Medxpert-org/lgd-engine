@@ -5,9 +5,9 @@ it by hand: the marker line below is asserted by check C12, so a hand-written
 number that disagrees with the repository fails the evaluation. C12 is excluded
 from the counts below — a report cannot contain the verdict on itself.
 
-`<!-- eval-report branch=feat/blank-is-not-a-value head=fe6915e checks=19 passed=19 cases=37 assertions=74 -->`
+`<!-- eval-report branch=feat/absence-taxonomy head=2562a8d checks=19 passed=19 cases=37 assertions=77 -->`
 
-Run at 2026-11-19 00:31 UTC against `feat/blank-is-not-a-value` at `fe6915e`, from a fresh clone.
+Run at 2026-11-19 00:38 UTC against `feat/absence-taxonomy` at `2562a8d`, from a fresh clone.
 
 | # | Claim checked | Result |
 |---|---|---|
@@ -25,11 +25,11 @@ Run at 2026-11-19 00:31 UTC against `feat/blank-is-not-a-value` at `fe6915e`, fr
 | C11 | verdict deterministic + cheap (no model) | PASS |
 | C13 | competitor claims carry provenance labels | PASS |
 | X1 | tampered page makes --check fail | PASS |
-| X2 | suite runs and reports 74 tests | PASS |
+| X2 | suite runs and reports 77 tests | PASS |
 | X3 | dependencies = [] and no third-party imports | PASS |
 | X4 | note claims 37 cases, disk has 37 | PASS |
 | X5 | tree still clean after the whole run | PASS |
-| X6 | docs quote 74 assertions and 37 cases everywhere, and every cited audit command exists | PASS |
+| X6 | docs quote 77 assertions and 37 cases everywhere, and every cited audit command exists | PASS |
 
 **19/19 checks passed** (plus C12, which validates this file).
 
